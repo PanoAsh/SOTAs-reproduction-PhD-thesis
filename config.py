@@ -51,4 +51,3 @@ num_train = 51
 batch_size = 2
 Epochs = 10
 debug_on = 1
-transform_on = 1
