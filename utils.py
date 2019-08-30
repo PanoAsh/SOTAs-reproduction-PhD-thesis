@@ -21,7 +21,7 @@ def TXT_gnr(TXT_path, IMG_dir):
 
 #------------------------ DIY datset class ------------------------
 class MyDataset(Dataset):
-    def __init__(self, ids_imgs_path, ids_objms_path, myTrans=None,
+    def __init__(self, ids_imgs_path, ids_objms_path,
                  normTrans=None):
         ids_imgs = open(ids_imgs_path, 'r')
         ids_objms = open(ids_objms_path, 'r')
@@ -36,7 +36,6 @@ class MyDataset(Dataset):
 
         self.imgs = imgs
         self.objms = objms
-        self.transform = myTrans
         self.norm = normTrans
 
     def __getitem__(self, index):
@@ -46,17 +45,19 @@ class MyDataset(Dataset):
         objm = Image.open(objm_path).convert('L')
         objm_db = Image.open(objm_path).convert('RGB')
 
-        if self.transform is not None:
-            imgTrans, objmTrans = data_ForTrain(self.norm)
-            img = imgTrans(img)
-            objm = objmTrans(objm)
-            if debug_on:
-                objm_db = objmTrans(objm_db)
 
-        if debug_on:
-            debug_vision(img, objm_db)
+        imgTrans, objmTrans = data_ForTrain(self.norm)
+        imgs, objms, objms_db = data_MultiCrop(img, objm, objm_db,
+                                           img.size[0], img.size[1])
+        for i in range(10):
+            imgs[i] = imgTrans(imgs[i])
+            objms[i] = objmTrans(objms[i])
+            # objms_db[i] = objmTrans(objms_db[i])
 
-        return img, objm
+        # if debug_on:
+        #     debug_vision(imgs[8], objms_db[8])
+
+        return imgs, objms
 
     def __len__(self):
         return len(self.imgs)
@@ -74,17 +75,37 @@ def data_MultiCrop(img, objm, objm_db, Height, Width, Scale=1):
         on each of the vr.
 
      """
+     # ************ 9 center crop on 1st scale ************
+     h_s1 = Height/3*2
+     w_s1 = Width/3*2
+     imgs = []
+     objms = []
+     objms_db = []
 
-     print ('under built...')
+     for i in range(3):
+         for j in range(3):
+             x1 = i*Height/6
+             y1 = j*Width/6
+             x2 = x1+h_s1
+             y2 = y1+w_s1
+             imgs.append(img.crop((x1,y1,x2,y2)))
+             objms.append(objm.crop((x1,y1,x2,y2)))
+             objms_db.append(objm_db.crop((x1,y1,x2,y2)))
+
+     imgs.append(img)
+     objms.append(objm)
+     objms_db.append(objm_db)
+
+     return imgs, objms, objms_db
 
 def data_ForTrain(normTransform):
     imgsTransform = transforms.Compose([
-        transforms.Resize(size_train),
+        transforms.Resize((size_train,size_train*2)),
         transforms.ToTensor(),
         normTransform
     ])
     objmsTransform = transforms.Compose([
-        transforms.Resize(size_train),
+        transforms.Resize((size_train,size_train*2)),
         transforms.ToTensor()
     ])
 
