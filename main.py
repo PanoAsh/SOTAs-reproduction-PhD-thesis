@@ -41,12 +41,12 @@ if __name__ == '__main__':
 
         # ************ load the dataset for training ************
         data_train = MyDataset(ids_imgs_train_path, ids_objms_train_path,
-                               myTrans=transform_on, normTrans=normTransformation)
+                               normTrans=normTransformation)
         print('************************')
         print('training dataset loaded !')
         print('************************')
         data_val = MyDataset(ids_imgs_val_path, ids_objms_val_path,
-                             myTrans=transform_on, normTrans=normTransformation)
+                             normTrans=normTransformation)
         print('************************')
         print('validate dataset loaded !')
         print('************************')
