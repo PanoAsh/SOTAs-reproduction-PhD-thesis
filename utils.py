@@ -169,7 +169,7 @@ class DiceCoef(nn.Module):
         target = target.view(target.size(0), -1)
         DC = []
 
-        for i in range(batch_size):
+        for i in range(input.shape[0]):
             DC.append((2 * torch.sum(input[i] * target[i]) + epsilon_DC) / \
                       (torch.sum(input[i]) + torch.sum(target[i]) + epsilon_DC))
             DC[i].unsqueeze_(0)
