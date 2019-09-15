@@ -1,11 +1,12 @@
 #------------------------ load the necessary packages ------------------------
 from torch.utils.data import Dataset
 from PIL import Image
+import torch
+import torch.nn as nn
 import torchvision.transforms as transforms
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import random
 from config import *
 
 #------------------------ functions for TXT genneration ------------------------
@@ -52,12 +53,8 @@ class MyDataset(Dataset):
         for i in range(10):
             imgs[i] = imgTrans(imgs[i])
             objms[i] = objmTrans(objms[i])
-            # objms_db[i] = objmTrans(objms_db[i])
 
-        # if debug_on:
-        #     debug_vision(imgs[8], objms_db[8])
-
-        return imgs, objms
+        return imgs[9], objms[9]
 
     def __len__(self):
         return len(self.imgs)
@@ -149,7 +146,7 @@ def data_norm(Num):
 # ------------------------ calculate the mean and std ------------------------
 def debug_vision(img, objm):
     print('start debugging...')
-    img.numpy()
+    img.numpy() # img.detach_(); img.numpy()
     objm.numpy()
     img = img.transpose(0,2)
     img = img.transpose(0,1)
@@ -161,3 +158,23 @@ def debug_vision(img, objm):
     plt.subplot(1,2,2)
     plt.imshow(objm)
     plt.show()
+
+# ------------------------ calculate the mean and std ------------------------
+class DiceCoef(nn.Module):
+    def __init__(self):
+        super(DiceCoef, self).__init__()
+
+    def forward(self, input, target):
+        input = input.view(input.size(0), -1)
+        target = target.view(target.size(0), -1)
+        DC = []
+
+        for i in range(batch_size):
+            DC.append((2 * torch.sum(input[i] * target[i]) + epsilon_DC) / \
+                      (torch.sum(input[i]) + torch.sum(target[i]) + epsilon_DC))
+            DC[i].unsqueeze_(0)
+
+        DC = torch.cat(DC, 0)
+        DC = torch.mean(DC)
+
+        return DC
