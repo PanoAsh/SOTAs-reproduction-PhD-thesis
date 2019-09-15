@@ -12,16 +12,17 @@ class FCN8s(nn.Module):
 
         self.n_class = num_classes
 
-        self.pretrained = nn.Sequential(*list(pre_net.children())[:-2])
-        self.stage01 = nn.Sequential(*list(self.pretrained.children())[0][0:17])# 1/8
-        self.stage02 = nn.Sequential(*list(self.pretrained.children())[0][17:24])# 1/16
-        self.stage03 = nn.Sequential(*list(self.pretrained.children())[0][24:31])# 1/32
+        self.stage01 = nn.Sequential(*list(pre_net.children())[0][0:17])# 1/8
+        self.stage02 = nn.Sequential(*list(pre_net.children())[0][17:24])# 1/16
+        self.stage03 = nn.Sequential(*list(pre_net.children())[0][24:31])# 1/32
 
         self.scores01 = nn.Conv2d(512, num_classes, 1)
         self.scores02 = nn.Conv2d(256, num_classes, 1)
 
         self.upsampling2x = bilinear_upsampling(num_classes, num_classes, 4, 2, 1)
         self.upsampling8x = bilinear_upsampling(num_classes, num_classes, 16, 8, 4)
+
+        self.classifier = nn.Sigmoid()
 
     def forward(self, x):
         x = self.stage01(x)
@@ -43,6 +44,7 @@ class FCN8s(nn.Module):
         s1 = s1 + s2# 1/8
 
         s = self.upsampling8x(s1)
+        s = self.classifier(s)
 
         return s
 
