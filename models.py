@@ -10,7 +10,12 @@ class FCN8s(nn.Module):
     def __init__(self, num_classes, pre_net):
         super(FCN8s, self).__init__()
 
-        self.n_class = num_classes
+        self.upsampling2x = bilinear_upsampling(num_classes, num_classes, 4, 2, 1)
+        self.upsampling2x.initialize_weights()
+        self.upsampling8x = bilinear_upsampling(num_classes, num_classes, 16, 8, 4)
+        self.upsampling8x.initialize_weights()
+        for p in self.parameters(): # freeze the upsampling layers
+            p.requires_grad = False
 
         self.stage01 = nn.Sequential(*list(pre_net.children())[0][0:17])# 1/8
         self.stage02 = nn.Sequential(*list(pre_net.children())[0][17:24])# 1/16
@@ -18,9 +23,6 @@ class FCN8s(nn.Module):
 
         self.scores01 = nn.Conv2d(512, num_classes, 1)
         self.scores02 = nn.Conv2d(256, num_classes, 1)
-
-        self.upsampling2x = bilinear_upsampling(num_classes, num_classes, 4, 2, 1)
-        self.upsampling8x = bilinear_upsampling(num_classes, num_classes, 16, 8, 4)
 
         self.classifier = nn.Sigmoid()
 
@@ -68,13 +70,24 @@ def get_upsampling_weight(in_channels, out_channels, kernel_size):
 
     return torch.from_numpy(weight).float()
 
-def bilinear_upsampling(in_channels, out_channels, kernel_size,
+class bilinear_upsampling(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size,
                         stride, padding, bias=False):
-    initial_weight = get_upsampling_weight(in_channels, out_channels,
-                                           kernel_size)
-    layer = nn.ConvTranspose2d(in_channels, out_channels,
-                               kernel_size, stride, padding, bias=bias)
-    layer.weight.data.copy_(initial_weight)
-    layer.weight.requires_grad = False # weight is frozen
+        super(bilinear_upsampling, self).__init__()
 
-    return layer
+        self.CI = in_channels
+        self.CO = out_channels
+        self.ks = kernel_size
+        self.convTrans = nn.ConvTranspose2d(in_channels, out_channels,
+                                            kernel_size,stride,
+                                            padding, bias)
+
+    def forward(self, x):
+        x = self.convTrans(x)
+
+        return x
+
+    def initialize_weights(self):
+        initial_weight = get_upsampling_weight(self.CI, self.CO, self.ks)
+
+        self.convTrans.weight.data.copy_(initial_weight)
