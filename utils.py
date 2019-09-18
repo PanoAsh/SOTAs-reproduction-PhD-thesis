@@ -146,12 +146,12 @@ def data_norm(Num):
 # ------------------------ calculate the mean and std ------------------------
 def debug_vision(img, objm):
     print('start debugging...')
-    img.numpy() # img.detach_(); img.numpy()
-    objm.numpy()
     img = img.transpose(0,2)
     img = img.transpose(0,1)
     objm = objm.transpose(0,2)
     objm = objm.transpose(0,1)
+    img = img.cpu().numpy()  #
+    objm = objm.cpu().numpy()
     plt.figure
     plt.subplot(1,2,1)
     plt.imshow(img)
