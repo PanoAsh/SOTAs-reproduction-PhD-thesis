@@ -16,18 +16,27 @@ import random
 import shutil
 from torchvision.models import resnet34, vgg16
 from tensorboardX import SummaryWriter
+import torch.utils.model_zoo as model_zoo
 from config import *
 from utils import *
 from models import *
 
 # ------------------------ step 1 : define the models / optimizers / metrics ------------------------
-net_pretrained = vgg16(pretrained=pretrain_on)
+net_pretrained = vgg16(pretrained=True)
 net = FCN8s(num_classes, net_pretrained)
-if torch.cuda.device_count() > 1:
-    net = nn.DataParallel(net, device_ids=[0, 1, 2, 3])
+if pretrain_on:
+    pretrained_dict = model_zoo.load_url(model_urls['vgg16'])
+    net_dict = net.state_dict()
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in net_dict}
+    net_dict.update(pretrained_dict)
+    net.load_state_dict(net_dict)
+
+# if torch.cuda.device_count() > 1:
+#     net = nn.DataParallel(net, device_ids=[1, 2, 3])
 net.to(device)
 
-optimizer = optim.SGD(net.parameters(), lr=lr_init, momentum=0.9, dampening=0.1)
+optimizer = optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
+                      lr=lr_init, momentum=0.9, dampening=0.1)
 
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_num, gamma=0.1)
 
@@ -56,7 +65,7 @@ if __name__ == '__main__':
     if train_on:
 
         # ************ initialize the log recorder ************
-        writer = SummaryWriter(log_dir=log_dir, comment='SOD360')
+        writer = SummaryWriter(logdir=log_dir, comment='SOD360')
 
         # ************ calculate the mean and std of trainSet ************
         normTransformation = data_norm(num_train)
@@ -88,7 +97,6 @@ if __name__ == '__main__':
             total_val = 0.0
             scheduler.step()
 
-            net.train()
             for i, data in enumerate(train_loader):
                 inputs, masks = data
                 inputs, masks = Variable(inputs.to(device)), \
@@ -135,7 +143,7 @@ if __name__ == '__main__':
                                        {'train_acc': correct / total}, epoch)
 
                 # model visualization
-                if i % 9 == 0:
+                if i % 3 == 0:
                     # visualize the inputs, masks and outputs
                     show_inputs = make_grid(inputs)
                     show_maps = make_grid(masks)
@@ -146,15 +154,17 @@ if __name__ == '__main__':
 
             # record grads and weights
             for name, layer in net.named_parameters():
-                writer.add_histogram(name + '_grad',
-                                     layer.grad.cpu().data.numpy(), epoch)
-                writer.add_histogram(name + '_data',
-                                     layer.cpu().data.numpy(), epoch)
+                if layer.data.requires_grad:
+                    writer.add_histogram(name + '_grad',
+                                         layer.grad.cpu().data.numpy(), epoch)
+                    writer.add_histogram(name + '_data',
+                                         layer.cpu().data.numpy(), epoch)
 
             net.eval()
             for i, data in enumerate(valid_loader):
                 imgs, masks = data
-                imgs, masks = Variable(imgs), Variable(masks)
+                imgs, masks = Variable(imgs.to(device)),\
+                              Variable(masks.to(device))
 
                 # forward
                 outputs = net(imgs)
