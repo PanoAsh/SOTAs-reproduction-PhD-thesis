@@ -55,12 +55,22 @@ test_on = 0
 size_train = 896
 scale_crop = 1
 num_train = 51
-batch_size = 1
+batch_size = 4
 Epochs = 2
 debug_on = 1
 lr_init = 0.001
 epsilon_DC = 0.001
 step_num = 10
-pretrain_on = True
+pretrain_on = 1
 num_classes = 1
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+model_urls = {
+    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
+    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
+    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
+    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
+    'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
+    'vgg13_bn': 'https://download.pytorch.org/models/vgg13_bn-abd245e5.pth',
+    'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
+    'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
+}
