@@ -24,7 +24,7 @@ from models import *
 # ------------------------ step 1 : define the models / optimizers / metrics ------------------------
 net_pretrained = vgg16(pretrained=True)
 net = FCN8s(num_classes, net_pretrained)
-if pretrain_on:
+if pretrain_on: # maybe useless but correct
     pretrained_dict = model_zoo.load_url(model_urls['vgg16'])
     net_dict = net.state_dict()
     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in net_dict}
@@ -127,8 +127,7 @@ if __name__ == '__main__':
                 loss_sigma += loss.item()
 
                 if i % 1 == 0:
-                    loss_avg = loss_sigma / 1
-                    loss_sigma = 0.0
+                    loss_avg = loss_sigma / total
                     print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] "
                           "Loss: {:.4f} Acc:{:.2%}".format(epoch + 1, Epochs, i + 1,
                                                            len(train_loader), loss_avg,
@@ -154,11 +153,8 @@ if __name__ == '__main__':
 
             # record grads and weights
             for name, layer in net.named_parameters():
-                if layer.data.requires_grad:
-                    writer.add_histogram(name + '_grad',
-                                         layer.grad.cpu().data.numpy(), epoch)
-                    writer.add_histogram(name + '_data',
-                                         layer.cpu().data.numpy(), epoch)
+                writer.add_histogram(name + 'FCN8s',
+                                    layer.clone().cpu().data.numpy(), epoch)
 
             net.eval()
             for i, data in enumerate(valid_loader):
@@ -180,8 +176,7 @@ if __name__ == '__main__':
                 correct_val += metric
                 total_val += 1
 
-                loss_avg_val = loss_val
-                loss_val = 0.0
+                loss_avg_val = loss_val / total_val
 
                 print("Validation: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] "
                       "Loss: {:.4f} Acc:{:.2%}".
@@ -210,4 +205,3 @@ if __name__ == '__main__':
         print('************************')
         print('testing dataset loaded !')
         print('************************')
-
