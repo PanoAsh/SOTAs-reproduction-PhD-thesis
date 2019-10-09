@@ -44,23 +44,23 @@ class MyDataset(Dataset):
         objm_path = self.objms[index]
         img = Image.open(img_path).convert('RGB')
         objm = Image.open(objm_path).convert('L')
-        objm_db = Image.open(objm_path).convert('RGB')
-
+        # objm_db = Image.open(objm_path).convert('RGB') # debug
 
         imgTrans, objmTrans = data_ForTrain(self.norm)
-        imgs, objms, objms_db = data_MultiCrop(img, objm, objm_db,
-                                           img.size[0], img.size[1])
+        imgs, objms = data_MultiCrop(img, objm, img.size[0], img.size[1])
         for i in range(10):
             imgs[i] = imgTrans(imgs[i])
             objms[i] = objmTrans(objms[i])
 
-        return imgs[9], objms[9]
+        key_train = np.random.randint(0, 10, 1)[0]
+
+        return imgs[key_train], objms[key_train]
 
     def __len__(self):
         return len(self.imgs)
 
 # ------------------------ preprocess the dataset ------------------------
-def data_MultiCrop(img, objm, objm_db, Height, Width, Scale=1):
+def data_MultiCrop(img, objm, Height, Width, Scale=1):
      """
 
         Based on the prior knowledge, 9 viewports(vr) will be located
@@ -77,7 +77,6 @@ def data_MultiCrop(img, objm, objm_db, Height, Width, Scale=1):
      w_s1 = Width/3*2
      imgs = []
      objms = []
-     objms_db = []
 
      for i in range(3):
          for j in range(3):
@@ -87,13 +86,11 @@ def data_MultiCrop(img, objm, objm_db, Height, Width, Scale=1):
              y2 = y1+w_s1
              imgs.append(img.crop((x1,y1,x2,y2)))
              objms.append(objm.crop((x1,y1,x2,y2)))
-             objms_db.append(objm_db.crop((x1,y1,x2,y2)))
 
      imgs.append(img)
      objms.append(objm)
-     objms_db.append(objm_db)
 
-     return imgs, objms, objms_db
+     return imgs, objms
 
 def data_ForTrain(normTransform):
     imgsTransform = transforms.Compose([
