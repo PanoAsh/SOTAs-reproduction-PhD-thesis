@@ -1,0 +1,3 @@
+Difference between FCN and U Net:
+1. feature merging method: add / concatenate
+2. Convolution layers exist or not in upsampling part of the net
