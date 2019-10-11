@@ -22,14 +22,18 @@ from utils import *
 from models import *
 
 # ------------------------ step 1 : define the models / optimizers / metrics ------------------------
-net_pretrained = vgg16(pretrained=True)
-net = FCN8s(num_classes, net_pretrained)
-if pretrain_on: # maybe useless but correct
-    pretrained_dict = model_zoo.load_url(model_urls['vgg16'])
-    net_dict = net.state_dict()
-    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in net_dict}
-    net_dict.update(pretrained_dict)
-    net.load_state_dict(net_dict)
+if model_select == 'fcn':
+    net_pretrained = vgg16(pretrained=True)
+    net = FCN8s(num_classes, net_pretrained)
+    if pretrain_on: # maybe useless but correct
+       pretrained_dict = model_zoo.load_url(model_urls['vgg16'])
+       net_dict = net.state_dict()
+       pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in net_dict}
+       net_dict.update(pretrained_dict)
+       net.load_state_dict(net_dict)
+
+if model_select == 'unet':
+    net = unet()
 
 # if torch.cuda.device_count() > 1:
 #     net = nn.DataParallel(net, device_ids=[1, 2, 3])
@@ -68,7 +72,10 @@ if __name__ == '__main__':
         writer = SummaryWriter(logdir=log_dir, comment='SOD360')
 
         # ************ calculate the mean and std of trainSet ************
-        normTransformation = data_norm(num_train)
+        # normTransformation = data_norm(num_train) # run if the data updated
+        normTransformation = transforms.Normalize(
+            [0.44706792, 0.41150272, 0.3787503],
+            [0.26928946, 0.25931585, 0.27907613])
 
         # ************ load the dataset for training ************
         data_train = MyDataset(ids_imgs_train_path, ids_objms_train_path,
@@ -190,13 +197,14 @@ if __name__ == '__main__':
                 writer.add_scalars('Accuracy_group',
                                    {'valid_acc': correct_val / total_val}, epoch)
 
+            if epoch % 5 == 0:
+                torch.save(net.state_dict(), mod_dir)
+                print('************************')
+                print('model successfully saved !')
+                print('************************')
+
         print('************************')
         print('finished training !')
-        print('************************')
-
-        torch.save(net.state_dict(), mod_dir)
-        print('************************')
-        print('model successfully saved !')
         print('************************')
 
 # ------------------------ step 4 : test and evaluate the results ------------------------
