@@ -133,53 +133,85 @@ class unet(nn.Module):
         self.layer9_2 = nn.Conv2d(32, 32, 3, 1, 1)
         self.layer9_3 = nn.Conv2d(32, 1, 1)
 
+        self.relu = nn.ReLU(inplace=True)
+
         self.classifier = nn.Sigmoid()
 
     def forward(self, x):
         x = self.layer1_1(x)
+        x = self.relu(x)
         x = self.layer1_2(x)
+        x = self.relu(x)
         l1 = x
         x = self.layer1_3(x) # 1/2
 
         x = self.layer2_1(x)
+        x = self.relu(x)
         x = self.layer2_2(x)
+        x = self.relu(x)
         l2 = x
         x = self.layer2_3(x) # 1/4
 
         x = self.layer3_1(x)
+        x = self.relu(x)
         x = self.layer3_2(x)
+        x = self.relu(x)
         l3 = x
         x = self.layer3_3(x) # 1/8
 
         x = self.layer4_1(x)
+        x = self.relu(x)
         x = self.layer4_2(x)
+        x = self.relu(x)
         l4 = x
         x = self.layer4_3(x) # 1/16
 
         x = self.layer5_1(x)
+        x = self.relu(x)
         x = self.layer5_2(x)
+        x = self.relu(x)
         x = self.layer5_3(x) # 1/8
+        x = self.relu(x)
 
         x = torch.cat([x, l4], dim=1)
         x = self.layer6_1(x)
+        x = self.relu(x)
         x = self.layer6_2(x)
+        x = self.relu(x)
         x = self.layer6_3(x) # 1/4
+        x = self.relu(x)
 
         x = torch.cat([x, l3], dim=1)
         x = self.layer7_1(x)
+        x = self.relu(x)
         x = self.layer7_2(x)
+        x = self.relu(x)
         x = self.layer7_3(x) # 1/2
+        x = self.relu(x)
 
         x = torch.cat([x, l2], dim=1)
         x = self.layer8_1(x)
+        x = self.relu(x)
         x = self.layer8_2(x)
+        x = self.relu(x)
         x = self.layer8_3(x)
+        x = self.relu(x)
 
         x = torch.cat([x, l1], dim=1)
         x = self.layer9_1(x)
+        x = self.relu(x)
         x = self.layer9_2(x)
+        x = self.relu(x)
         x = self.layer9_3(x)
 
         x = self.classifier(x)
 
         return x
+
+    def initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                torch.nn.init.kaiming_normal_(m.weight.data,
+                                              nonlinearity='relu')
+                if m.bias is not None:
+                    m.bias.data.zero_()
