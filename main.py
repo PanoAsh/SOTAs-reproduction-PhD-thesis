@@ -34,6 +34,7 @@ if model_select == 'fcn':
 
 if model_select == 'unet':
     net = unet()
+    net.initialize_weights()
 
 # if torch.cuda.device_count() > 1:
 #     net = nn.DataParallel(net, device_ids=[1, 2, 3])
@@ -72,10 +73,10 @@ if __name__ == '__main__':
         writer = SummaryWriter(logdir=log_dir, comment='SOD360')
 
         # ************ calculate the mean and std of trainSet ************
-        # normTransformation = data_norm(num_train) # run if the data updated
-        normTransformation = transforms.Normalize(
-            [0.44706792, 0.41150272, 0.3787503],
-            [0.26928946, 0.25931585, 0.27907613])
+        normTransformation = data_norm(num_train) # run if the data updated
+        # normTransformation = transforms.Normalize(
+        #     [0.44706792, 0.41150272, 0.3787503],
+        #     [0.26928946, 0.25931585, 0.27907613])
 
         # ************ load the dataset for training ************
         data_train = MyDataset(ids_imgs_train_path, ids_objms_train_path,
