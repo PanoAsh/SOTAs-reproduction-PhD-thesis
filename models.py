@@ -55,7 +55,6 @@ def get_upsampling_weight(in_channels, out_channels, kernel_size):
     """
     Make a 2D bilinear kernel suitable for unsampling
     """
-
     factor = (kernel_size + 1) // 2
     if kernel_size % 2 == 1:
         center = factor - 1
@@ -91,3 +90,96 @@ class bilinear_upsampling(nn.Module):
         initial_weight = get_upsampling_weight(self.CI, self.CO, self.ks)
 
         self.convTrans.weight.data.copy_(initial_weight)
+
+# ------------------------ define the U net model ------------------------
+class unet(nn.Module):
+
+    def __init__(self):
+        super(unet, self).__init__()
+
+        self.layer1_1 = nn.Conv2d(3, 32, 3, 1, 1)
+        self.layer1_2 = nn.Conv2d(32, 32, 3, 1, 1)
+        self.layer1_3 = nn.MaxPool2d(2, 2) # 1/2
+
+        self.layer2_1 = nn.Conv2d(32, 64, 3, 1, 1)
+        self.layer2_2 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.layer2_3 = nn.MaxPool2d(2, 2) # 1/4
+
+        self.layer3_1 = nn.Conv2d(64, 128, 3, 1, 1)
+        self.layer3_2 = nn.Conv2d(128, 128, 3, 1, 1)
+        self.layer3_3 = nn.MaxPool2d(2, 2) # 1/8
+
+        self.layer4_1 = nn.Conv2d(128, 256, 3, 1, 1)
+        self.layer4_2 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.layer4_3 = nn.MaxPool2d(2, 2) # 1/16
+
+        self.layer5_1 = nn.Conv2d(256, 512, 3, 1, 1)
+        self.layer5_2 = nn.Conv2d(512, 512, 3, 1, 1)
+        self.layer5_3 = nn.ConvTranspose2d(512, 256, 4, 2, 1)
+
+        self.layer6_1 = nn.Conv2d(512, 256, 3, 1, 1)
+        self.layer6_2 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.layer6_3 = nn.ConvTranspose2d(256, 128, 4, 2, 1)
+
+        self.layer7_1 = nn.Conv2d(256, 128, 3, 1, 1)
+        self.layer7_2 = nn.Conv2d(128, 128, 3, 1, 1)
+        self.layer7_3 = nn.ConvTranspose2d(128, 64, 4, 2, 1)
+
+        self.layer8_1 = nn.Conv2d(128, 64, 3, 1, 1)
+        self.layer8_2 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.layer8_3 = nn.ConvTranspose2d(64, 32, 4, 2, 1)
+
+        self.layer9_1 = nn.Conv2d(64, 32, 3, 1, 1)
+        self.layer9_2 = nn.Conv2d(32, 32, 3, 1, 1)
+        self.layer9_3 = nn.Conv2d(32, 1, 1)
+
+        self.classifier = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.layer1_1(x)
+        x = self.layer1_2(x)
+        l1 = x
+        x = self.layer1_3(x) # 1/2
+
+        x = self.layer2_1(x)
+        x = self.layer2_2(x)
+        l2 = x
+        x = self.layer2_3(x) # 1/4
+
+        x = self.layer3_1(x)
+        x = self.layer3_2(x)
+        l3 = x
+        x = self.layer3_3(x) # 1/8
+
+        x = self.layer4_1(x)
+        x = self.layer4_2(x)
+        l4 = x
+        x = self.layer4_3(x) # 1/16
+
+        x = self.layer5_1(x)
+        x = self.layer5_2(x)
+        x = self.layer5_3(x) # 1/8
+
+        x = torch.cat([x, l4], dim=1)
+        x = self.layer6_1(x)
+        x = self.layer6_2(x)
+        x = self.layer6_3(x) # 1/4
+
+        x = torch.cat([x, l3], dim=1)
+        x = self.layer7_1(x)
+        x = self.layer7_2(x)
+        x = self.layer7_3(x) # 1/2
+
+        x = torch.cat([x, l2], dim=1)
+        x = self.layer8_1(x)
+        x = self.layer8_2(x)
+        x = self.layer8_3(x)
+
+        x = torch.cat([x, l1], dim=1)
+        x = self.layer9_1(x)
+        x = self.layer9_2(x)
+        x = self.layer9_3(x)
+
+        x = self.classifier(x)
+
+        return x
