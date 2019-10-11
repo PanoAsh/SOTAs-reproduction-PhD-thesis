@@ -52,7 +52,7 @@ mod_dir = pj_path + '/Log/net_params.pkl'
 update_dts = 0
 train_on = 1
 test_on = 0
-size_train = 896
+size_train = 784
 scale_crop = 1
 num_train = 51
 batch_size = 4
@@ -74,3 +74,4 @@ model_urls = {
     'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
     'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
 }
+model_select = 'unet'
