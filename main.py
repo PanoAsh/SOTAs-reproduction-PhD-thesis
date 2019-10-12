@@ -73,10 +73,12 @@ if __name__ == '__main__':
         writer = SummaryWriter(logdir=log_dir, comment='SOD360')
 
         # ************ calculate the mean and std of trainSet ************
-        normTransformation = data_norm(num_train) # run if the data updated
-        # normTransformation = transforms.Normalize(
-        #     [0.44706792, 0.41150272, 0.3787503],
-        #     [0.26928946, 0.25931585, 0.27907613])
+        if update_dnm:
+            normTransformation = data_norm(num_train)
+        else:
+            normTransformation = transforms.Normalize(
+                [0.44706792, 0.41150272, 0.3787503],
+                [0.26928946, 0.25931585, 0.27907613])
 
         # ************ load the dataset for training ************
         data_train = MyDataset(ids_imgs_train_path, ids_objms_train_path,
@@ -151,7 +153,7 @@ if __name__ == '__main__':
 
                 # model visualization
                 if i % 3 == 0:
-                    # visualize the inputs, masks and outputs
+                    # visualize the inputs, masks and outputs of training stage
                     show_inputs = make_grid(inputs)
                     show_maps = make_grid(masks)
                     show_outputs = make_grid(outputs)
@@ -161,7 +163,7 @@ if __name__ == '__main__':
 
             # record grads and weights
             for name, layer in net.named_parameters():
-                writer.add_histogram(name + 'FCN8s',
+                writer.add_histogram(name + model_select,
                                     layer.clone().cpu().data.numpy(), epoch)
 
             net.eval()
