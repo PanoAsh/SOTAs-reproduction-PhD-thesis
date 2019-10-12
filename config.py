@@ -50,17 +50,16 @@ mod_dir = pj_path + '/Log/net_params.pkl'
 # PARAMETERS      														#
 #########################################################################
 update_dts = 0
+update_dnm = 0
 train_on = 1
 test_on = 0
 size_train = 784
-scale_crop = 1
 num_train = 51
 batch_size = 4
 Epochs = 100
-debug_on = 1
 lr_init = 0.001
 epsilon_DC = 0.001
-step_num = 35
+step_num = 30
 pretrain_on = 1
 num_classes = 1
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
