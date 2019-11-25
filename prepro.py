@@ -11,9 +11,10 @@ height_st = 1024
 class preprocessing():
     def __init__(self):
         self.path = os.getcwd() + '/bins'
-        self.path1 = os.getcwd() + '/'
-        self.path2 = os.getcwd() + '/new'
-        self.pathv = os.getcwd() + '/videos'
+        self.path1 = os.getcwd() + '/frames'
+        self.path2 = os.getcwd() + '/heatmaps'
+        self.path3 = os.getcwd() + '/overlays'
+        self.pathv = os.getcwd() + '/overlay_video.avi'
 
     def thresholding(self):
         filelist = os.listdir(self.path)
@@ -118,18 +119,18 @@ class preprocessing():
             count += 1
 
     def imgfuse(self):
-        filelist = os.listdir(self.path)
+        filelist = os.listdir(self.path1)
 
         count = 1
         for item in filelist:
-            img_path = os.path.join(os.path.abspath(self.path), item)
-            img = cv2.imread(img_path)
             img1_path = os.path.join(os.path.abspath(self.path1), item)
             img1 = cv2.imread(img1_path)
             img2_path = os.path.join(os.path.abspath(self.path2), item)
+            img2 = cv2.imread(img2_path)
+            img3_path = os.path.join(os.path.abspath(self.path3), item)
 
-            img2 = cv2.addWeighted(img, 0.6, img1, 0.4, 0)
-            cv2.imwrite(img2_path, img2)
+            img3 = cv2.addWeighted(img1, 0.5, img2, 0.5, 0)
+            cv2.imwrite(img3_path, img3)
             print(" {} images processed".format(count))
             count += 1
 
@@ -197,12 +198,27 @@ class preprocessing():
                                              dtype=cv2.CV_8UC1)
 
                         # save the image
-                        # heatmap = cv2.applyColorMap(data, cv2.COLORMAP_HOT)
-                        cv2.imwrite(name + '_' + "{}".format(Nframe + 1) +
-                                    '.png', data)
+                        heatmap = cv2.applyColorMap(data, cv2.COLORMAP_HOT)
+                        cv2.imwrite('0' + name + '_' + format(str(Nframe+1), '0>4s') +
+                                    '.png', heatmap)
                         print("{}, frame #{}".format(name, Nframe))
                 print(" {} videos processed".format(count))
                 count += 1
+
+    def overlay_video(self):
+        fl = os.listdir(self.path3)
+        fl.sort(key=lambda x: x[:-4])
+        video = cv2.VideoWriter(self.pathv, 0, 25, (2048, 1024))
+
+        count = 1
+        for item in fl:
+            frame_path = os.path.join(os.path.abspath(self.path3), item)
+            video.write(cv2.imread(frame_path))
+            print("{} wrote".format(count))
+            count += 1
+
+        cv2.destroyAllWindows()
+        video.release()
 
 def debug_show(img):
     plt.subplot(1, 4, 1)
@@ -217,4 +233,6 @@ def debug_show(img):
 
 if __name__ == '__main__':
     pp = preprocessing()
-    pp.video_bin(10) # get the iamge every 10 frames
+   # pp.video_bin(1) # get the iamge every 10 frames
+    #pp.imgfuse()
+    pp.overlay_video()
