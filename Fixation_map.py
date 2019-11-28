@@ -73,9 +73,9 @@ def show_overlay(overlay):
 
 
 if __name__ == '__main__':
-    #s_video = VideoFixationMap()
-    # s_video.video_overlay()
-    #s_video.overlay_video()
+    s_video = VideoFixationMap()
+   # s_video.video_overlay()
+    s_video.overlay_video()
 
-    vr_obj = VideoFixationMap()
-    vr_obj.fixation_reproduce()
+  #  vr_obj = VideoFixationMap()
+   # vr_obj.fixation_reproduce()
