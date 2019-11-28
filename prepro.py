@@ -14,7 +14,8 @@ class preprocessing():
         self.path1 = os.getcwd() + '/frames'
         self.path2 = os.getcwd() + '/heatmaps'
         self.path3 = os.getcwd() + '/overlays'
-        self.pathv = os.getcwd() + '/overlay_video.avi'
+        self.pathv = os.getcwd()
+        self.pathf = os.getcwd() + '/frames_n'
 
     def thresholding(self):
         filelist = os.listdir(self.path)
@@ -141,13 +142,13 @@ class preprocessing():
         for item in filelist:
             if item.endswith('.mp4'):
                 video_path = os.path.join(os.path.abspath(self.pathv), item)
-                frame_path = os.path.join(os.path.abspath(self.path2), item)
+                frame_path = os.path.join(os.path.abspath(self.pathf), item)
                 cap = cv2.VideoCapture(video_path)
                 frames_num = int(cap.get(7))
                 countF = 1
                 for i in range(frames_num):
                     ret, frame = cap.read()
-                    frame = cv2.resize(frame, (width_st, height_st))
+                    frame = cv2.resize(frame, (3840, 2048))
                     cv2.imwrite(frame_path[:-4] + '_' +
                                 format(str(countF), '0>4s') + '.png',
                                 frame)
@@ -199,7 +200,7 @@ class preprocessing():
 
                         # save the image
                         heatmap = cv2.applyColorMap(data, cv2.COLORMAP_HOT)
-                        cv2.imwrite('0' + name + '_' + format(str(Nframe+1), '0>4s') +
+                        cv2.imwrite(name + '_' + format(str(Nframe+1), '0>4s') +
                                     '.png', heatmap)
                         print("{}, frame #{}".format(name, Nframe))
                 print(" {} videos processed".format(count))
@@ -233,6 +234,7 @@ def debug_show(img):
 
 if __name__ == '__main__':
     pp = preprocessing()
-   # pp.video_bin(1) # get the iamge every 10 frames
-    #pp.imgfuse()
-    pp.overlay_video()
+    pp.VideoToImg()
+    #pp.video_bin(1) # get the iamge every 10 frames
+   # pp.imgfuse()
+   # pp.overlay_video()
