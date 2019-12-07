@@ -8,6 +8,9 @@ import numpy as np
 
 import utils_360ISOD as utils
 
+from PIL import Image
+import scipy.stats as stt
+
 def PanoISOD_e2c(e_img, face_w=256, mode='bilinear', cube_format='dice'):
     '''
     e_img:  ndarray in shape of [H, W, *]
@@ -44,12 +47,29 @@ def PanoISOD_e2c(e_img, face_w=256, mode='bilinear', cube_format='dice'):
 
     return cubemap
 
+
+def data_MultiCrop(scale, img, Height, Width):
+    h = Height / scale
+    w = Width / scale
+    imgs = []
+
+    for i in range(scale):
+        for j in range(scale):
+            x1 = i * h
+            y1 = j * w
+            x2 = x1 + h
+            y2 = y1 + w
+            imgs.append(img.crop((x1, y1, x2, y2)))
+
+    return imgs
+
 class PanoISOD_PP():
     def __init__(self):
         self.img_path = os.getcwd() + '/data/stimuli/'
         self.msk_path = os.getcwd() + '/data/mask_obj/'
         self.imgC_path = os.getcwd() + '/data_convert/stimuli_c/'
         self.mskC_path = os.getcwd() + '/data_convert/mask_obj_c/'
+        self.sal_path = os.getcwd() + '/saliency/'
 
     def epr2cmp(self):
         eprlist = os.listdir(self.img_path)
@@ -67,7 +87,29 @@ class PanoISOD_PP():
                 print(" {} images processed".format(count))
                 count += 1
 
+    def complexity_stt(self, p_max):
+        sallist = os.listdir(self.sal_path)
+        sallist.sort(key=lambda x: x[:-4])
+
+        count = 1
+        for idx in sallist:
+            if idx.endswith('.png'):
+                sal_path =  os.path.join(os.path.abspath(self.sal_path), idx)
+                sal_map = Image.open(sal_path).convert('L')
+
+                # compute multi-level entropy of the salient map
+                n_max = p_max * p_max
+                for p in range(p_max):
+                    blocks = data_MultiCrop(4, sal_map, 1024, 2048)
+                    print()
+
+
+                entropy = np.mean(stt.entropy(sal_map))
+                print()
+
+
 
 if __name__ == '__main__':
     pano_pp = PanoISOD_PP()
-    pano_pp.epr2cmp()
+  #  pano_pp.epr2cmp()
+    pano_pp.complexity_stt(p_max=4)
