@@ -10,6 +10,8 @@ import utils_360ISOD as utils
 
 from PIL import Image
 
+import random
+
 complexity_path = os.getcwd() + '/analysis.txt'
 
 def PanoISOD_e2c(e_img, face_w=256, mode='bilinear', cube_format='dice'):
@@ -94,7 +96,7 @@ def file_generater(complexity_imgs_normal):
     f = open(complexity_path, 'w')
     count = 1
     for item in complexity_imgs_normal:
-        line = "The ranking of index is:".format(count) + ' ' + str(item) + '\n'
+        line = format(str(item), '0>3s') + '.png' + '\n'
         f.write(line)
         count += 1
     f.close()
@@ -105,21 +107,45 @@ def dataset_sort(data):
 
     return index
 
-def dataset_split():
+def entropy_save():
     pano_pp = PanoISOD_PP()
 
-    index_list = []
+    entropy_list = []
     lvl_c = 1
-    for lvl in range(4):
+    for lvl in range(49):
         complex_data = pano_pp.complexity_stt(p_max=(lvl + 1))
-        index_list.append(dataset_sort(complex_data))
+        entropy_list.append(complex_data)
         print("The {} level processed".format(lvl_c))
-        if lvl == 3:
-           index_dataset = index_list[lvl]
-           entropy_fixation = complex_data
         lvl_c += 1
+        if lvl % 3 == 0:
+            print('saving entropy...')
+            file_generater(entropy_list)
+    print('data saved !')
 
-    print()
+def dataset_split(level_data=3, level_ent=20):
+    # the muiti-level entropy is set to be 20 for the 360ISOD dataset;
+    # the dataset is divided into three levels according to the entropy-based complexity analysis
+
+    pano_pp = PanoISOD_PP()
+    entropy_data = pano_pp.complexity_stt(p_max=(level_ent))
+    entropy_index = dataset_sort(entropy_data)
+
+    if level_data == 3:
+        index_easy = entropy_index[:35]
+        index_medium = entropy_index[35:70]
+        index_hard = entropy_index[70:]
+
+        random.shuffle(index_easy)
+        random.shuffle(index_medium)
+        random.shuffle(index_hard)
+
+        train_index = index_easy[:31] + index_medium[:31] + index_hard[:33]
+        test_index = index_easy[31:] + index_medium[31:] + index_hard[33:]
+
+      #  file_generater(train_index)
+        file_generater(test_index)
+        print('All done !')
+
 
 class PanoISOD_PP():
     def __init__(self):
@@ -150,8 +176,6 @@ class PanoISOD_PP():
         sallist.sort(key=lambda x: x[:-4])
 
         complexity_imgs = []
-        complexity_imgs_normal = []
-        complexity_imgs_dff = []
         count = 1
         for idx in sallist:
             if idx.endswith('.png'):
@@ -182,4 +206,5 @@ class PanoISOD_PP():
 
 
 if __name__ == '__main__':
-    print(dataset_split())
+    #print(entropy_save())
+    dataset_split()
