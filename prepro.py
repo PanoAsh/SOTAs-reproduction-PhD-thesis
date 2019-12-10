@@ -3,51 +3,15 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-threshold = 0.5
-multi = 3 / threshold / 2
 width_st = 2048
 height_st = 1024
 
 class preprocessing():
     def __init__(self):
-        self.path = os.getcwd() + '/bins'
-        self.path1 = os.getcwd() + '/frames'
-        self.path2 = os.getcwd() + '/heatmaps'
-        self.path3 = os.getcwd() + '/overlays'
-        self.pathv = os.getcwd()
-        self.pathf = os.getcwd() + '/frames_n'
-
-    def thresholding(self):
-        filelist = os.listdir(self.path)
-
-        count = 1
-        for item in filelist:
-            if item.endswith('.png'):
-                img_path = os.path.join(os.path.abspath(self.path), item)
-                img = cv2.imread(img_path) # BGR
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # RGB
-                H = img.shape[0]
-                W = img.shape[1]
-
-                # threshold
-                for i in range(H):
-                    for j in range(W):
-                        if img[i, j, 0] <= 255 * threshold: # red
-                           img[i, j, 0] = 0
-                        img[i, j, 1] = 0 # green
-                        if img[i, j, 2] >= 255 * threshold: # blue
-                           img[i, j, 2] = 0
-
-                # debug_show(img)
-                img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-                for m in range(H): # lighting
-                    for n in range(W):
-                        img[m, n] *= multi
-                        if img[m, n] >= 255:
-                            img[m, n] = 255
-                cv2.imwrite(item, img)
-                print(" {} images processed".format(count))
-                count += 1
+        self.path_L_raw = os.getcwd() + '/scanpath_nante/L/'
+        self.path_R_raw = os.getcwd() + '/scanpath_nante/R/'
+        self.path_L_prd = os.getcwd() + '/fixations/L/'
+        self.path_R_prd = os.getcwd() + '/fixations/R/'
 
     def readbin(self):
         filelist = os.listdir(self.path)
@@ -74,7 +38,7 @@ class preprocessing():
                 # threshold the saliencies
                 maxSal = np.max(data)
                 for i in range(width*height):
-                    if data[i] <= 0.2 * maxSal:
+                    if data[i] <= 0.2 * maxSal: # 0.2 is a empirical value
                         data[i] = 0
 
                 # Reshape flattened data to 2D image
@@ -95,22 +59,22 @@ class preprocessing():
         count = 1
         for item in filelist:
             img_path = os.path.join(os.path.abspath(self.path), item)
-            if item.endswith('.jpg'):
+            if item.endswith('.png'):
                 img = cv2.imread(img_path)
-                img = cv2.resize(img, (width_st, height_st))
+                img = cv2.resize(img, (512, 256))
                 cv2.imwrite(item[:-3] + 'png', img)
                 print(" {} images processed".format(count))
                 count += 1
 
     def rename(self):
-        filelist = os.listdir(self.path)
+        filelist = os.listdir(self.path_R_raw)
+        filelist.sort(key=lambda x: x[:-4])
 
         count = 1
         for item in filelist:
-            if item.endswith('.png'):
-                src = os.path.join(os.path.abspath(self.path1), item)
-                dst = os.path.join(os.path.abspath(self.path2),
-                                   '01_00' + item[2:4] + '.png')
+            if item.endswith('.txt'):
+                src = os.path.join(os.path.abspath(self.path_R_raw), item)
+                dst = os.path.join(os.path.abspath(self.path_R_prd), format(str(count), '0>3s') + '.txt')
                 try:
                     os.rename(src, dst)
                     print ('converting %s to %s ...' % (src, dst))
@@ -234,7 +198,4 @@ def debug_show(img):
 
 if __name__ == '__main__':
     pp = preprocessing()
-    pp.VideoToImg()
-    #pp.video_bin(1) # get the iamge every 10 frames
-   # pp.imgfuse()
-   # pp.overlay_video()
+    pp.rename()
