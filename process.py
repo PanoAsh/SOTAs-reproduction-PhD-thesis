@@ -431,10 +431,25 @@ def IOC_func(pck_files):
     IOC_imgs = []
     for pck_idx in range(num_pck):
         print("---- Show the info of the {} pck ----".format(pck_idx+1))
+        ioc_path = settings.IOC_PATH + format(str(pck_idx), '0>2s') + '.txt'
+
         # process the current pck file and compute the ioc of it
         IOC_list = load_one_out_logfile(pck_files[pck_idx], pck_idx)
+        file_generater(IOC_list, ioc_path)
         IOC_imgs.append(np.mean(IOC_list))
-        print()
+
+    file_generater(IOC_imgs, settings.IOC_PATH_TT)
+    print('All done !')
+
+def file_generater(list, path):
+    f = open(path, 'w')
+
+    count = 1
+    for item in list:
+        line = str(item) + '\n'
+        f.write(line)
+        count += 1
+    f.close()
 
 def print_logfile_stats(log):
     print("Total of %d runs." % len(log))
@@ -565,8 +580,4 @@ def load_one_out_logfile(path, img_idx):
 
 if __name__ == '__main__':
     all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
-   # runs_files = [load_logfile(logfile) for logfile in all_files] # official logfile loader
     IOC_func(all_files)
-
-       # heatmap = cv2.applyColorMap(gaze_salmap, cv2.COLORMAP_MAGMA)
-       # img_overlay = cv2.addWeighted(img, 0.4, heatmap, 0.6, 0)
