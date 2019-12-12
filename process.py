@@ -24,6 +24,7 @@ import _pickle as pck
 width_360ISOD = 2048
 height_360ISOD = 1024
 
+from PIL import Image
 
 # Helper functions
 def cond_mkdir(path):
@@ -578,6 +579,37 @@ def load_one_out_logfile(path, img_idx):
 
     return list_ioc
 
+def norm_entropy(map, P= height_360ISOD * width_360ISOD):
+    map = np.array(map)
+    hist_map = np.histogram(map, bins=255)
+    map_norm = hist_map[0] / P
+    entropy_list = []
+
+    for idx in range(255):
+        p_idx = map_norm[idx]
+        if p_idx != 0:
+            entropy_list.append(p_idx * np.log2(p_idx))
+        else:
+            entropy_list.append(0)
+
+    entropy = -1 * np.sum(entropy_list)
+
+    return entropy
+
+def entropy_func():
+    salmaps = os.listdir(settings.SALIENCY_PATH)
+    salmaps.sort(key=lambda x: x[:-4])
+
+    entropy_list = []
+    for idx in salmaps:
+        if idx.endswith('.png'):
+            sal_path = os.path.join(os.path.abspath(settings.SALIENCY_PATH), idx)
+            sal_map = Image.open(sal_path).convert('L')
+            entropy_list.append(norm_entropy(sal_map))
+
+    file_generater(entropy_list, settings.ENTROPY_PATH)
+
 if __name__ == '__main__':
     all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
-    IOC_func(all_files)
+    #IOC_func(all_files)
+    entropy_func()
