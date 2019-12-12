@@ -21,10 +21,11 @@ from scipy import ndimage
 import settings
 import _pickle as pck
 
-width_360ISOD = 2048
-height_360ISOD = 1024
+width_360ISOD = settings.width_360ISOD
+height_360ISOD = settings.height_360ISOD
 
 from PIL import Image
+import scipy.stats
 
 # Helper functions
 def cond_mkdir(path):
@@ -579,9 +580,9 @@ def load_one_out_logfile(path, img_idx):
 
     return list_ioc
 
-def norm_entropy(map, P= height_360ISOD * width_360ISOD):
-    map = np.array(map)
-    hist_map = np.histogram(map, bins=255)
+def norm_entropy(salmap, P= height_360ISOD * width_360ISOD):
+    salmap = np.array(salmap)
+    hist_map = np.histogram(salmap, bins=255)
     map_norm = hist_map[0] / P
     entropy_list = []
 
@@ -596,6 +597,18 @@ def norm_entropy(map, P= height_360ISOD * width_360ISOD):
 
     return entropy
 
+def shannon_entropy(salmap, P= height_360ISOD * width_360ISOD):
+    salmap = np.array(salmap)
+    salmap = salmap / 255
+
+    entropy = 0
+    for r in range(height_360ISOD):
+        for c in range(width_360ISOD):
+            if salmap[r, c] != 0:
+                entropy = entropy + salmap[r, c] * salmap[r, c] * np.log2(salmap[r, c] * salmap[r, c])
+
+    return -1 * entropy
+
 def entropy_func():
     salmaps = os.listdir(settings.SALIENCY_PATH)
     salmaps.sort(key=lambda x: x[:-4])
@@ -606,6 +619,8 @@ def entropy_func():
             sal_path = os.path.join(os.path.abspath(settings.SALIENCY_PATH), idx)
             sal_map = Image.open(sal_path).convert('L')
             entropy_list.append(norm_entropy(sal_map))
+            #entropy_list.append(shannon_entropy(sal_map))
+            print(" {} images processed".format(idx))
 
     file_generater(entropy_list, settings.ENTROPY_PATH)
 
