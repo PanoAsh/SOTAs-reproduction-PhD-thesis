@@ -451,7 +451,7 @@ def show_map_self(map, name, binary):
         cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
         print('The current map saved !')
 
-    if binary == 'True':
+    elif binary == 'True':
         salmap, threshold = adaptive_threshold(map, 0.25)
 
         # generate the binary map according to the adaptive threshold
@@ -464,6 +464,12 @@ def show_map_self(map, name, binary):
 
         cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
         print('The current map saved !')
+
+    else:
+        print('No processing; Please check your input parameters...')
+        return map
+
+    return salmap
 
 def adaptive_threshold(map, region_kept):
     # find the adaptive threshold of intensity to keep the 25% of image regions
@@ -533,13 +539,25 @@ def load_one_out_logfile(path, img_idx):
 
         map_rest = get_gaze_salmap(log_rest['data'])
         show_map_self(map_rest, 'rest_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'), 'False')
-        show_map_self(map_rest, 'rest_binary_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'),
-                      'True')
+        rest_fix_reg = show_map_self(map_rest, 'rest_binary_' + format(str(img_idx), '0>2s') + '_'
+                                        + format(str(run_idx), '0>2s'), 'True')
 
         map_one = get_gaze_point(log_one['data'])
-        show_map_self(map_one, 'one_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'), 'False')
-        print()
+        one_fix_pos = show_map_self(map_one, 'one_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'),
+                                'False')
 
+        count_in = 0
+        count_out = 0
+        for r in range(height_360ISOD):
+            for c in range(width_360ISOD):
+                if one_fix_pos[r, c] == 255:
+                    if rest_fix_reg[r, c] == 255:
+                        count_in += 1
+                    else:
+                        count_out += 1
+        IOC = count_in / (count_in + count_out)
+
+        return IOC
 
 if __name__ == '__main__':
     all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
