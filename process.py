@@ -21,6 +21,9 @@ from scipy import ndimage
 import settings
 import _pickle as pck
 
+width_360ISOD = 2048
+height_360ISOD = 1024
+
 
 # Helper functions
 def cond_mkdir(path):
@@ -131,7 +134,7 @@ def salmap_from_norm_coords(norm_coords, sigma, height_width):
     return salmap
 
 
-def get_gaze_salmap(list_of_runs, sigma_deg=1.0, height_width=(1024, 2048)):
+def get_gaze_salmap(list_of_runs, sigma_deg=1.0, height_width=(height_360ISOD, width_360ISOD)):
     '''Computes gaze saliency maps.'''
     fixation_coords = []
 
@@ -442,10 +445,69 @@ def load_logfile(path):
     print_logfile_stats(log)
     return log
 
-def show_map_self(map_path, name):
-    salmap = cv2.normalize(map_path, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-    cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
-    print('The current map saved !')
+def show_map_self(map, name, binary):
+    if binary == 'False':
+        salmap = cv2.normalize(map, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
+        print('The current map saved !')
+
+    if binary == 'True':
+        salmap, threshold = adaptive_threshold(map, 0.25)
+
+        # generate the binary map according to the adaptive threshold
+        for r in range(height_360ISOD):
+            for c in range(width_360ISOD):
+                if salmap[r, c] >= threshold:
+                    salmap[r, c] = 255
+                else:
+                    salmap[r, c] = 0
+
+        cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
+        print('The current map saved !')
+
+def adaptive_threshold(map, region_kept):
+    # find the adaptive threshold of intensity to keep the 25% of image regions
+    salmap = cv2.normalize(map, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+    histmap = np.histogram(salmap, bins=255)
+    hist_pxl = histmap[0]
+
+    pxl_count = 0
+    abs_list = []
+    for int_lvl in range(255):
+        pxl_count += hist_pxl[int_lvl]
+        ratio = pxl_count / (width_360ISOD * height_360ISOD)
+        print("Ratio of {} with the pixel intensity lower than {}".format(ratio, (int_lvl + 1)))
+        abs_list.append(np.abs(ratio - 1 + region_kept)) # region_kept is empirical value, 25% in the IOC paper
+    threshold = abs_list.index(min(abs_list)) + 1
+
+    return salmap, threshold
+
+def get_gaze_point(list_of_runs, height_width=(height_360ISOD, width_360ISOD)):
+    '''Computes gaze saliency maps.'''
+    fixation_coords = []
+
+    for run in list_of_runs:
+        relevant_fixations = run['gaze_fixations']
+
+        if len(relevant_fixations.shape) > 1:
+            _, unique_idcs = np.unique(relevant_fixations[:, 0], return_index=True)
+            all_fixations = relevant_fixations[unique_idcs]
+            fixation_coords.append(all_fixations)
+
+    norm_coords = np.vstack(fixation_coords)[:, ::-1]
+
+    return salpoint_from_norm_coords(norm_coords, height_width)
+
+def salpoint_from_norm_coords(norm_coords, height_width):
+    img_coords = np.mod(np.round(norm_coords * np.array(height_width)), np.array(height_width) - 1.0).astype(int)
+
+    gaze_counts = np.zeros((height_width[0], height_width[1]))
+    for coord in img_coords:
+        gaze_counts[coord[0], coord[1]] += 1.0
+
+    gaze_counts[0, 0] = 0.0
+
+    return gaze_counts
 
 def load_one_out_logfile(path, img_idx):
     with open(path, 'rb') as log_file:
@@ -467,9 +529,15 @@ def load_one_out_logfile(path, img_idx):
 
         #compute the ioc of the current observer on the current image
         map_ori = get_gaze_salmap(log['data'])
-        show_map_self(map_ori, 'total_' + format(str(img_idx), '0>2s'))
+        show_map_self(map_ori, 'total_' + format(str(img_idx), '0>2s'), 'False')
+
         map_rest = get_gaze_salmap(log_rest['data'])
-        show_map_self(map_rest, 'rest_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'))
+        show_map_self(map_rest, 'rest_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'), 'False')
+        show_map_self(map_rest, 'rest_binary_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'),
+                      'True')
+
+        map_one = get_gaze_point(log_one['data'])
+        show_map_self(map_one, 'one_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'), 'False')
         print()
 
 
