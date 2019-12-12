@@ -29,6 +29,37 @@ def cond_mkdir(path):
         os.makedirs(path)
 
 
+def print_logfile_stats(log):
+    '''Prints the number of runs per viewpoint in this logfile.'''
+    print("Total of %d runs." % len(log))
+    for i in range(4):
+        print("Viewpoint %d: %d" % (i, len(log[log['viewpoint_idx'] == i])))
+
+
+def load_logfile(path):
+    '''
+    Loads a logfile of eyetracking records from dist, given the path to the pickle file.
+    '''
+    with open(path, 'rb') as log_file:
+        log = pck.load(log_file, encoding='latin1')
+    print("Loaded %s." % path)
+    print_logfile_stats(log)
+    return log
+
+def load_one_out_logfile(path):
+    with open(path, 'rb') as log_file:
+        log = pck.load(log_file, encoding='latin1')
+    print("Loaded %s." % path)
+
+    total_runs = len(log)
+
+    list_debug = []
+    debug = log.iloc[[0]]
+    debug_2 = log.drop([0], axis=0)
+    print_logfile_stats(debug_2)
+    return debug_2
+
+
 def gnomonic2lat_lon(x_y_coords, fov_vert_hor, center_lat_lon):
     '''
     Converts gnomonic (x, y) coordinates to (latitude, longitude) coordinates.
@@ -131,7 +162,7 @@ def salmap_from_norm_coords(norm_coords, sigma, height_width):
     return salmap
 
 
-def get_gaze_salmap(list_of_runs, sigma_deg=1.0, height_width=(1024, 2048)):
+def get_gaze_salmap(list_of_runs, sigma_deg=0.15, height_width=(1024, 2048)):
     '''Computes gaze saliency maps.'''
     fixation_coords = []
 
@@ -186,7 +217,7 @@ def overlay_image_salmap(img_path, salmap):
     ax.axis('off')
     plt.setp(ax.get_xticklabels(), visible=False)
     plt.setp(ax.get_yticklabels(), visible=False)
-
+    plt.show()
     return fig, ax
 
 
@@ -424,59 +455,31 @@ def interpolate_nan_rows(array, bad_rows_bool):
 
 
 def IOC_func(pck_files):
-    num_pck = len(pck_files)
-    for pck_idx in range(num_pck):
-        print("---- Show the info of the {} pck ----".format(pck_idx+1))
-        load_one_out_logfile(pck_files[pck_idx], pck_idx) # process the current pck file and compute the ioc of it
-        print()
-
-def print_logfile_stats(log):
-    print("Total of %d runs." % len(log))
-    for i in range(4):
-        print("Viewpoint %d: %d" % (i, len(log[log['viewpoint_idx'] == i])))
-
-def load_logfile(path):
-    with open(path, 'rb') as log_file:
-        log = pck.load(log_file, encoding='latin1')
-    print("Loaded %s." % path)
-    print_logfile_stats(log)
-    return log
-
-def show_map_self(map_path, name):
-    salmap = cv2.normalize(map_path, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-    cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
-    print('The current map saved !')
-
-def load_one_out_logfile(path, img_idx):
-    with open(path, 'rb') as log_file:
-        log = pck.load(log_file, encoding='latin1')
-    print("Loaded %s." % path)
-
-    total_runs = len(log) # total E-observers participated for the current image
-    list_ioc = []
-    for run_idx in range(total_runs):
-        log_one = log.iloc[[run_idx]]
-        log_rest = log.drop([run_idx], axis=0)
-        print("---- Show the info of IOC process of the {} runs ----".format(run_idx))
-        print('---------------- The total info ----------------')
-        print_logfile_stats(log)
-        print('---------------- The one info ----------------')
-        print_logfile_stats(log_one)
-        print('---------------- The rest info ----------------')
-        print_logfile_stats(log_rest)
-
-        #compute the ioc of the current observer on the current image
-        map_ori = get_gaze_salmap(log['data'])
-        show_map_self(map_ori, 'total_' + format(str(img_idx), '0>2s'))
-        map_rest = get_gaze_salmap(log_rest['data'])
-        show_map_self(map_rest, 'rest_' + format(str(img_idx), '0>2s') + '_' + format(str(run_idx), '0>2s'))
-        print()
+    runs_files = [load_one_out_logfile(logfile) for logfile in pck_files]
+    print()
 
 
 if __name__ == '__main__':
     all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
-   # runs_files = [load_logfile(logfile) for logfile in all_files] # official logfile loader
-    IOC_func(all_files)
+    runs_files = [load_logfile(logfile) for logfile in all_files] # official logfile loader
 
-       # heatmap = cv2.applyColorMap(gaze_salmap, cv2.COLORMAP_MAGMA)
-       # img_overlay = cv2.addWeighted(img, 0.4, heatmap, 0.6, 0)
+    for item in range(22):
+        gaze_salmap = get_gaze_salmap(runs_files[20]['data'])
+
+        maxSal = np.max(gaze_salmap)
+        for i in range(1024):
+            for j in range(2048):
+                if gaze_salmap[i, j] <= 0.32*maxSal:
+                    gaze_salmap[i, j] = 0
+                else:
+                    gaze_salmap[i, j] = 1
+
+        gaze_salmap = cv2.normalize(gaze_salmap, None, alpha=0, beta=255,
+                                    norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        heatmap = cv2.applyColorMap(gaze_salmap, cv2.COLORMAP_MAGMA)
+        img = cv2.imread(settings.IMG_PATH + '/106.png')
+        #fig, ax = overlay_image_salmap(img, gaze_salmap)
+        img_overlay = cv2.addWeighted(img, 0.4, heatmap, 3, 0)
+        cv2.imwrite(settings.IMG_PATH + format(str(item + 1), '0>4s') + '.png',
+                    img_overlay)
+        print()
