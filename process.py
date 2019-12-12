@@ -428,9 +428,12 @@ def interpolate_nan_rows(array, bad_rows_bool):
 
 def IOC_func(pck_files):
     num_pck = len(pck_files)
+    IOC_imgs = []
     for pck_idx in range(num_pck):
         print("---- Show the info of the {} pck ----".format(pck_idx+1))
-        load_one_out_logfile(pck_files[pck_idx], pck_idx) # process the current pck file and compute the ioc of it
+        # process the current pck file and compute the ioc of it
+        IOC_list = load_one_out_logfile(pck_files[pck_idx], pck_idx)
+        IOC_imgs.append(np.mean(IOC_list))
         print()
 
 def print_logfile_stats(log):
@@ -449,10 +452,11 @@ def show_map_self(map, name, binary):
     if binary == 'False':
         salmap = cv2.normalize(map, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
         cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
-        print('The current map saved !')
+        print('Map saved !')
 
     elif binary == 'True':
         salmap, threshold = adaptive_threshold(map, 0.25)
+        print("Threshold: {}; Map index: {}".format(threshold, name))
 
         # generate the binary map according to the adaptive threshold
         for r in range(height_360ISOD):
@@ -463,7 +467,7 @@ def show_map_self(map, name, binary):
                     salmap[r, c] = 0
 
         cv2.imwrite(settings.MAP_PATH + name + '.png', salmap)
-        print('The current map saved !')
+        print('Map saved !')
 
     else:
         print('No processing; Please check your input parameters...')
@@ -482,7 +486,7 @@ def adaptive_threshold(map, region_kept):
     for int_lvl in range(255):
         pxl_count += hist_pxl[int_lvl]
         ratio = pxl_count / (width_360ISOD * height_360ISOD)
-        print("Ratio of {} with the pixel intensity lower than {}".format(ratio, (int_lvl + 1)))
+      #  print("Ratio of {} with the pixel intensity lower than {}".format(ratio, (int_lvl + 1)))
         abs_list.append(np.abs(ratio - 1 + region_kept)) # region_kept is empirical value, 25% in the IOC paper
     threshold = abs_list.index(min(abs_list)) + 1
 
@@ -555,9 +559,9 @@ def load_one_out_logfile(path, img_idx):
                         count_in += 1
                     else:
                         count_out += 1
-        IOC = count_in / (count_in + count_out)
+        list_ioc.append(count_in / (count_in + count_out))
 
-        return IOC
+    return list_ioc
 
 if __name__ == '__main__':
     all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
