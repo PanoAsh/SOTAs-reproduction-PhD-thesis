@@ -6,13 +6,12 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pano_utils as utils
-
 from PIL import Image
 import random
 
 import settings
-
+import pano_utils as utils
+import prepro_utils
 
 def PanoISOD_e2c(e_img, face_w, mode='bilinear', cube_format='dice'):
     '''
@@ -253,6 +252,52 @@ class PanoISOD_PP():
 
         return complexity_imgs
 
+
+class Nantes_PP():
+    def __init__(self):
+        self.fixpos_l_path = settings.L_PATH_TGT
+        self.fixpos_r_path = settings.R_PATH_TGT
+
+    def load_raw(self, mode):
+        if mode == 'left':
+            pathI = self.fixpos_l_path
+        elif mode == 'right':
+            pathI = self.fixpos_r_path
+        else:
+            print('No processing; Please check the input parameters.')
+
+        fixlist = os.listdir(pathI)
+        fixlist.sort(key=lambda x: x[:-4])
+        count = 1
+        for item in fixlist:
+            fixpos_path = os.path.join(os.path.abspath(pathI), item)
+            fixpos = np.loadtxt(fixpos_path, delimiter=",", skiprows=1, usecols=(0, 1, 2, 3))
+            fixpos = fixpos * [1, 2 * np.pi, np.pi, 1]
+            starts_fixpos = prepro_utils.get_starts(fixpos)
+
+            num_runs = len(starts_fixpos)
+            print("There are {} E-observers for the {} image.".format(num_runs, count))
+            count += 1
+            for idx_starts in range(num_runs):
+               sphere2erp(fixpos, starts_fixpos, idx_starts)
+
+def sphere2erp(fixpos, starts_fixpos, idx_starts):
+    sub_fixpos = prepro_utils.get_fixpos(fixpos, starts_fixpos, idx_starts)
+
+    # initialize the 3D unit vector
+    VEC = np.zeros([sub_fixpos.shape[0], 4])
+
+    # Store starting timestamp
+    VEC[:, 3] = sub_fixpos[:, 3]
+
+    # Convert latitudes/longitudes to unit vectors / [x, y, z, timestamp]
+    VEC[:, :3] = utils.sphere2UnitVector(sub_fixpos[:, 1:3])
+
+    print()
+
+
 if __name__ == '__main__':
-    pp = PanoISOD_PP()
-    pp.erp2cmp()
+    #pp = PanoISOD_PP()
+    #pp.erp2cmp()
+    npp = Nantes_PP()
+    npp.load_raw(mode='left')

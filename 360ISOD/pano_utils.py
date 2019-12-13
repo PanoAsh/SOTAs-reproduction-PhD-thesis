@@ -241,3 +241,11 @@ def rotation_matrix(rad, ax):
                       [-ax[1], ax[0], 0]])
 
     return R
+
+def sphere2UnitVector(sequence):
+    UVec = np.zeros([sequence.shape[0], 3])
+    UVec[:, 0] = np.cos(sequence[:,1]) * np.cos(sequence[:,0])
+    UVec[:, 1] = np.cos(sequence[:,1]) * np.sin(sequence[:,0])
+    UVec[:, 2] = np.sin(sequence[:,1])
+
+    return UVec
