@@ -34,20 +34,6 @@ def file_rename(mode='left'):
 
     print('Naming process done !')
 
-def get_starts(fix_list):
-
-    return np.where(fix_list[:, 0] == 0)[0]
-
-def get_fixpos(fixationList, startPositions, scanpathIdx=0):
-    if scanpathIdx >= startPositions.shape[0]-1:
-        range_ = np.arange(startPositions[scanpathIdx], fixationList.shape[0])
-    else:
-        range_ = np.arange(startPositions[scanpathIdx], startPositions[scanpathIdx+1])
-
-    print(range_, startPositions[scanpathIdx])
-
-    return fixationList[range_, :].copy()
-
 
 if __name__ == '__main__':
    print('waiting...')

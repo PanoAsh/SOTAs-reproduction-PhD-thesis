@@ -11,7 +11,6 @@ import random
 
 import settings
 import pano_utils as utils
-import prepro_utils
 import PANOISOD_analysis
 
 def PanoISOD_e2c(e_img, face_w, mode='bilinear', cube_format='dice'):
@@ -254,49 +253,82 @@ class PanoISOD_PP():
         return complexity_imgs
 
 
-class Nantes_PP():
+class FixPos_PP():
     def __init__(self):
         self.fixpos_l_path = settings.L_PATH_TGT
         self.fixpos_r_path = settings.R_PATH_TGT
 
-    def load_raw(self, mode):
-        if mode == 'left':
-            pathI = self.fixpos_l_path
-        elif mode == 'right':
-            pathI = self.fixpos_r_path
-        else:
-            print('No processing; Please check the input parameters.')
+    def load_raw(self):
+        pathIL = self.fixpos_l_path
+        pathIR = self.fixpos_r_path
 
-        fixlist = os.listdir(pathI)
+        fixlist = os.listdir(pathIL)
         fixlist.sort(key=lambda x: x[:-4])
         count = 1
+        crds_list = []
+        starts_list = []
         for item in fixlist:
-            fixpos_path = os.path.join(os.path.abspath(pathI), item)
-            fixpos = np.loadtxt(fixpos_path, delimiter=",", skiprows=1, usecols=(0, 1, 2, 3))
-            starts_fixpos = prepro_utils.get_starts(fixpos)
-            num_runs = len(starts_fixpos)
-            print("There are {} E-observers for the {} image.".format(num_runs, count))
-            count += 1
+            fixposL_path = os.path.join(os.path.abspath(pathIL), item)
+            fixposR_path = os.path.join(os.path.abspath(pathIR), item)
+            fixposL = np.loadtxt(fixposL_path, delimiter=",", skiprows=1, usecols=(0, 1, 2, 3))
+            fixposR = np.loadtxt(fixposR_path, delimiter=",", skiprows=1, usecols=(0, 1, 2, 3))
+            starts_fixposL = get_starts(fixposL)
+            starts_fixposR = get_starts(fixposR)
 
             # combine all the fixations on the current image
-            fix_coords = fixpos[:, 1:3]
-            fix_coords.T[[0, 1]] = fix_coords.T[[1, 0]]
-            fix_erp = PANOISOD_analysis.salpoint_from_norm_coords(fix_coords,
-                                                                  (settings.height_360ISOD, settings.width_360ISOD))
-            sal_erp = PANOISOD_analysis.salmap_from_norm_coords(fix_coords, 1.0 * settings.width_360ISOD / 360.0,
-                                                                (settings.height_360ISOD, settings.width_360ISOD))
+            fix_crdL = fixposL[:, 1:3]
+            fix_crdL.T[[0, 1]] = fix_crdL.T[[1, 0]]
+            fix_crdR = fixposR[:, 1:3]
+            fix_crdR.T[[0, 1]] = fix_crdR.T[[1, 0]]
+            fix_coords = np.concatenate((fix_crdL, fix_crdR), axis=0)
+            starts_fixposR = starts_fixposR + len(fixposL)
+            fix_starts = np.concatenate((starts_fixposL, starts_fixposR), axis=0)
 
-            # visualize the fixation points of the current image
-            fix_erp = cv2.normalize(fix_erp, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-            cv2.imwrite('sample_1.png', fix_erp)
+            crds_list.append(fix_coords)
+            starts_list.append(fix_starts)
+            num_runs = len(fix_starts)
+            print("There are {} runs for the {} image.".format(num_runs, count))
+            count += 1
 
-            # visualize the fixation map of the current image
-            sal_erp = cv2.normalize(sal_erp, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-            cv2.imwrite('sample_2.png', sal_erp)
-            print()
+        if count != len(fixlist) + 1:
+            print('Fail to load all data; Please check...')
+        else:
+            print('All data loaded !')
+
+        return crds_list, starts_list
+
+
+def get_fixpos(fixationList, startPositions, scanpathIdx=0):
+    if scanpathIdx >= startPositions.shape[0]-1:
+        range_ = np.arange(startPositions[scanpathIdx], fixationList.shape[0])
+    else:
+        range_ = np.arange(startPositions[scanpathIdx], startPositions[scanpathIdx+1])
+
+    #print(range_, startPositions[scanpathIdx])
+    return fixationList[range_, :].copy()
+
+def get_starts(fix_list):
+
+    return np.where(fix_list[:, 0] == 0)[0]
+
 
 if __name__ == '__main__':
     #pp = PanoISOD_PP()
     #pp.erp2cmp()
-    npp = Nantes_PP()
-    npp.load_raw(mode='left')
+    pp = FixPos_PP()
+    pp.load_raw()
+
+
+    fix_erp = PANOISOD_analysis.salpoint_from_norm_coords(fix_coords,
+                                                          (settings.height_360ISOD, settings.width_360ISOD))
+    sal_erp = PANOISOD_analysis.salmap_from_norm_coords(fix_coords, 1.0 * settings.width_360ISOD / 360.0,
+                                                        (settings.height_360ISOD, settings.width_360ISOD))
+
+    # visualize the fixation points of the current image
+    fix_erp = cv2.normalize(fix_erp, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+    cv2.imwrite('sample_1.png', fix_erp)
+
+    # visualize the fixation map of the current image
+    sal_erp = cv2.normalize(sal_erp, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+    cv2.imwrite('sample_2.png', sal_erp)
+    print()
