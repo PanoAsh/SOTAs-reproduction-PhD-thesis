@@ -39,6 +39,8 @@ PANOISOD_MSK_TEST_PATH = PROJECT_ROOT + '/360ISOD_msk_test/'
 IOC_2_PATH_TT = PROJECT_ROOT + '/IOC_Nantes_total.txt'
 IOC_2_PATH = PROJECT_ROOT + '/IOC_'
 
+HEAT_PATH = PROJECT_ROOT + '/heatmap/'
+
 # Default of the 360ISOD dataset
 width_360ISOD = 2048
 height_360ISOD = 1024

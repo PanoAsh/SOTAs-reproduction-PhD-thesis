@@ -219,7 +219,7 @@ class PanoISOD_PP():
                 print(" {} images processed".format(count))
                 count += 1
 
-    def complexity_stt(self, p_max):
+    def complexity_stt(self, p_max): # multi-level entropy
         sallist = os.listdir(self.sal_path)
         sallist.sort(key=lambda x: x[:-4])
 
@@ -311,24 +311,29 @@ def get_starts(fix_list):
 
     return np.where(fix_list[:, 0] == 0)[0]
 
+def fix2heat(path, reg=0.25): # to keep the 25% of the images based on the ranking of saliency
+    fixlist = os.listdir(path)
+    fixlist.sort(key=lambda x: x[:-4])
+
+    for item in fixlist:
+        fix_path = os.path.join(os.path.abspath(path), item)
+        fix_map = Image.open(fix_path).convert('L')
+        fix_map = np.array(fix_map)
+        fix_map, thr = PANOISOD_analysis.adaptive_threshold(fix_map, reg)
+
+        for r in range(settings.height_360ISOD):
+            for c in range(settings.width_360ISOD):
+                if fix_map[r, c] < thr:
+                    fix_map[r, c] = 0
+
+        heat_map = cv2.applyColorMap(fix_map, cv2.COLORMAP_HOT)
+        cv2.imwrite(item, heat_map)
+        print(item + ' ' + 'has been processed.')
 
 if __name__ == '__main__':
+    print('waiting...')
     #pp = PanoISOD_PP()
     #pp.erp2cmp()
-    pp = FixPos_PP()
-    pp.load_raw()
-
-
-    fix_erp = PANOISOD_analysis.salpoint_from_norm_coords(fix_coords,
-                                                          (settings.height_360ISOD, settings.width_360ISOD))
-    sal_erp = PANOISOD_analysis.salmap_from_norm_coords(fix_coords, 1.0 * settings.width_360ISOD / 360.0,
-                                                        (settings.height_360ISOD, settings.width_360ISOD))
-
-    # visualize the fixation points of the current image
-    fix_erp = cv2.normalize(fix_erp, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-    cv2.imwrite('sample_1.png', fix_erp)
-
-    # visualize the fixation map of the current image
-    sal_erp = cv2.normalize(sal_erp, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-    cv2.imwrite('sample_2.png', sal_erp)
-    print()
+    # pp = FixPos_PP()
+    #pp.load_raw()
+    #fix2heat(settings.SALIENCY_PATH)

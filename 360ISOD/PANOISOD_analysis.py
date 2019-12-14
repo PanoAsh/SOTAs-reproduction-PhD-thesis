@@ -342,7 +342,8 @@ def load_one_out_txt(fixations, starts_idx, img_idx):
     return list_ioc
 
 if __name__ == '__main__':
+    print('waiting...')
     #all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
     #IOC_func(all_files)
-    #entropy_func()
-    IOC_func_2()
+    # entropy_func()
+    # IOC_func_2()
