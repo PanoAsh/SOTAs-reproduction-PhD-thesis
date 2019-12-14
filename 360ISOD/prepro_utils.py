@@ -82,17 +82,39 @@ class common_prepro():
                 count += 1
 
     def resize(self):
-        filelist = os.listdir(self.path)
+        filelist = os.listdir(settings.PANOISOD_MSK_TEST_PATH)
 
         count = 1
         for item in filelist:
-            img_path = os.path.join(os.path.abspath(self.path), item)
+            img_path = os.path.join(os.path.abspath(settings.PANOISOD_MSK_TEST_PATH), item)
             if item.endswith('.png'):
                 img = cv2.imread(img_path)
                 img = cv2.resize(img, (512, 256))
                 cv2.imwrite(item[:-3] + 'png', img)
                 print(" {} images processed".format(count))
                 count += 1
+
+    def lst_train(self):
+        imglist = os.listdir(settings.PANOISOD_MSK_TRAIN_PATH)
+        imglist.sort(key=lambda x: x[:-4])
+
+        f = open(settings.TRAIN_PAIR_LST_PATH, 'w')
+
+        for item in imglist:
+            line = '360ISOD-Image' + '/' + item + ' ' + '360ISOD-Mask' + '/' + item + '\n'
+            f.write(line)
+        f.close()
+
+    def lst_test(self):
+        imglist = os.listdir(settings.PANOISOD_MSK_TRAIN_PATH)
+        imglist.sort(key=lambda x: x[:-4])
+
+        f = open(settings.TEST_LST_PATH, 'w')
+
+        for item in imglist:
+            line = item[:-3] + 'jpg' + '\n'
+            f.write(line)
+        f.close()
 
     def imgfuse(self):
         filelist = os.listdir(settings.ERP_PATH)
@@ -199,5 +221,6 @@ class common_prepro():
 
 if __name__ == '__main__':
    print('waiting...')
-   #cpp = common_prepro()
-   #cpp.imgfuse()
+   cpp = common_prepro()
+   cpp.resize()
+  # cpp.lst_test()

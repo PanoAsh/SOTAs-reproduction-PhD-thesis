@@ -111,9 +111,9 @@ def file_generater(file, mode):
         count += 1
     f.close()
 
-def dataset_sort(data):
+def dataset_sort(data, h2l= False):
     # sort the files
-    index = sorted(range(len(data)), key=lambda k: data[k])
+    index = sorted(range(len(data)), key=lambda k: data[k], reverse=h2l)
 
     return index
 
@@ -166,11 +166,9 @@ def to_train():
 
     count = 1
     for id in img_idx:
-        src = os.path.join(os.path.abspath(settings.PANOISOD_IMG_PATH), id[:-4]+'jpg')
-        #src = os.path.join(os.path.abspath(img_path), id[:-1])
+        src = os.path.join(os.path.abspath(settings.PANOISOD_IMG_PATH), id[:-1])
         src2 = os.path.join(os.path.abspath(settings.PANOISOD_MSK_PATH), id[:-1])
-        dst = os.path.join(os.path.abspath(settings.PANOISOD_IMG_TRAIN_PATH), id[:-4]+'jpg')
-        #dst = os.path.join(os.path.abspath(train_path_img), id[:-1])
+        dst = os.path.join(os.path.abspath(settings.PANOISOD_IMG_TRAIN_PATH), id[:-1])
         dst2 = os.path.join(os.path.abspath(settings.PANOISOD_MSK_TRAIN_PATH), id[:-1])
         try:
             os.rename(src, dst)
@@ -182,11 +180,9 @@ def to_train():
 
     count = 1
     for id in img_T_idx:
-        src = os.path.join(os.path.abspath(settings.PANOISOD_IMG_PATH), id[:-4]+'jpg')
-        #src = os.path.join(os.path.abspath(img_path), id[:-1])
+        src = os.path.join(os.path.abspath(settings.PANOISOD_IMG_PATH), id[:-1])
         src2 = os.path.join(os.path.abspath(settings.PANOISOD_MSK_PATH), id[:-1])
-        dst = os.path.join(os.path.abspath(settings.PANOISOD_IMG_TEST_PATH), id[:-4]+'jpg')
-        #dst = os.path.join(os.path.abspath(test_path_img), id[:-1])
+        dst = os.path.join(os.path.abspath(settings.PANOISOD_IMG_TEST_PATH), id[:-1])
         dst2 = os.path.join(os.path.abspath(settings.PANOISOD_MSK_TEST_PATH), id[:-1])
         try:
             os.rename(src, dst)
@@ -330,8 +326,37 @@ def fix2heat(path, reg=0.25): # to keep the 25% of the images based on the ranki
         cv2.imwrite(item, heat_map)
         print(item + ' ' + 'has been processed.')
 
+def dataset_split_IOC(level_data=3):
+    # the dataset is divided into three levels according to the IOC-based complexity analysis
+
+    ioc_data = np.loadtxt(settings.IOC_LOAD_PATH)
+    ioc_index = dataset_sort(ioc_data, h2l=True) # A higher IOC means better convergence
+    ioc_index = [x + 1 for x in ioc_index] # the image index should be in the range of [1-107]
+
+    if level_data == 3:
+        index_easy = ioc_index[:35] # 35
+        index_medium = ioc_index[35:70] # 35
+        index_hard = ioc_index[70:] # 37
+
+        random.shuffle(index_easy)
+        random.shuffle(index_medium)
+        random.shuffle(index_hard)
+
+        train_index = index_easy[:31] + index_medium[:31] + index_hard[:33] # 95
+        test_index = index_easy[31:] + index_medium[31:] + index_hard[33:] # 12
+
+        file_generater(index_easy, 'easy')
+        file_generater(index_medium, 'medium')
+        file_generater(index_hard, 'hard')
+        file_generater(train_index, 'train')
+        file_generater(test_index, 'test')
+        print('All done !')
+
+
 if __name__ == '__main__':
     print('waiting...')
+    #to_train()
+    #dataset_split_IOC()
     #pp = PanoISOD_PP()
     #pp.erp2cmp()
     # pp = FixPos_PP()

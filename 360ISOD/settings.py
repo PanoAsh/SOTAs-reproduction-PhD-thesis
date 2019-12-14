@@ -41,6 +41,11 @@ IOC_2_PATH = PROJECT_ROOT + '/IOC_'
 
 HEAT_PATH = PROJECT_ROOT + '/heatmap/'
 
+IOC_LOAD_PATH = PROJECT_ROOT + '/IOC.txt'
+
+TRAIN_PAIR_LST_PATH = PROJECT_ROOT + '/train_pair.lst'
+TEST_LST_PATH = PROJECT_ROOT + '/test.lst'
+
 # Default of the 360ISOD dataset
 width_360ISOD = 2048
 height_360ISOD = 1024
