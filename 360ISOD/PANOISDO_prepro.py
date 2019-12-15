@@ -49,6 +49,34 @@ def PanoISOD_e2c(e_img, face_w, mode='bilinear', cube_format='dice'):
 
     return cubemap
 
+def uv_rotate(uv):
+    max_lai, max_log = debug_uv_rot(uv)
+    uv_size = uv.shape
+
+    to_right = max_lai / 3
+    to_top = max_log / 3
+
+    uv[:, :, 0] = uv[:, :, 0] + to_right
+    uv[:, :, 1] = uv[:, :, 1] + to_top
+
+    for r in range(uv_size[0]):
+        for c in range(uv_size[1]):
+            if uv[r, c, 0] > max_lai:
+                uv[r, c, 0] = -2 * max_lai + uv[r, c, 0]
+            if uv[r, c, 1] > max_log:
+                uv[r, c, 0] = -2 * max_log + uv[r, c, 0]
+
+    return uv
+
+def debug_uv_rot(uv):
+    debug = []
+    debug.append(np.max(uv[:, :, 0]))
+   # debug.append(np.min(uv[:, :, 0]))
+    debug.append(np.max(uv[:, :, 1]))
+    #debug.append(np.min(uv[:, :, 1]))
+
+    return debug
+
 def data_MultiCrop(scale, img, Height, Width):
     h = Height / scale # the height of each block
     w = Width / scale # the width of each block
@@ -401,8 +429,8 @@ if __name__ == '__main__':
     print('waiting...')
     #to_train()
     #dataset_split_IOC_2('stanford')
-    #pp = PanoISOD_PP()
-    #pp.erp2cmp()
+    pp = PanoISOD_PP()
+    pp.erp2cmp()
     # pp = FixPos_PP()
     #pp.load_raw()
     #fix2heat(settings.SALIENCY_PATH)
