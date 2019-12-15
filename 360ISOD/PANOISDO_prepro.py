@@ -352,11 +352,55 @@ def dataset_split_IOC(level_data=3):
         file_generater(test_index, 'test')
         print('All done !')
 
+def dataset_split_IOC_2(mode='nantes'):
+    # the dataset is divided into three levels according to the IOC-based complexity analysis
+    # Due to the difference of E-tracking observers in Nantes_85 and Stanford_22, re-split the dataset for better analysis
+
+    if mode == 'nantes':
+        ioc_data = np.loadtxt(settings.IOC_NTS_LOAD_PATH)
+        ioc_index = dataset_sort(ioc_data, h2l=True)  # A higher IOC means better convergence
+        ioc_index = [x + 1 for x in ioc_index]  # the image index should be in the range of [1-85]
+
+        index_easy = ioc_index[:28] # 28
+        index_medium = ioc_index[28:56] # 28
+        index_hard = ioc_index[56:] # 29
+
+        random.shuffle(index_easy)
+        random.shuffle(index_medium)
+        random.shuffle(index_hard)
+
+        train_index = index_easy[:22] + index_medium[:22] + index_hard[:24] # 68
+        test_index = index_easy[22:] + index_medium[22:] + index_hard[24:] # 17
+
+        file_generater(index_easy, 'easy')
+        file_generater(index_medium, 'medium')
+        file_generater(index_hard, 'hard')
+        file_generater(train_index, 'train')
+        file_generater(test_index, 'test')
+        print('All done !')
+
+    elif mode == 'stanford':
+        ioc_data = np.loadtxt(settings.IOC_STF_LOAD_PATH)
+        ioc_index = dataset_sort(ioc_data, h2l=True)  # A higher IOC means better convergence
+        ioc_index = [x + 1 for x in ioc_index]  # the image index should be in the range of [1-22]
+
+        index_easy = ioc_index[:7] # 7
+        index_medium = ioc_index[7:14] # 7
+        index_hard = ioc_index[14:] # 8
+
+        file_generater(index_easy, 'easy')
+        file_generater(index_medium, 'medium')
+        file_generater(index_hard, 'hard')
+        print('All done !')
+
+    else:
+        print('No processing done, please check your input parameters.')
+
 
 if __name__ == '__main__':
     print('waiting...')
     #to_train()
-    #dataset_split_IOC()
+    #dataset_split_IOC_2('stanford')
     #pp = PanoISOD_PP()
     #pp.erp2cmp()
     # pp = FixPos_PP()

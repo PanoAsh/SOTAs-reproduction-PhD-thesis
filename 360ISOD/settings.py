@@ -19,7 +19,7 @@ R_PATH_RAW = PROJECT_ROOT + '/fixpos/scanpath_nante/R/'
 L_PATH_TGT = PROJECT_ROOT + '/fixpos/fixations/L/'
 R_PATH_TGT = PROJECT_ROOT + '/fixpos/fixations/R/'
 
-CMP_PATH = PROJECT_ROOT + '/cubmaps/'
+CMP_PATH = PROJECT_ROOT + '/cubemaps/'
 ERP_PATH = PROJECT_ROOT + '/stimulis/'
 
 TRAIN_TXT_PATH = PROJECT_ROOT + '/train.txt'
@@ -42,6 +42,8 @@ IOC_2_PATH = PROJECT_ROOT + '/IOC_'
 HEAT_PATH = PROJECT_ROOT + '/heatmap/'
 
 IOC_LOAD_PATH = PROJECT_ROOT + '/IOC.txt'
+IOC_NTS_LOAD_PATH = PROJECT_ROOT + '/IOC_nantes.txt'
+IOC_STF_LOAD_PATH = PROJECT_ROOT + '/IOC_stanford.txt'
 
 TRAIN_PAIR_LST_PATH = PROJECT_ROOT + '/train_pair.lst'
 TEST_LST_PATH = PROJECT_ROOT + '/test.lst'

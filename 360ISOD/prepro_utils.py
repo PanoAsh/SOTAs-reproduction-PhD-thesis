@@ -82,11 +82,11 @@ class common_prepro():
                 count += 1
 
     def resize(self):
-        filelist = os.listdir(settings.PANOISOD_MSK_TEST_PATH)
+        filelist = os.listdir(os.getcwd() + '/resize')
 
         count = 1
         for item in filelist:
-            img_path = os.path.join(os.path.abspath(settings.PANOISOD_MSK_TEST_PATH), item)
+            img_path = os.path.join(os.path.abspath(os.getcwd() + '/resize'), item)
             if item.endswith('.png'):
                 img = cv2.imread(img_path)
                 img = cv2.resize(img, (512, 256))
@@ -95,7 +95,7 @@ class common_prepro():
                 count += 1
 
     def lst_train(self):
-        imglist = os.listdir(settings.PANOISOD_MSK_TRAIN_PATH)
+        imglist = os.listdir(os.getcwd() + '/lst')
         imglist.sort(key=lambda x: x[:-4])
 
         f = open(settings.TRAIN_PAIR_LST_PATH, 'w')
@@ -106,7 +106,7 @@ class common_prepro():
         f.close()
 
     def lst_test(self):
-        imglist = os.listdir(settings.PANOISOD_MSK_TRAIN_PATH)
+        imglist = os.listdir(os.getcwd() + '/lst')
         imglist.sort(key=lambda x: x[:-4])
 
         f = open(settings.TEST_LST_PATH, 'w')
@@ -222,5 +222,5 @@ class common_prepro():
 if __name__ == '__main__':
    print('waiting...')
    cpp = common_prepro()
-   cpp.resize()
-  # cpp.lst_test()
+   #cpp.resize()
+   cpp.lst_test()
