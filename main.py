@@ -1,218 +1,104 @@
-# ------------------------ step 0 : load the necessary packages ------------------------
-import torch
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-from torchvision.utils import make_grid
-import numpy as np
+import argparse
 import os
-from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from tensorboardX import SummaryWriter
-from datetime import datetime
-import glob
-import random
-import shutil
-from torchvision.models import resnet34, vgg16
-from tensorboardX import SummaryWriter
-import torch.utils.model_zoo as model_zoo
-from config import *
-from utils import *
-from models import *
+from dataset.dataset import get_loader
+from solver import Solver
 
-# ------------------------ step 1 : define the models / optimizers / metrics ------------------------
-if model_select == 'fcn':
-    net_pretrained = vgg16(pretrained=True)
-    net = FCN8s(num_classes, net_pretrained)
-    if pretrain_on: # maybe useless but correct
-       pretrained_dict = model_zoo.load_url(model_urls['vgg16'])
-       net_dict = net.state_dict()
-       pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in net_dict}
-       net_dict.update(pretrained_dict)
-       net.load_state_dict(net_dict)
+def get_test_info(sal_mode='vr'):
+    if sal_mode == 'e':
+        image_root = './data/ECSSD/Imgs/'
+        image_source = './data/ECSSD/test.lst'
+    elif sal_mode == 'p':
+        image_root = './data/PASCALS/Imgs/'
+        image_source = './data/PASCALS/test.lst'
+    elif sal_mode == 'd':
+        image_root = './data/DUTOMRON/Imgs/'
+        image_source = './data/DUTOMRON/test.lst'
+    elif sal_mode == 'h':
+        image_root = './data/HKU-IS/Imgs/'
+        image_source = './data/HKU-IS/test.lst'
+    elif sal_mode == 's':
+        image_root = './data/SOD/Imgs/'
+        image_source = './data/SOD/test.lst'
+    elif sal_mode == 't':
+        image_root = './data/DUTS-TE/Imgs/'
+        image_source = './data/DUTS-TE/test.lst'
+    elif sal_mode == 'm_r': # for speed test
+        image_root = './data/MSRA/Imgs_resized/'
+        image_source = './data/MSRA/test_resized.lst'
 
-if model_select == 'unet':
-    net = unet()
-    net.initialize_weights()
+    elif sal_mode == 'vr': # 360ISOD dataset for testing
+        image_root = './data/360ISOD-TE/Imgs/'
+        image_source = './data/360ISOD-TE/test.lst'
 
-# if torch.cuda.device_count() > 1:
-#     net = nn.DataParallel(net, device_ids=[1, 2, 3])
-net.to(device)
+    return image_root, image_source
 
-optimizer = optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
-                      lr=lr_init, momentum=0.9, dampening=0.1)
+def main(config):
+    if config.mode == 'train':
+        train_loader = get_loader(config)
+        run = 0
+        while os.path.exists("%s/run-%d" % (config.save_folder, run)):
+            run += 1
+        os.mkdir("%s/run-%d" % (config.save_folder, run))
+        os.mkdir("%s/run-%d/models" % (config.save_folder, run))
+        config.save_folder = "%s/run-%d" % (config.save_folder, run)
+        train = Solver(train_loader, None, config)
+        train.train()
+    elif config.mode == 'test':
+        config.test_root, config.test_list = get_test_info(config.sal_mode)
+        test_loader = get_loader(config, mode='test')
+        if not os.path.exists(config.test_fold): os.mkdir(config.test_fold)
+        test = Solver(None, test_loader, config)
+        test.test()
+    else:
+        raise IOError("illegal input!!!")
 
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_num, gamma=0.1)
-
-criterionBCE = nn.BCELoss()
-criterionBCE.to(device)
-
-criterionDC = DiceCoef()
-criterionDC.to(device)
-
-# ------------------------ step 2 : load and preprocess SOD360 ------------------------
 if __name__ == '__main__':
 
-    # ************ update the dataset info ************
-    if update_dts:
-        TXT_gnr(ids_imgs_train_path, imgs_train_path)
-        TXT_gnr(ids_imgs_val_path, imgs_val_path)
-        TXT_gnr(ids_imgs_test_path, imgs_test_path)
-        TXT_gnr(ids_objms_train_path, objms_train_path)
-        TXT_gnr(ids_objms_val_path, objms_val_path)
-        TXT_gnr(ids_objms_test_path, objms_test_path)
-        print('************************')
-        print('dataset updated !')
-        print('************************')
+    vgg_path = './dataset/pretrained/vgg16_20M.pth'
+    resnet_path = './dataset/pretrained/resnet50_caffe.pth'
+    resnet_wo_path = './dataset/pretrained/final_run0.pth'
+    resnet_w_path = './dataset/pretrained/final_run1.pth'
 
-    # ************ load the dataset for training ************
-    if train_on:
+    parser = argparse.ArgumentParser()
 
-        # ************ initialize the log recorder ************
-        writer = SummaryWriter(logdir=log_dir, comment='SOD360')
+    # Hyper-parameters
+    parser.add_argument('--n_color', type=int, default=3)
+    # 1/10 of the original lr, to avoid the overfitting due to the overlap of multi-cubes
+    parser.add_argument('--lr', type=float, default=5e-6) # Learning rate resnet:5e-5, vgg:1e-4
+    parser.add_argument('--wd', type=float, default=0.0005) # Weight decay
+    parser.add_argument('--no-cuda', dest='cuda', action='store_false')
 
-        # ************ calculate the mean and std of trainSet ************
-        if update_dnm:
-            normTransformation = data_norm(num_train)
-        else:
-            normTransformation = transforms.Normalize(
-                [0.44706792, 0.41150272, 0.3787503],
-                [0.26928946, 0.25931585, 0.27907613])
+    # Training settings
+    parser.add_argument('--arch', type=str, default='resnet') # resnet or vgg
+    parser.add_argument('--pretrained_model', type=str, default=resnet_path)
+    parser.add_argument('--epoch', type=int, default=70)
+    parser.add_argument('--batch_size', type=int, default=1) # only support 1 now
+    parser.add_argument('--num_thread', type=int, default=1)
+    parser.add_argument('--load', type=str, default=resnet_wo_path)
+    parser.add_argument('--save_folder', type=str, default='./results')
+    parser.add_argument('--epoch_save', type=int, default=3)
+    parser.add_argument('--iter_size', type=int, default=10)
+    parser.add_argument('--show_every', type=int, default=50)
 
-        # ************ load the dataset for training ************
-        data_train = MyDataset(ids_imgs_train_path, ids_objms_train_path,
-                               normTrans=normTransformation)
-        print('************************')
-        print('training dataset loaded !')
-        print('************************')
-        data_val = MyDataset(ids_imgs_val_path, ids_objms_val_path,
-                             normTrans=normTransformation)
-        print('************************')
-        print('validate dataset loaded !')
-        print('************************')
+    # Train data
+    parser.add_argument('--train_root', type=str, default='./data/360ISOD')
+    parser.add_argument('--train_list', type=str, default='./data/360ISOD/train_pair.lst')
 
-        train_loader = DataLoader(dataset=data_train, batch_size=batch_size,
-                                  shuffle=True)
-        valid_loader = DataLoader(dataset=data_val, batch_size=batch_size,
-                                  shuffle=True)
+    # Testing settings
+    parser.add_argument('--model', type=str, default='./results/run-360/models/final.pth') # Snapshot
+    parser.add_argument('--test_fold', type=str, default='./results/run-360/run-360-sal') # Test results saving folder
+    parser.add_argument('--sal_mode', type=str, default='vr') # Test image dataset
 
-# ------------------------ step 3 : train and validate the models ------------------------
-        for epoch in range(Epochs):
-            loss_sigma = 0.0
-            loss_val = 0.0
-            correct = 0.0
-            total = 0.0
-            correct_val = 0.0
-            total_val = 0.0
-            scheduler.step()
+    # Misc
+    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
+    config = parser.parse_args()
 
-            for i, data in enumerate(train_loader):
-                inputs, masks = data
-                inputs, masks = Variable(inputs.to(device)), \
-                                Variable(masks.to(device))
+    if not os.path.exists(config.save_folder):
+        os.mkdir(config.save_folder)
 
-                # visulize the model structure
-                if epoch == 0:
-                    if i == 0:
-                        writer.add_graph(net, inputs)
+    # Get test set info
+    test_root, test_list = get_test_info(config.sal_mode)
+    config.test_root = test_root
+    config.test_list = test_list
 
-                # forward
-                optimizer.zero_grad()
-                outputs = net(inputs)
-
-                # compute the loss
-                loss = criterionBCE(outputs, masks)
-
-                # compute the metric
-                metric = criterionDC(outputs, masks)
-
-                # backward
-                loss.backward()
-                optimizer.step()
-
-                # statistics
-                correct += metric.item()
-                total += 1
-                loss_sigma += loss.item()
-
-                if i % 1 == 0:
-                    loss_avg = loss_sigma / total
-                    print("Training: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] "
-                          "Loss: {:.4f} Acc:{:.2%}".format(epoch + 1, Epochs, i + 1,
-                                                           len(train_loader), loss_avg,
-                                                           correct / total))
-
-                    # record training loss
-                    writer.add_scalars('Loss_group', {'train_loss': loss_avg}, epoch)
-                    # record learning rate
-                    writer.add_scalar('learning rate', scheduler.get_lr()[0], epoch)
-                    # record accuracy
-                    writer.add_scalars('Accuracy_group',
-                                       {'train_acc': correct / total}, epoch)
-
-                # model visualization
-                if i % 3 == 0:
-                    # visualize the inputs, masks and outputs of training stage
-                    show_inputs = make_grid(inputs)
-                    show_maps = make_grid(masks)
-                    show_outputs = make_grid(outputs)
-                    writer.add_image('Input_group', show_inputs)
-                    writer.add_image('Map_group', show_maps)
-                    writer.add_image('Out_group', show_outputs)
-
-            # record grads and weights
-            for name, layer in net.named_parameters():
-                writer.add_histogram(name + model_select,
-                                    layer.clone().cpu().data.numpy(), epoch)
-
-            net.eval()
-            for i, data in enumerate(valid_loader):
-                imgs, masks = data
-                imgs, masks = Variable(imgs.to(device)),\
-                              Variable(masks.to(device))
-
-                # forward
-                outputs = net(imgs)
-                outputs.detach_()
-
-                # compute loss
-                loss = criterionBCE(outputs, masks)
-
-                # compute metric
-                metric = criterionDC(outputs, masks)
-
-                loss_val += loss.item()
-                correct_val += metric
-                total_val += 1
-
-                loss_avg_val = loss_val / total_val
-
-                print("Validation: Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] "
-                      "Loss: {:.4f} Acc:{:.2%}".
-                      format(epoch + 1, Epochs, i + 1, len(valid_loader),
-                             loss_avg_val, correct_val / total_val))
-
-                # record validation loss
-                writer.add_scalars('Loss_group',
-                                   {'valid_loss': loss_avg_val}, epoch)
-                # record validation accuracy
-                writer.add_scalars('Accuracy_group',
-                                   {'valid_acc': correct_val / total_val}, epoch)
-
-            if epoch % 5 == 0:
-                torch.save(net.state_dict(), mod_dir)
-                print('************************')
-                print('model successfully saved !')
-                print('************************')
-
-        print('************************')
-        print('finished training !')
-        print('************************')
-
-# ------------------------ step 4 : test and evaluate the results ------------------------
-    if test_on:
-        data_test = MyDataset(ids_imgs_test_path, ids_objms_test_path)
-        print('************************')
-        print('testing dataset loaded !')
-        print('************************')
+    main(config)
