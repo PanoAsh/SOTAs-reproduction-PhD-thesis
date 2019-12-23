@@ -48,8 +48,7 @@ def get_triangle_lr(base_lr, max_lr, total_steps, cur, ratio=1., \
 
     return lr, momentum
 
-BASE_LR = 1e-4 # for fine tuning
-MAX_LR = 5e-4
+MAX_LR = 5e-3 # for fine tuning
 FIND_LR = False #True
 
 DATA_PATH = os.getcwd() + '/data/360ISOD/' # train path
@@ -92,10 +91,10 @@ def train(Dataset, Network):
         image, mask = prefetcher.next()
         while image is not None:
             niter = epoch * db_size + batch_idx
-            lr, momentum = get_triangle_lr(BASE_LR, MAX_LR, cfg.epoch*db_size, niter, ratio=1.)
-            optimizer.param_groups[0]['lr'] = 0.1 * lr #for backbone
-            optimizer.param_groups[1]['lr'] = lr
-            optimizer.momentum = momentum
+          #  lr, momentum = get_triangle_lr(BASE_LR, MAX_LR, cfg.epoch*db_size, niter, ratio=1.)
+            optimizer.param_groups[0]['lr'] = 0.1 * MAX_LR #for backbone
+            optimizer.param_groups[1]['lr'] = MAX_LR
+         #   optimizer.momentum = momentum
             batch_idx += 1
             global_step += 1
             out2, out3, out4, out5 = net(image)
@@ -110,12 +109,12 @@ def train(Dataset, Network):
             #sw.add_scalar('lr'   , optimizer.param_groups[0]['lr'], global_step=global_step)
             #sw.add_scalars('loss', {'loss2':loss2.item(), 'loss3':loss3.item(), 'loss4':loss4.item(), 'loss5':loss5.item(), 'loss':loss.item()}, global_step=global_step)
             if batch_idx % 100 == 0:
-                msg = '%s | step:%d/%d | lr=%.6f | loss=%.6f | loss2=%.6f | loss3=%.6f | loss4=%.6f | loss5=%.6f'%(datetime.datetime.now(), epoch+1, cfg.epoch, optimizer.param_groups[0]['lr'], loss.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item())
+                msg = '%s | step:%d/%d | base_lr=%.6f | loss=%.6f | loss2=%.6f | loss3=%.6f | loss4=%.6f | loss5=%.6f'%(datetime.datetime.now(), epoch+1, cfg.epoch, optimizer.param_groups[0]['lr'], loss.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item())
                 print(msg)
                 logger.info(msg)
             image, mask = prefetcher.next()
 
-        if (epoch+1)%5 == 0 or (epoch+1)==cfg.epoch:
+        if (epoch+1) % 5 == 0 or (epoch+1)==cfg.epoch:
             torch.save(net.state_dict(), cfg.savepath+ '/' + str(epoch+1) + '.pth')
 
 
