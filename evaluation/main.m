@@ -60,7 +60,8 @@ for midx=1:length(MD_ALL),
 
             %% calculate MAE and Smeasure
             tic;
-            for i = 1:imgNUM              
+            for i = 1:imgNUM   
+                
 
     %             fprintf('Evaluating: %d/%d\n',i,imgNUM);
 
@@ -110,10 +111,10 @@ for midx=1:length(MD_ALL),
                 Emeasure(i) = Enhancedmeasure(Bi_sal,gt);
                  
                 % to debug
-                %gt_show = [gt_name(1:3) '.jpg'];
-                %imwrite(gt, gt_show);
-                %sal_show = [sal_name(1:3) '_MAE_' num2str(MAE(i)) '_S_' num2str(Smeasure(i)) '_E_' num2str(Emeasure(i)) '_wF_' num2str(wFmeasure(i)) '.png'];
-                %imwrite(sal, sal_show);
+                gt_show = [gt_name(1:3) '.jpg'];
+                imwrite(gt, gt_show);
+                sal_show = [sal_name(1:3) '_MAE_' num2str(MAE(i)) '_S_' num2str(Smeasure(i)) '_E_' num2str(Emeasure(i)) '_wF_' num2str(wFmeasure(i)) '.png'];
+                imwrite(sal, sal_show);
                 
             end
 
@@ -121,12 +122,11 @@ for midx=1:length(MD_ALL),
 
             %%
             Smeasure(Smeasure==-1) = [];
-            
-         %   Smeasure(isnan(Smeasure)) = []
          
             wFmeasure(wFmeasure==-1) = [];
             
             Emeasure(Emeasure==-1) = [];
+            
             MAE(MAE==-1) = [];
             
             %%
