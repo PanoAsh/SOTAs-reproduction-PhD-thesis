@@ -19,8 +19,8 @@ R_PATH_RAW = PROJECT_ROOT + '/fixpos/scanpath_nante/R/'
 L_PATH_TGT = PROJECT_ROOT + '/fixpos/fixations/L/'
 R_PATH_TGT = PROJECT_ROOT + '/fixpos/fixations/R/'
 
-CMP_PATH = PROJECT_ROOT + '/cubmaps/'
-ERP_PATH = PROJECT_ROOT + '/stimulis/'
+CMP_PATH = PROJECT_ROOT + '/scrn/scrn_30_stf/'
+ERP_PATH = PROJECT_ROOT + '/scrn_stf/'
 
 TRAIN_TXT_PATH = PROJECT_ROOT + '/train.txt'
 TEST_TXT_PATH = PROJECT_ROOT + '/test.txt'
@@ -35,6 +35,20 @@ PANOISOD_IMG_TRAIN_PATH = PROJECT_ROOT + '/360ISOD_img_train/'
 PANOISOD_MSK_TRAIN_PATH = PROJECT_ROOT + '/360ISOD_msk_train/'
 PANOISOD_IMG_TEST_PATH = PROJECT_ROOT + '/360ISOD_img_test/'
 PANOISOD_MSK_TEST_PATH = PROJECT_ROOT + '/360ISOD_msk_test/'
+
+IOC_2_PATH_TT = PROJECT_ROOT + '/IOC_Nantes_total.txt'
+IOC_2_PATH = PROJECT_ROOT + '/IOC_'
+
+HEAT_PATH = PROJECT_ROOT + '/heatmap/'
+
+IOC_LOAD_PATH = PROJECT_ROOT + '/IOC.txt'
+IOC_NTS_LOAD_PATH = PROJECT_ROOT + '/IOC_nantes.txt'
+IOC_STF_LOAD_PATH = PROJECT_ROOT + '/IOC_stanford.txt'
+
+TRAIN_PAIR_LST_PATH = PROJECT_ROOT + '/train_pair.lst'
+TEST_LST_PATH = PROJECT_ROOT + '/test.lst'
+
+OBJECTS_PATH = PROJECT_ROOT + '/texts/'
 
 # Default of the 360ISOD dataset
 width_360ISOD = 2048
