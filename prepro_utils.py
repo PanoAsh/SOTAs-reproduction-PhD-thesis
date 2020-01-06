@@ -275,11 +275,35 @@ class common_prepro():
         num_obj = sum(objects_list)
         print("There are {} objects in total.".format(num_obj))
 
+    def num_ins(self):
+        objects = os.listdir(settings.OBJECTS_PATH)
+        objects.sort(key=lambda x: x[:-4])
+        instance_list = []
+
+        for img in objects:
+            obj_path = os.path.join(os.path.abspath(settings.OBJECTS_PATH), img)
+            obj = open(obj_path, 'r').readlines()
+            ins = []
+            for idx in range(len(obj)):
+                ins.append(obj[idx].split('_')[0])
+            instance_list.append(ins)
+        flattened_instance_list = []
+        for x in instance_list:
+            for y in x:
+                flattened_instance_list.append(y)
+        final_list = set(flattened_instance_list)
+        count = 0
+        for item in final_list:
+            if item != '':
+                count += 1
+        print("There are {} object classes in total.".format(count))
+
 
 if __name__ == '__main__':
    print('waiting...')
    cpp = common_prepro()
-   cpp.num_obj()
+   #cpp.num_obj()
+   cpp.num_ins()
    #cpp.multicube_to_train()
    #cpp.multicube_to_test()
    #cpp.resize()
