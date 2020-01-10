@@ -49,6 +49,66 @@ def PanoISOD_e2c(e_img, face_w, mode='bilinear', cube_format='dice'):
 
     return cubemap
 
+def PanoISOD_c2e(cubemap, h, w, mode='bilinear', cube_format='list'):
+    if mode == 'bilinear':
+        order = 1
+    elif mode == 'nearest':
+        order = 0
+    else:
+        raise NotImplementedError('unknown mode')
+
+    if cube_format == 'horizon':
+        pass
+    elif cube_format == 'list':
+        cubemap = utils.cube_list2h(cubemap)
+    elif cube_format == 'dict':
+        cubemap = utils.cube_dict2h(cubemap)
+    elif cube_format == 'dice':
+        cubemap = utils.cube_dice2h(cubemap)
+    else:
+        raise NotImplementedError('unknown cube_format')
+    assert len(cubemap.shape) == 3
+    assert cubemap.shape[0] * 6 == cubemap.shape[1]
+    assert w % 8 == 0
+    face_w = cubemap.shape[0]
+
+    uv = utils.equirect_uvgrid(h, w)
+    u, v = np.split(uv, 2, axis=-1)
+    u = u[..., 0]
+    v = v[..., 0]
+    cube_faces = np.stack(np.split(cubemap, 6, 1), 0)
+
+    # Get face id to each pixel: 0F 1R 2B 3L 4U 5D
+    tp = utils.equirect_facetype(h, w)
+    coor_x = np.zeros((h, w))
+    coor_y = np.zeros((h, w))
+
+    for i in range(4):
+        mask = (tp == i)
+        coor_x[mask] = 0.5 * np.tan(u[mask] - np.pi * i / 2)
+        coor_y[mask] = -0.5 * np.tan(v[mask]) / np.cos(u[mask] - np.pi * i / 2)
+
+    mask = (tp == 4)
+    c = 0.5 * np.tan(np.pi / 2 - v[mask])
+    coor_x[mask] = c * np.sin(u[mask])
+    coor_y[mask] = c * np.cos(u[mask])
+
+    mask = (tp == 5)
+    c = 0.5 * np.tan(np.pi / 2 - np.abs(v[mask]))
+    coor_x[mask] = c * np.sin(u[mask])
+    coor_y[mask] = -c * np.cos(u[mask])
+
+    # Final renormalize
+    coor_x = (np.clip(coor_x, -0.5, 0.5) + 0.5) * face_w
+    coor_y = (np.clip(coor_y, -0.5, 0.5) + 0.5) * face_w
+
+    equirec = np.stack([
+        utils.sample_cubefaces(cube_faces[..., i], tp, coor_y, coor_x, order=order)
+        for i in range(cube_faces.shape[3])
+    ], axis=-1)
+
+    return equirec
+
 def uv_rotate(uv):
     max_lai, max_log = debug_uv_rot(uv)
     uv_size = uv.shape
@@ -243,6 +303,49 @@ class PanoISOD_PP():
                 print(" {} images processed".format(count))
                 count += 1
 
+    def cmp2erp(self):
+        cmplist = os.listdir(self.cub_path)
+        cmplist.sort(key=lambda x: x[:-4])
+
+        test_patches = []
+        for index in cmplist:
+            if index.endswith('.png'):
+                if int(index[4]) == 1 and int(index[6]) == 1:
+                    test_patches.append(index)
+
+        count = 1
+        num_test = int(len(test_patches) / 6)
+        for idx in range(num_test):
+            patch_list = []
+            for fac in range(6):
+                patch_path = os.path.join(os.path.abspath(self.cub_path), test_patches[6*idx+fac])
+                patch_list.append(cv2.imread(patch_path))
+
+            patch_list[1] = cv2.flip(patch_list[1], 1)
+            patch_list[2] = cv2.flip(patch_list[2], 1)
+            patch_list[4] = cv2.flip(patch_list[4], 0)
+
+            erp = PanoISOD_c2e(patch_list, settings.height_360ISOD, settings.width_360ISOD)
+            erp_name = test_patches[idx*6]
+            erp_name = erp_name[0:3] + '.png'
+            erp_path = os.path.join(os.path.abspath(self.sti_path), erp_name)
+            cv2.imwrite(erp_path, erp)
+            print(" {} images processed".format(count))
+            count += 1
+
+    def resize_eval(self):
+        filelist = os.listdir(os.getcwd() + '/c')
+
+        count = 1
+        for item in filelist:
+            img_path = os.path.join(os.path.abspath(os.getcwd() + '/c'), item)
+            if item.endswith('.png'):
+                img = cv2.imread(img_path)
+                img = cv2.resize(img, (settings.width_360ISOD, settings.height_360ISOD))
+                cv2.imwrite(item, img)
+                print(" {} images processed".format(count))
+                count += 1
+
     def complexity_stt(self, p_max): # multi-level entropy
         sallist = os.listdir(self.sal_path)
         sallist.sort(key=lambda x: x[:-4])
@@ -335,7 +438,7 @@ def get_starts(fix_list):
 
     return np.where(fix_list[:, 0] == 0)[0]
 
-def fix2heat(path, reg=0.25): # to keep the 25% of the images based on the ranking of saliency
+def fix2heat(path, reg=0.1): # to keep the 25% of the images based on the ranking of saliency
     fixlist = os.listdir(path)
     fixlist.sort(key=lambda x: x[:-4])
 
@@ -429,8 +532,10 @@ if __name__ == '__main__':
     print('waiting...')
     #to_train()
     #dataset_split_IOC_2('stanford')
-    pp = PanoISOD_PP()
-    pp.erp2cmp()
+   # pp = PanoISOD_PP()
+    #pp.erp2cmp()
+    #pp.cmp2erp()
+    #pp.resize_eval()
     # pp = FixPos_PP()
     #pp.load_raw()
-    #fix2heat(settings.SALIENCY_PATH)
+    fix2heat(settings.SALIENCY_PATH)

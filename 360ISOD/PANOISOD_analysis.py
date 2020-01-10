@@ -341,9 +341,41 @@ def load_one_out_txt(fixations, starts_idx, img_idx):
 
     return list_ioc
 
+def get_anno_assistant():
+    data_loader = PANOISDO_prepro.FixPos_PP()
+    crds, starts = data_loader.load_raw()
+
+    num_imgs = len(crds)
+    for idx in range(num_imgs):
+        print("---- Show the info of the {} image ----".format(idx + 1))
+
+        map_ori = salmap_from_norm_coords(crds[idx], 2.0 * width_360ISOD / 360.0, (height_360ISOD, width_360ISOD))
+        map_ori = cv2.normalize(map_ori, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        cv2.imwrite(format(str(idx + 1), '0>3s') + '.png', map_ori)
+
+    print('All done !')
+
+def get_anno_assistant_stf(pck_files):
+    num_pck = len(pck_files)
+    for pck_idx in range(num_pck):
+        print("---- Show the info of the {} pck ----".format(pck_idx + 1))
+
+        # process the current pck file and compute the ioc of it
+        with open(pck_files[pck_idx], 'rb') as log_file:
+            log = pck.load(log_file, encoding='latin1')
+        print("Loaded %s." % pck_files[pck_idx])
+
+        map_ori = get_gaze_salmap(log['data'], sigma_deg=2)
+        salmap = cv2.normalize(map_ori, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        cv2.imwrite(format(str(pck_idx+86), '0>3s') + '.png', salmap)
+
+    print('All done !')
+
+
 if __name__ == '__main__':
     print('waiting...')
-    #all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
-    #IOC_func(all_files)
+    all_files = sorted(glob(os.path.join(settings.DATASET_PATH_VR, '*.pck')))
+    get_anno_assistant_stf(all_files)
     # entropy_func()
-    # IOC_func_2()
+    #IOC_func_2()
+    #get_anno_assistant()

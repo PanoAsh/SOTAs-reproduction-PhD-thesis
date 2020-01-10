@@ -89,10 +89,54 @@ class common_prepro():
             img_path = os.path.join(os.path.abspath(os.getcwd() + '/resize'), item)
             if item.endswith('.png'):
                 img = cv2.imread(img_path)
-                img = cv2.resize(img, (512, 256))
-                cv2.imwrite(item[:-3] + 'png', img)
+                img = cv2.resize(img, (256, 256))
+                cv2.imwrite(item, img)
                 print(" {} images processed".format(count))
                 count += 1
+
+    def multicube_to_train(self):
+        filelist = os.listdir(os.getcwd() + '/resize') # one-step_processing from raw multi-cubes to training data
+
+        txt_train = open(settings.TRAIN_TXT_PATH)
+        train_list = []
+        for id in txt_train:
+            train_list.append(int(id[:3]))
+
+        count = 1
+        for item in filelist:
+            item_list = item.split('_')
+            if int(item_list[1]) in train_list:
+                img_path = os.path.join(os.path.abspath(os.getcwd() + '/resize'), item)
+                img = cv2.imread(img_path)
+                img = cv2.resize(img, (256, 256))
+                cv2.imwrite(format(str(int(item_list[1])), '0>3s') + '_' + item_list[2] +
+                            '_' + item_list[3] + '_' + item_list[4], img)
+                print(" {} images saved".format(count))
+                count += 1
+
+        print('All done !')
+
+    def multicube_to_test(self):
+        filelist = os.listdir(os.getcwd() + '/resize') # one-step_processing from raw multi-cubes to training data
+
+        txt_test = open(settings.TEST_TXT_PATH)
+        test_list = []
+        for id in txt_test:
+            test_list.append(int(id[:3]))
+
+        count = 1
+        for item in filelist:
+            item_list = item.split('_')
+            if int(item_list[1]) in test_list:
+                img_path = os.path.join(os.path.abspath(os.getcwd() + '/resize'), item)
+                img = cv2.imread(img_path)
+                img = cv2.resize(img, (256, 256))
+                cv2.imwrite(format(str(int(item_list[1])), '0>3s') + '_' + item_list[2] +
+                            '_' + item_list[3] + '_' + item_list[4][:-3] + 'png', img)
+                print(" {} images saved".format(count))
+                count += 1
+
+        print('All done !')
 
     def lst_train(self):
         imglist = os.listdir(os.getcwd() + '/lst')
@@ -101,7 +145,8 @@ class common_prepro():
         f = open(settings.TRAIN_PAIR_LST_PATH, 'w')
 
         for item in imglist:
-            line = '360ISOD-Image' + '/' + item + ' ' + '360ISOD-Mask' + '/' + item + '\n'
+            line = '360ISOD-Image' + '/' + item + ' ' + '360ISOD-Mask' + '/' + item + ' ' + \
+                   '360ISOD-Mask' + '/' + item[:-4] + '_edge' + '.png' + '\n'
             f.write(line)
         f.close()
 
@@ -112,7 +157,7 @@ class common_prepro():
         f = open(settings.TEST_LST_PATH, 'w')
 
         for item in imglist:
-            line = item[:-3] + 'jpg' + '\n'
+            line = item + '\n'
             f.write(line)
         f.close()
 
@@ -128,6 +173,7 @@ class common_prepro():
             img2 = cv2.imread(img2_path)
 
             img3 = cv2.addWeighted(img1, 0.4, img2, 0.6, 0)
+            cv2.applyColorMap(img3, cv2.COLORMAP_JET)
             cv2.imwrite(item, img3)
             print(" {} images processed".format(count))
             count += 1
@@ -218,9 +264,55 @@ class common_prepro():
         cv2.destroyAllWindows()
         video.release()
 
+    def num_obj(self):
+        objects = os.listdir(settings.OBJECTS_PATH)
+        objects.sort(key=lambda x: x[:-4])
+        objects_list = []
+
+        for img in objects:
+            obj_path = os.path.join(os.path.abspath(settings.OBJECTS_PATH), img)
+            obj = open(obj_path, 'r').readlines()
+            objects_list.append(len(obj)-1)
+        num_obj = sum(objects_list)
+        print("There are {} objects in total.".format(num_obj))
+
+    def num_ins(self):
+        objects = os.listdir(settings.OBJECTS_PATH)
+        objects.sort(key=lambda x: x[:-4])
+        instance_list = []
+
+        for img in objects:
+            obj_path = os.path.join(os.path.abspath(settings.OBJECTS_PATH), img)
+            obj = open(obj_path, 'r').readlines()
+            ins = []
+            for idx in range(len(obj)):
+                ins.append(obj[idx].split('_')[0])
+            instance_list.append(ins)
+        flattened_instance_list = []
+        for x in instance_list:
+            for y in x:
+                flattened_instance_list.append(y)
+        final_list = set(flattened_instance_list)
+        count = 0
+        for item in final_list:
+            if item != '':
+                count += 1
+
+        f = open('class.txt', 'w')
+        for item in final_list:
+            line = item + '\n'
+            f.write(line)
+        f.close()
+        print("There are {} object classes in total.".format(count))
+
 
 if __name__ == '__main__':
    print('waiting...')
    cpp = common_prepro()
+   cpp.imgfuse()
+   #cpp.num_obj()
+   #cpp.num_ins()
+   #cpp.multicube_to_train()
+   #cpp.multicube_to_test()
    #cpp.resize()
-   cpp.lst_test()
+   #cpp.lst_train()

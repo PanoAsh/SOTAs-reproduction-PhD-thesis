@@ -11,7 +11,7 @@ DATASET_PATH_BROWSER = os.path.join(PROJECT_ROOT, 'data', 'browser')
 MAP_PATH = os.path.join(PROJECT_ROOT, 'data', 'show_map_')
 IOC_PATH = os.path.join(PROJECT_ROOT, 'data', 'IOC_')
 IOC_PATH_TT = os.path.join(PROJECT_ROOT, 'data', 'IOC.txt')
-SALIENCY_PATH = os.path.join(PROJECT_ROOT, 'saliency')
+SALIENCY_PATH = os.path.join(PROJECT_ROOT, 'fixations_map')
 ENTROPY_PATH = os.path.join(PROJECT_ROOT, 'Entropy.txt')
 
 L_PATH_RAW = PROJECT_ROOT + '/fixpos/scanpath_nante/L/'
@@ -19,7 +19,7 @@ R_PATH_RAW = PROJECT_ROOT + '/fixpos/scanpath_nante/R/'
 L_PATH_TGT = PROJECT_ROOT + '/fixpos/fixations/L/'
 R_PATH_TGT = PROJECT_ROOT + '/fixpos/fixations/R/'
 
-CMP_PATH = PROJECT_ROOT + '/cubemaps/'
+CMP_PATH = PROJECT_ROOT + '/scrn/scrn_30_stf/'
 ERP_PATH = PROJECT_ROOT + '/stimulis/'
 
 TRAIN_TXT_PATH = PROJECT_ROOT + '/train.txt'
@@ -39,7 +39,7 @@ PANOISOD_MSK_TEST_PATH = PROJECT_ROOT + '/360ISOD_msk_test/'
 IOC_2_PATH_TT = PROJECT_ROOT + '/IOC_Nantes_total.txt'
 IOC_2_PATH = PROJECT_ROOT + '/IOC_'
 
-HEAT_PATH = PROJECT_ROOT + '/heatmap/'
+HEAT_PATH = PROJECT_ROOT + '/heatmaps/'
 
 IOC_LOAD_PATH = PROJECT_ROOT + '/IOC.txt'
 IOC_NTS_LOAD_PATH = PROJECT_ROOT + '/IOC_nantes.txt'
@@ -47,6 +47,8 @@ IOC_STF_LOAD_PATH = PROJECT_ROOT + '/IOC_stanford.txt'
 
 TRAIN_PAIR_LST_PATH = PROJECT_ROOT + '/train_pair.lst'
 TEST_LST_PATH = PROJECT_ROOT + '/test.lst'
+
+OBJECTS_PATH = PROJECT_ROOT + '/texts/'
 
 # Default of the 360ISOD dataset
 width_360ISOD = 2048
