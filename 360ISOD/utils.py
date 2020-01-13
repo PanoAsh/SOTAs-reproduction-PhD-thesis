@@ -301,17 +301,58 @@ class common_prepro():
             if item != '':
                 count += 1
 
-        f = open('object.txt', 'w')
+        f = open('object_name.txt', 'w')
         count_2 = 0
         for obj, num in class_list.items():
             count_2 += num
-            line = obj + ' ' + str(num) + '\n'
+            line = obj + '\n'
+            f.write(line)
+        f.close()
+
+        f = open('object_number.txt', 'w')
+        count_2 = 0
+        for obj, num in class_list.items():
+            count_2 += num
+            line = str(num) + '\n'
             f.write(line)
         f.close()
 
        # print("There are {} objects in total.".format(len(flattened_instance_list)-107))
         print("There are {} objects in total.".format(count_2 - 107))
         print("There are {} object classes in total.".format(count))
+
+    def obj_stt(self):
+        obj_ids = open('object_name.txt')
+        obj_num = open('object_number.txt')
+        clss = open('CLASS.txt')
+
+        obj_ids_list = []
+        obj_num_list = []
+        clss_list = []
+        for item in obj_ids:
+            obj_ids_list.append(item)
+        for item in obj_num:
+            obj_num_list.append(item)
+        for item in clss:
+            clss_list.append(item)
+
+        ids_H = [i for i, x in enumerate(clss_list) if x == "H\r\n"]
+        ids_AW = [i for i, x in enumerate(clss_list) if x == "AW\r\n"]
+        ids_V = [i for i, x in enumerate(clss_list) if x == "V\r\n"]
+        ids_AR = [i for i, x in enumerate(clss_list) if x == "AR\r\n"]
+        ids_DS = [i for i, x in enumerate(clss_list) if x == "DS\r\n"]
+        ids_T = [i for i, x in enumerate(clss_list) if x == "T\r\n"]
+        ids_AN = [i for i, x in enumerate(clss_list) if x == "AN\r\n"]
+
+
+        num_cls = 0
+        for ids in range(len(ids_V)):
+            num = obj_num_list[ids_V[ids]]
+            num = int(num[:-1])
+            num_cls += num
+
+        print()
+
 
 
 class file_arrangement():
@@ -413,7 +454,8 @@ if __name__ == '__main__':
    cpp = common_prepro()
    #cpp.imgfuse()
    #cpp.num_obj()
-   cpp.num_ins()
+   #cpp.num_ins()
+   cpp.obj_stt()
    #cpp.multicube_to_train()
    #cpp.multicube_to_test()
    #cpp.resize()
