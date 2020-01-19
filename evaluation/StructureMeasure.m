@@ -32,7 +32,12 @@ elseif(y==1)%if the GT is completely white
     x = mean2(prediction);
     Q = x; %only calcualte the area of intersection
 else
-    alpha = 0.5;
+   alpha = 0.7;
+   %alpha = 0.5;
+    
+    %region_score = S_region(prediction,GT);
+    %object_score = S_object(prediction,GT);
+    
     Q = alpha*S_object(prediction,GT)+(1-alpha)*S_region(prediction,GT);
     
     if (Q<0)

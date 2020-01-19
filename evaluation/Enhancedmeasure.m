@@ -65,5 +65,3 @@ end
 function enhanced = EnhancedAlignmentTerm(align_Matrix)
 enhanced = ((align_Matrix + 1).^2)/4;
 end
-
-

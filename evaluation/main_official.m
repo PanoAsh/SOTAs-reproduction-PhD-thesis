@@ -4,14 +4,27 @@ clear all; close all; %clc;
 
 CACHE = 'cache/';
 
-DS = { '360ISOD'}; %, 'SOCTE'
+DS = {'ECSSD', 'PASCAL-S', 'HKU-IS', 'DUTSTE' ,'SOD', 'DUT'}; %, 'SOCTE'
 
 %%
-MD_ALL = {'360ISOD'
+MD_ALL = {'AMU17','BDMP','C2S','DCL16','DGRL',...
+          'DHS','DLS2017','DS16','DSS17','ELD16',...
+          'FSN17','GT','HS','KSR16','LEGS',...
+          'MCDL','MDF15','MSRNet','NLDF17','PAGRN18',...
+          'PiCANet','PiCANet-C','PiCANet-R','PiCANet-RC','RADF',...
+          'RAS','RFCN','SRM17','UCF17','wCtr',...
+          'CRPSD', 'DRFI','MAP','SBF','ASNet',...
+          'RSD-r', 'WSS'
          };
      
-postfix={'.png'...{'360ISOD'}
-        
+postfix={'.png', '.jpg', '.png', '_dcl_crf.png', '.png',...{'AMU17','BDMP','C2S','DCL16','DGRL'}
+         '.png', '.png', '.png', '_dss_crf.png', '_ELD.png',...{'DHS','DLS2017','DS16','DSS17','ELD16'}
+         '.png', '.png', '_HS.png', '.png', '.png',...{'FSN17','GT','HS','KSR16','LEGS'}
+         '.png', '_MDF.png', '.png', '_NLDF.png', '.png',...{'MCDL','MDF15','MSRNet','NLDF17','PAGRN18'}
+         '.png', '.png', '.png', '.png', '.jpg',...{'PiCANet','PiCANet-C','PiCANet-R','PiCANet-RC','RADF'}
+         '_ras.png', '.jpg', '.png', '.png', '_wCtr_Optimized.png',...{'RAS','RFCN','SRM17','UCF17','wCtr'}
+         '_CRPSD.png','.png','.png','.png','.png', ...{'CRPSD', 'DRFI','MAP','SBF','ASNet'}
+         '.png', '.png' ...{'RSD-r', 'WSS'}
         }; 
 % 37 - 3 - 1 - 1 = 32
 
@@ -25,7 +38,10 @@ targetIsHigh = true;
 
 for midx=1:length(MD_ALL),
     method = MD_ALL{midx};
-    
+    if isequal(method, 'GT')||isequal(method, 'PiCANet')...
+            ||isequal(method, 'PiCANet-C')||isequal(method, 'PiCANet-R')
+        continue;
+    end
     for didx=1:length(DS),
         dataset = DS{didx};
         
@@ -33,9 +49,9 @@ for midx=1:length(MD_ALL),
             load([CACHE, sprintf('%s_%s.mat',method, dataset)]);
         else
             % path of ground truth maps
-            gtPath = '/home/yzhang1/MatlabProjects/360ISOD_evaluation/gt';
+            gtPath = ['G:/DataSets/Salienct_Object/' dataset '/masks/'];
             % path where prediction results are stored
-            salPath = '/home/yzhang1/MatlabProjects/360ISOD_evaluation/predicted';
+            salPath = ['G:/DataSets/Salienct_Object/Results/' dataset '/' method '/'];
             
             if ~exist(salPath, 'dir')
                 fprintf('%s %s not exist.\n', dataset, method);
@@ -54,35 +70,34 @@ for midx=1:length(MD_ALL),
 
             %% evaluation score initilization.
             Smeasure=zeros(1,imgNUM)-1;
-            Emeasure=zeros(1,imgNUM)-1;
-            E_curve = zeros(imgNUM,256)-1;
+%             Emeasure=zeros(1,imgNUM)-1;
             MAE=zeros(1,imgNUM)-1;
-            wFmeasure=zeros(1,imgNUM)-1;
 
             %% calculate MAE and Smeasure
             tic;
-            for i = 1:imgNUM   
-                
+            for i = 1:imgNUM
 
     %             fprintf('Evaluating: %d/%d\n',i,imgNUM);
 
                 gt_name =  imgFiles(i+2).name;
                 sal_name =  replace(imgFiles(i+2).name,'.png', postfix{midx});
-               
+                if ~exist([salPath sal_name], 'file')
+                    continue;
+                end
 
                 %load gt
-                gt = imread(fullfile(gtPath, gt_name));
-                
+                gt = imread([gtPath gt_name]);
+
                 if numel(size(gt))>2
                     gt = rgb2gray(gt);
                 end
                 
                 if ~islogical(gt)
-                    gt = gt(:,:,1) > 128; % [0,255] to [0,1]
+                    gt = gt(:,:,1) > 128;
                 end
                 
                 %load salency
-                sal  = imread(fullfile(salPath, sal_name));
+                sal  = imread([salPath sal_name]);
                 MAE(i) = CalMAE(sal, gt);
                 
                 %check size
@@ -98,91 +113,49 @@ for midx=1:length(MD_ALL),
                 %normalize sal to [0, 1]
                 sal = reshape(mapminmax(sal(:)',0,1),size(sal));
 
-                Smeasure(i) = StructureMeasure(sal,logical(gt)); 
-                
-                wFmeasure(i) = weightFmeasure(sal,logical(gt));
-          
+                Smeasure(i) = StructureMeasure(sal,logical(gt));               
+
                 %You can change the method of binarization method. As an example, here just use adaptive threshold.
-                threshold =  2* mean(sal(:)) ;
-                if ( threshold > 1 )
-                    threshold = 1;
-                end
-                Bi_sal = zeros(size(sal));
-                Bi_sal(sal>threshold)=1;
-                Emeasure(i) = Enhancedmeasure(Bi_sal,gt);
-                
-                % caculate the e_measure at multiple thresholds
-                for thr_e = 1:256
-                    threshold = (thr_e - 1) / 255;
-                    if ( threshold > 1 )
-                        threshold = 1;
-                    end
-                    Bi_sal = zeros(size(sal));
-                    Bi_sal(sal>threshold)=1;
-                    E_curve(i,thr_e) = Enhancedmeasure(Bi_sal,gt);
-                end 
-                 
-                % to debug
-                %gt_show = [gt_name(1:3) '.jpg'];
-                %imwrite(gt, gt_show);
-                %sal_show = [sal_name(1:3) '_MAE_' num2str(MAE(i)) '_S_' num2str(Smeasure(i)) '_E_' num2str(Emeasure(i)) '_wF_' num2str(wFmeasure(i)) '.png'];
-                %imwrite(sal, sal_show);
-                
-                disp(i);
-                
+            %     threshold =  2* mean(sal(:)) ;
+            %     if ( threshold > 1 )
+            %         threshold = 1;
+            %     end
+            %     Bi_sal = zeros(size(sal));
+            %     Bi_sal(sal>threshold)=1;
+            %     Emeasure(i) = Enhancedmeasure(Bi_sal,gt);
+
             end
 
             toc;
 
             %%
             Smeasure(Smeasure==-1) = [];
-         
-            wFmeasure(wFmeasure==-1) = [];
-            
-            Emeasure(Emeasure==-1) = [];
-            
+%             Emeasure(Emeasure==-1) = [];
             MAE(MAE==-1) = [];
             
             %%
             Sm = mean2(Smeasure);
             Fm = max(F_curve);
-            Em = mean2(Emeasure); 
+            % Em = mean2(Emeasure);
             mae = mean2(MAE);
-            wFm = mean2(wFmeasure);
 
             Sm_std = std2(Smeasure);
-            Em_std = std2(Emeasure);
+            % Em_std = std2(Emeasure);
             mae_std = std2(MAE);
-            wFm_std = std2(wFmeasure);
-            
-            % output the F-measure curve
-            fid = fopen('f_measure.txt', 'w');
-            for row = 1:length(F_curve)
-                fprintf(fid, '%s\n', F_curve(row));
-            end
-            fclose(fid);
-            
-            % output the E-measure curve
-            fid = fopen('e_measure.txt', 'w');
-            multi_Em = mean(E_curve);
-            for r = 1:length(multi_Em)
-                fprintf(fid, '%s\n', multi_Em(r));
-            end
-            fclose(fid);
             
             %%
-            if (~isnan(Fm)||~isnan(mae))||~isnan(Sm)||~isnan(Em)||~isnan(wFm)               
+            if (~isnan(Fm)||~isnan(mae))||~isnan(Sm)               
                 save([CACHE, sprintf('%s_%s.mat',method, dataset)], ...
-                    'Fm', 'Sm', 'Sm_std', 'mae', 'mae_std', 'Em', 'Em_std', 'wFm', 'wFm_std');
+                    'Fm', 'Sm', 'Sm_std', 'mae', 'mae_std');
                 save([CACHE, sprintf('%s_%s_all.mat',method, dataset)], ...
-                    'F_curve', 'Smeasure', 'MAE', 'Emeasure', 'wFmeasure');
+                    'F_curve', 'Smeasure', 'MAE');
             end
             
         end
 %         fprintf('(%s %s Dataset) Fmeasure: %.3f; Smeasure: %.3f+%.3f; MAE: %.3f+%.3f\n', ...
 %             method, dataset, Fm, Sm, Sm_std, mae, mae_std);
-        fprintf('(%s %s Dataset) Fmeasure: %.3f; Smeasure: %.3f; MAE: %.3f; Emeasure: %.3f; wFmeasure: %.3f\n', ...
-            method, dataset, Fm, Sm, mae, Em, wFm);
+        fprintf('(%s %s Dataset) Fmeasure: %.3f; Smeasure: %.3f; MAE: %.3f\n', ...
+            method, dataset, Fm, Sm, mae);
 
     end
 end
