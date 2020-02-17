@@ -1,11 +1,28 @@
 import os
 import cv2
 import numpy as np
+from scipy import ndimage
 
-# parameters
+# parameters (to generate overlays)
+genOverlay = 1
+
+frm_interval = 10
+
 Width = 3840
-Height= 2160
-Fps = 25
+Height= 2048
+Fps = 30
+
+auto_oly = 1
+seq2frm = 0
+frm2oly_2 = 0
+frm2oly = 0
+oly2vid = 0
+
+# parameters (vr_scene)
+vr_scene = 0
+seq_height = 300 # to save space and time
+seq_width = 600
+
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -15,6 +32,7 @@ class PanoVSOD_stts():
         self.path_syn = os.getcwd() + '/synthetic_video.avi'
         self.path_oly = os.getcwd() + '/overlays/'
         self.path_fix = os.getcwd() + '/fixations/' # one by one
+        self.path_FM = os.getcwd() + '/fixation_maps/'
 
     def num_frames_count(self):
         seq_list = os.listdir(self.path_sor)
@@ -82,6 +100,7 @@ class PanoVSOD_stts():
             oly_path = os.path.join(os.path.abspath(self.path_oly), frm_list[idx])
 
             fix = np.load(fix_path)
+
             fix = fix[:, :, np.newaxis]
             fixation = []
             for i in range(3):
@@ -97,15 +116,173 @@ class PanoVSOD_stts():
             cv2.imwrite(oly_path, overlay)
             print("{} frames processed".format(idx + 1))
 
+    def fixation_overlay_2(self):
+        frm_list = os.listdir(self.path_frm)
+        frm_list.sort(key=lambda x: x[:-4])
+        fix_list = np.load(os.getcwd() + '/003.npy')
+
+        for idx in range(len(frm_list)):
+            frm_path = os.path.join(os.path.abspath(self.path_frm), frm_list[idx])
+            oly_path = os.path.join(os.path.abspath(self.path_oly), frm_list[idx])
+
+            fix = fix_list[:, :, idx]
+            fix = self.gaussian_smooth(fix, 2 * seq_width / 360)
+            fix = fix[:, :, np.newaxis]
+            fixation = []
+            for i in range(3):
+                fixation.append(fix)
+            fixation = np.concatenate(fixation, axis=2)
+            fixation = cv2.resize(fixation, (Width, Height))
+            fixation = cv2.normalize(fixation, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+            fixation = cv2.applyColorMap(fixation, cv2.COLORMAP_JET)
+
+            image = cv2.imread(frm_path)
+
+            overlay = cv2.addWeighted(image, 1, fixation, 1, 0)
+            cv2.imwrite(oly_path, overlay)
+            print("{} frames processed".format(idx + 1))
+
+    def gaussian_smooth(self, fix, sigma_y):
+        salmap = ndimage.filters.gaussian_filter1d(fix, sigma=sigma_y, mode='wrap', axis=0)
+
+        # In x-direction, we scale the radius of the gaussian kernel the closer we get to the pole
+        for row in range(salmap.shape[0]):
+            angle = (row / float(salmap.shape[0]) - 0.5) * np.pi
+            sigma_x = sigma_y / (np.cos(angle) + 1e-3)
+            salmap[row, :] = ndimage.filters.gaussian_filter1d(salmap[row, :], sigma=sigma_x, mode='wrap')
+
+        salmap /= float(np.sum(salmap))
+
+        return salmap
+
+    def vrs_txt_rename(self):
+        txt_path = os.getcwd() + '/txt_fixations/'
+        sbj_list = os.listdir(os.getcwd() + '/source_fixations/')
+        sbj_list.sort(key=lambda x: x)
+
+        count_sbj = 0
+        for sbj in sbj_list:
+            sbj_path = os.path.join(os.getcwd(), 'source_fixations', sbj)
+            txt_list = os.listdir(sbj_path)
+            txt_list.sort(key=lambda x: x)
+
+            for item in txt_list:
+                if item.endswith('.txt'):
+                    item_list = item.split('_')
+                    new_item = item_list[0] + '_' + sbj + '_' + item_list[1]
+                    src = os.path.join(sbj_path, item)
+                    dst = os.path.join(txt_path, new_item + '.txt')
+                    try:
+                        os.rename(src, dst)
+                        print('converting %s to %s ...' % (src, dst))
+                    except:
+                        continue
+
+            count_sbj += 1
+            print("{} subjects processed.".format(count_sbj))
+
+    def vrs_coor(self):
+        seq_list = os.listdir(self.path_sor)
+        seq_list.sort(key=lambda x: x[:-4])
+
+        txt_list = os.listdir(os.getcwd() + '/txt_fixations/')
+        txt_list.sort(key=lambda x: x)
+
+        count_seq = 0
+        for seq in seq_list:
+            seq_file = cv2.VideoCapture(self.path_sor + '/' + seq)
+            #seq_width = int(seq_file.get(3))
+            #seq_height = int(seq_file.get(4))
+            seq_frm = int(seq_file.get(7))
+            seq_fix = np.zeros((seq_height, seq_width, seq_frm))
+            seq_idx = seq[:3]
+
+            count_txt = 0
+            for txt in txt_list:
+                if txt[:3] == seq_idx:
+                    txt_fix = np.genfromtxt(os.path.join(os.getcwd() + '/txt_fixations/' + txt), dtype='str',  delimiter=',')
+                    num_fix = txt_fix.shape[0]
+                    if num_fix > seq_frm:
+                        num_judge = seq_frm
+                    else:
+                        num_judge = num_fix
+                    for idx in range(num_judge):
+                        coor_x = int(float(txt_fix[idx, 6]) * seq_width)
+                        coor_y = int(float(txt_fix[idx, 7]) * seq_height)
+                        coordH = seq_height - coor_y
+                        idx_frm = int(txt_fix[idx, 1]) - 1
+                        if coordH >= seq_height:
+                            continue
+                        elif idx_frm >= seq_frm:
+                            continue
+                        elif coor_x >= seq_width:
+                            continue
+                        else:
+                            seq_fix[coordH, coor_x, idx_frm] = 1
+
+                    count_txt += 1
+                    print("{} txt files processed.".format(count_txt))
+
+            np.save(os.getcwd() + '/' + seq[:3] + '.npy', seq_fix)
+            count_seq += 1
+            print("{} videos processed.".format(count_seq))
+
+    def auto_oly_vid(self):
+        FM_list = os.listdir(self.path_FM)
+        FM_list.sort(key=lambda x: x[:-4])
+
+        for item in FM_list:
+            seq_path = self.path_sor + item[:3] + '.mp4'
+            seq_item = cv2.VideoCapture(seq_path)
+            seq_width = int(seq_item.get(3))
+            seq_height = int(seq_item.get(4))
+            seq_frm = int(seq_item.get(7))
+            item_npy = np.load(os.getcwd() + '/fixation_maps/' + item)
+
+            for idx in range(numFrame):
+                if (idx + 1) % frm_interval == 0:
+                    idx_npy = item_npy[:, :, idx]
+
+                    idx_npy = self.gaussian_smooth(idx_npy, 2 * seq_width / 360)
+                    idx_npy = idx_npy[:, :, np.newaxis]
+                    fixation = []
+                    for i in range(3):
+                        fixation.append(idx_npy)
+                    fixation = np.concatenate(fixation, axis=2)
+                    fixation = cv2.resize(fixation, (Width, Height))
+                    fixation = cv2.normalize(fixation, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
+                                             dtype=cv2.CV_8UC1)
+                    fixation = cv2.applyColorMap(fixation, cv2.COLORMAP_JET)
+
+                    image = cv2.imread(frm_path)
+
+                    overlay = cv2.addWeighted(image, 1, fixation, 1, 0)
+                    cv2.imwrite(oly_path, overlay)
+                    print("{} frames processed".format(idx + 1))
+
 
 if __name__ == '__main__':
     pvsod = PanoVSOD_stts()
 
-   # nFrames = pvsod.num_frames_count()
+    #nFrames = pvsod.num_frames_count()
     #print("There are totally {} frames.".format(nFrames))
 
-    # generate the frames
-    #pvsod.VideoToImg()
+    if genOverlay == 1:
+        if seq2frm == 1:
+            pvsod.VideoToImg()
 
-    pvsod.fixation_overlay()
-    pvsod.ImgToVideo()
+        if frm2oly == 1:
+            pvsod.fixation_overlay()
+
+        if frm2oly_2 == 1:
+            pvsod.fixation_overlay_2()
+
+        if oly2vid == 1:
+            pvsod.ImgToVideo()
+
+        if auto_oly == 1:
+            pvsod.auto_oly_vid()
+
+    if vr_scene == 1:
+        #pvsod.vrs_txt_rename()
+        pvsod.vrs_coor()
