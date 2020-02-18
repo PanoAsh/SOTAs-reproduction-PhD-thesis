@@ -22,7 +22,7 @@ seq_width = 600
 
 # auto overlay
 auto_oly = 1
-frm_interval = 5
+frm_interval = 2
 pixel_shift = 20
 
 class PanoVSOD_stts():
@@ -255,6 +255,8 @@ class PanoVSOD_stts():
                 if (idx + 1) % frm_interval == 0:
                     seq_item.set(1, idx)
                     ret, frame = seq_item.read()
+                    if ret == False:
+                        continue
 
                     # find the corresponding w/wo sound fixation maps
                     npy_wo_path = fix_wo_path + '/' + fix_wo_files[idx]
@@ -290,8 +292,8 @@ class PanoVSOD_stts():
                     # write the current key frame
                     oly_vid.write(overlay)
 
-                    count_frm += 1
-                    print("{} frames processed.".format(count_frm))
+                count_frm += 1
+                print("{} frames processed.".format(count_frm))
 
             count_seq += 1
             print("{} videos processed.".format(count_seq))
