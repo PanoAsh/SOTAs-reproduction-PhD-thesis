@@ -22,7 +22,7 @@ seq_width = 600
 
 # auto overlay
 auto_oly = 1
-frm_interval = 2
+frm_interval = 10
 pixel_shift = 20
 
 class PanoVSOD_stts():
