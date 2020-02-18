@@ -4,15 +4,12 @@ import numpy as np
 from scipy import ndimage
 
 # parameters (to generate overlays)
-genOverlay = 1
-
-frm_interval = 10
+genOverlay = 0
 
 Width = 3840
 Height= 2048
 Fps = 30
 
-auto_oly = 1
 seq2frm = 0
 frm2oly_2 = 0
 frm2oly = 0
@@ -20,9 +17,13 @@ oly2vid = 0
 
 # parameters (vr_scene)
 vr_scene = 0
-seq_height = 300 # to save space and time
+seq_height = 300
 seq_width = 600
 
+# auto overlay
+auto_oly = 1
+frm_interval = 5
+pixel_shift = 20
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -228,37 +229,74 @@ class PanoVSOD_stts():
             print("{} videos processed.".format(count_seq))
 
     def auto_oly_vid(self):
-        FM_list = os.listdir(self.path_FM)
-        FM_list.sort(key=lambda x: x[:-4])
+        seq_list = os.listdir(os.getcwd() + '/stimulis/')
+        seq_list.sort(key=lambda x: x[:-4])
 
-        for item in FM_list:
-            seq_path = self.path_sor + item[:3] + '.mp4'
-            seq_item = cv2.VideoCapture(seq_path)
+        count_seq = 0
+        for item in seq_list:
+            fix_wo_path = os.path.join(os.getcwd() + '/fixation_wo_sound/', item[:3])
+            fix_wo_files = os.listdir(fix_wo_path)
+            fix_wo_files.sort(key=lambda x: x[:-4])
+            fix_w_path = os.path.join(os.getcwd() + '/fixation_w_sound/', item[:3])
+            fix_w_files = os.listdir(fix_w_path)
+            fix_w_files.sort(key=lambda x: x[:-4])
+
+            seq_item = cv2.VideoCapture(os.getcwd() + '/stimulis/' + item)
             seq_width = int(seq_item.get(3))
             seq_height = int(seq_item.get(4))
-            seq_frm = int(seq_item.get(7))
-            item_npy = np.load(os.getcwd() + '/fixation_maps/' + item)
+            seq_fps = int(seq_item.get(5)) + 1
+            seq_numFrm = int(seq_item.get(7))
 
-            for idx in range(numFrame):
+            oly_vid_path = os.getcwd() + '/' + item[:3] + '.avi'
+            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width, seq_height))
+
+            count_frm = 0
+            for idx in range(seq_numFrm):
                 if (idx + 1) % frm_interval == 0:
-                    idx_npy = item_npy[:, :, idx]
+                    seq_item.set(1, idx)
+                    ret, frame = seq_item.read()
 
-                    idx_npy = self.gaussian_smooth(idx_npy, 2 * seq_width / 360)
-                    idx_npy = idx_npy[:, :, np.newaxis]
-                    fixation = []
+                    # find the corresponding w/wo sound fixation maps
+                    npy_wo_path = fix_wo_path + '/' + fix_wo_files[idx]
+                    fix_wo = np.load(npy_wo_path)
+                    fix_wo = np.roll(fix_wo, -1 * pixel_shift, axis=1) # left shift 20 pixels
+                    npy_w_path = fix_w_path + '/' + fix_w_files[idx]
+                    fix_w = np.load(npy_w_path)
+                    fix_w = np.roll(fix_w, -1 * pixel_shift, axis=1)  # left shift 20 pixels
+
+                    # overlay two fixation maps to the current key frame
+                    fix_wo = fix_wo[:, :, np.newaxis]
+                    fixation_wo = []
                     for i in range(3):
-                        fixation.append(idx_npy)
-                    fixation = np.concatenate(fixation, axis=2)
-                    fixation = cv2.resize(fixation, (Width, Height))
-                    fixation = cv2.normalize(fixation, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
+                        fixation_wo.append(fix_wo)
+                    fixation_wo = np.concatenate(fixation_wo, axis=2)
+                    fixation_wo = cv2.resize(fixation_wo, (seq_width, seq_height))
+                    fixation_wo = cv2.normalize(fixation_wo, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                              dtype=cv2.CV_8UC1)
-                    fixation = cv2.applyColorMap(fixation, cv2.COLORMAP_JET)
+                    fixation_wo = cv2.applyColorMap(fixation_wo, cv2.COLORMAP_OCEAN)
+                    fix_w = fix_w[:, :, np.newaxis]
+                    fixation_w = []
+                    for i in range(3):
+                        fixation_w.append(fix_w)
+                    fixation_w = np.concatenate(fixation_w, axis=2)
+                    fixation_w = cv2.resize(fixation_w, (seq_width, seq_height))
+                    fixation_w = cv2.normalize(fixation_w, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
+                                                dtype=cv2.CV_8UC1)
+                    fixation_w = cv2.applyColorMap(fixation_w, cv2.COLORMAP_HOT)
 
-                    image = cv2.imread(frm_path)
+                    heatmap = cv2.addWeighted(fixation_wo, 1, fixation_w, 1, 0)
+                    overlay = cv2.addWeighted(frame, 0.5, heatmap, 1, 0)
 
-                    overlay = cv2.addWeighted(image, 1, fixation, 1, 0)
-                    cv2.imwrite(oly_path, overlay)
-                    print("{} frames processed".format(idx + 1))
+                    # write the current key frame
+                    oly_vid.write(overlay)
+
+                    count_frm += 1
+                    print("{} frames processed.".format(count_frm))
+
+            count_seq += 1
+            print("{} videos processed.".format(count_seq))
+
+            oly_vid.release()
 
 
 if __name__ == '__main__':
@@ -280,9 +318,9 @@ if __name__ == '__main__':
         if oly2vid == 1:
             pvsod.ImgToVideo()
 
-        if auto_oly == 1:
-            pvsod.auto_oly_vid()
-
     if vr_scene == 1:
         #pvsod.vrs_txt_rename()
         pvsod.vrs_coor()
+
+    if auto_oly == 1:
+        pvsod.auto_oly_vid()
