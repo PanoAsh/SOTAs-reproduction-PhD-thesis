@@ -2,6 +2,8 @@ import os
 import cv2
 import numpy as np
 from scipy import ndimage
+import stts_utils as utils
+
 
 # parameters (to generate overlays)
 genOverlay = 0
@@ -22,8 +24,12 @@ seq_width = 600
 
 # auto overlay
 auto_oly = 1
-frm_interval = 10
-pixel_shift = 20
+frm_interval = 1
+pixel_shift_lat = 18
+pixel_shift_lon = 0
+bool_rescale = False
+bool_shift = True
+
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -229,25 +235,24 @@ class PanoVSOD_stts():
             print("{} videos processed.".format(count_seq))
 
     def auto_oly_vid(self):
-        seq_list = os.listdir(os.getcwd() + '/stimulis/')
-        seq_list.sort(key=lambda x: x[:-4])
+        file_ids = os.listdir(os.getcwd() + '/test/')
 
         count_seq = 0
-        for item in seq_list:
-            fix_wo_path = os.path.join(os.getcwd() + '/fixation_wo_sound/', item[:3])
+        for id in file_ids:
+            fix_wo_path = os.path.join(os.getcwd() + '/fixations_wo_sound/', id)
             fix_wo_files = os.listdir(fix_wo_path)
             fix_wo_files.sort(key=lambda x: x[:-4])
-            fix_w_path = os.path.join(os.getcwd() + '/fixation_w_sound/', item[:3])
+            fix_w_path = os.path.join(os.getcwd() + '/fixations_w_sound/', id)
             fix_w_files = os.listdir(fix_w_path)
             fix_w_files.sort(key=lambda x: x[:-4])
 
-            seq_item = cv2.VideoCapture(os.getcwd() + '/stimulis/' + item)
+            seq_item = cv2.VideoCapture(os.getcwd() + '/source_videos/' + id + '.mp4')
             seq_width = int(seq_item.get(3))
             seq_height = int(seq_item.get(4))
             seq_fps = int(seq_item.get(5)) + 1
             seq_numFrm = int(seq_item.get(7))
 
-            oly_vid_path = os.getcwd() + '/' + item[:3] + '.avi'
+            oly_vid_path = os.getcwd() + '/' + id + '.avi'
             oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width, seq_height))
 
             count_frm = 0
@@ -258,30 +263,73 @@ class PanoVSOD_stts():
                     if ret == False:
                         continue
 
-                    # find the corresponding w/wo sound fixation maps
+                    # find the corresponding w/wo sound fixation maps + shifting
                     npy_wo_path = fix_wo_path + '/' + fix_wo_files[idx]
                     fix_wo = np.load(npy_wo_path)
-                    fix_wo = np.roll(fix_wo, -1 * pixel_shift, axis=1) # left shift 20 pixels
                     npy_w_path = fix_w_path + '/' + fix_w_files[idx]
                     fix_w = np.load(npy_w_path)
-                    fix_w = np.roll(fix_w, -1 * pixel_shift, axis=1)  # left shift 20 pixels
 
-                    # overlay two fixation maps to the current key frame
+                    # overlay two fixation maps to the current key frame + rescale
+                    pixel_pad = int((seq_height - seq_width / 2) / 2)
+
+                    # without sound
                     fix_wo = fix_wo[:, :, np.newaxis]
                     fixation_wo = []
                     for i in range(3):
                         fixation_wo.append(fix_wo)
                     fixation_wo = np.concatenate(fixation_wo, axis=2)
-                    fixation_wo = cv2.resize(fixation_wo, (seq_width, seq_height))
+
+                    if bool_shift == True:
+                        fixation_wo = np.roll(fixation_wo, pixel_shift_lon, axis=0)  # shifting down
+                        fixation_wo[:pixel_shift_lon, :, :] = 0
+                        cmp = utils.e2c(fixation_wo, int(600 / 4))
+                        cmp[0] = np.roll(cmp[0], -1 * pixel_shift_lat, axis=1)  # shifting left
+                        cmp[0][:, (-1 * pixel_shift_lat):, :] = 0
+                        cmp[1] = np.roll(cmp[1], pixel_shift_lat, axis=1)  # shifting right
+                        cmp[1][:, :pixel_shift_lat, :] = 0
+                        cmp[3] = np.roll(cmp[3], int((-1 * pixel_shift_lat) / 2), axis=1)  # shifting left
+                        cmp[3][:, int((-1 * pixel_shift_lat) / 2):, :] = 0
+                        cmp[4] = np.roll(cmp[4], int((-1 * pixel_shift_lat) / 2), axis=1)  # shifting left
+                        cmp[4][:, int((-1 * pixel_shift_lat) / 2):, :] = 0
+                        fixation_wo = utils.c2e(cmp, 300, 600)
+
+                    if bool_rescale == True:
+                        fix_wo = cv2.resize(fix_wo, (seq_width, int(seq_width / 2))) # resize to normal size (ratio of 1:2)
+                        fix_wo = np.pad(fix_wo, ((pixel_pad, pixel_pad), (0, 0)), 'constant') # padding (top, bottom, left, right)
+                    else:
+                        fixation_wo = cv2.resize(fixation_wo, (seq_width, seq_height))
+
                     fixation_wo = cv2.normalize(fixation_wo, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                              dtype=cv2.CV_8UC1)
                     fixation_wo = cv2.applyColorMap(fixation_wo, cv2.COLORMAP_OCEAN)
+
+                    # with sound
                     fix_w = fix_w[:, :, np.newaxis]
                     fixation_w = []
                     for i in range(3):
                         fixation_w.append(fix_w)
                     fixation_w = np.concatenate(fixation_w, axis=2)
-                    fixation_w = cv2.resize(fixation_w, (seq_width, seq_height))
+
+                    if bool_shift == True:
+                        fixation_w = np.roll(fixation_w, pixel_shift_lon, axis=0)  # shifting down
+                        fixation_w[:pixel_shift_lon, :, :] = 0
+                        cmp = utils.e2c(fixation_w, int(600 / 4))
+                        cmp[0] = np.roll(cmp[0], -1 * pixel_shift_lat, axis=1)  # shifting left
+                        cmp[0][:, (-1 * pixel_shift_lat):, :] = 0
+                        cmp[1] = np.roll(cmp[1], pixel_shift_lat, axis=1)  # shifting right
+                        cmp[1][:, :pixel_shift_lat, :] = 0
+                        cmp[3] = np.roll(cmp[3], int((-1 * pixel_shift_lat) / 2), axis=1)  # shifting left
+                        cmp[3][:, int((-1 * pixel_shift_lat) / 2):, :] = 0
+                        cmp[4] = np.roll(cmp[4], int((-1 * pixel_shift_lat) / 2), axis=1)  # shifting left
+                        cmp[4][:, int((-1 * pixel_shift_lat) / 2):, :] = 0
+                        fixation_w = utils.c2e(cmp, 300, 600)
+
+                    if bool_rescale == True:
+                        fix_w = cv2.resize(fix_w, (seq_width, int(seq_width / 2)))
+                        fix_w = np.pad(fix_w, ((pixel_pad, pixel_pad), (0, 0)), 'constant')
+                    else:
+                        fixation_w = cv2.resize(fixation_w, (seq_width, seq_height))
+
                     fixation_w = cv2.normalize(fixation_w, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                                 dtype=cv2.CV_8UC1)
                     fixation_w = cv2.applyColorMap(fixation_w, cv2.COLORMAP_HOT)
