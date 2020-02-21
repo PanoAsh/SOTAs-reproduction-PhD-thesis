@@ -23,12 +23,15 @@ seq_height = 300
 seq_width = 600
 
 # auto overlay
-auto_oly = 1
+auto_oly = 0
 frm_interval = 1
 pixel_shift_lat = 18
 pixel_shift_lon = 0
 bool_rescale = False
 bool_shift = True
+
+# video check
+bool_frm2vid = True
 
 
 class PanoVSOD_stts():
@@ -37,7 +40,7 @@ class PanoVSOD_stts():
         self.path_sor = os.getcwd() + '/source_videos/'
         self.path_frm = os.getcwd() + '/frames/' # one by one
         self.path_syn = os.getcwd() + '/synthetic_video.avi'
-        self.path_oly = os.getcwd() + '/overlays/'
+        self.path_oly = os.getcwd() + '/overlay_salmap/w/'
         self.path_fix = os.getcwd() + '/fixations/' # one by one
         self.path_FM = os.getcwd() + '/fixation_maps/'
 
@@ -81,19 +84,24 @@ class PanoVSOD_stts():
                 count += 1
 
     def ImgToVideo(self): # to generate the fixation overlays as guidance for salient object annotation
-        frm = os.listdir(self.path_oly)
-        frm.sort(key=lambda x: x[:-4])
-        video = cv2.VideoWriter(self.path_syn, 0, Fps, (Width, Height)) # modify the resolution, fps accordingly
+        oly_list = os.listdir(self.path_oly)
 
-        count = 1
-        for item in frm:
-            frame_path = os.path.join(os.path.abspath(self.path_oly), item)
-            video.write(cv2.imread(frame_path))
-            print("{} writen".format(count))
-            count += 1
+        count_oly = 0
+        for oly in oly_list:
+            oly_vid = cv2.VideoWriter(os.getcwd() + '/' + oly + '.avi', 0, 1, (600, 300))
 
-        cv2.destroyAllWindows()
-        video.release()
+            oly_path = self.path_oly + oly
+            oly_sub_list =  os.listdir(oly_path)
+            oly_sub_list.sort(key=lambda x: x[:-4])
+
+            for idx in range(len(oly_sub_list)):
+                frm_path = oly_path + '/' + oly_sub_list[idx]
+                oly_vid.write(cv2.imread(frm_path))
+                print("{} writen".format(idx + 1))
+
+            oly_vid.release()
+            count_oly += 1
+            print("{} videos processed.".format(count_oly))
 
     def fixation_overlay(self):
         frm_list = os.listdir(self.path_frm)
@@ -374,3 +382,6 @@ if __name__ == '__main__':
 
     if auto_oly == 1:
         pvsod.auto_oly_vid()
+
+    if bool_frm2vid == True:
+        pvsod.ImgToVideo()
