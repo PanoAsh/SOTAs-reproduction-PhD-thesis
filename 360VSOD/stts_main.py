@@ -24,15 +24,18 @@ seq_width = 600
 
 # auto overlay
 auto_oly = 0
-frm_interval = 1
 pixel_shift_lat = 18
 pixel_shift_lon = 0
 bool_rescale = False
-bool_shift = True
+bool_shift = False
 
 # video check
-bool_frm2vid = True
+bool_frm2vid = False
 
+# auto overlay (final version)
+frm_interval = 10
+bool_shift_scale = True
+pixel_shift = 20
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -356,6 +359,111 @@ class PanoVSOD_stts():
 
             oly_vid.release()
 
+    def auto_oly_2(self):
+        file_ids = os.listdir(os.getcwd() + '/fixations_w_sound/')
+
+        count_seq = 0
+        for id in file_ids:
+            fix_wo_path = os.path.join(os.getcwd() + '/fixations_wo_sound/', id)
+            fix_wo_files = os.listdir(fix_wo_path)
+            fix_wo_files.sort(key=lambda x: x[:-4])
+            fix_w_path = os.path.join(os.getcwd() + '/fixations_w_sound/', id)
+            fix_w_files = os.listdir(fix_w_path)
+            fix_w_files.sort(key=lambda x: x[:-4])
+
+            seq_item = cv2.VideoCapture(os.getcwd() + '/source_videos/' + id + '.mp4')
+            seq_width = int(seq_item.get(3))
+            seq_height = int(seq_item.get(4))
+            seq_fps = int(seq_item.get(5)) + 1
+            seq_numFrm = int(seq_item.get(7))
+
+            vid_edge = int((seq_width - int((600 - pixel_shift * 2) / 600 * seq_width)) / 2)
+
+            oly_vid_path = os.getcwd() + '/' + id + '.avi'
+            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width - vid_edge * 2, seq_height))
+
+            count_frm = 0
+            for idx in range(seq_numFrm):
+                if (idx + 1) % frm_interval == 0:
+                    seq_item.set(1, idx)
+                    ret, frame = seq_item.read()
+                    if ret == False:
+                        continue
+
+                    # find the corresponding w/wo sound fixation maps + shifting
+                    png_wo_path = fix_wo_path + '/' + fix_wo_files[idx]
+                    #fix_wo = np.load(npy_wo_path)
+                    fix_wo = cv2.imread(png_wo_path, cv2.IMREAD_GRAYSCALE)
+
+                    png_w_path = fix_w_path + '/' + fix_w_files[idx]
+                  #  fix_w = np.load(npy_w_path)
+                    fix_w = cv2.imread(png_w_path, cv2.IMREAD_GRAYSCALE)
+
+                    # process the wo sound fixation maps with shift and scale
+                    fix_wo_shift = fix_wo.copy()
+                    fix_wo_l = fix_wo[:, :pixel_shift]
+                    fix_wo_r = fix_wo[:, pixel_shift:]
+
+                    fix_wo_shift[:, :-pixel_shift] = fix_wo_r
+                    fix_wo_shift[:, -pixel_shift:] = fix_wo_l
+
+                    fix_wo_shift = cv2.resize(fix_wo_shift, (600 - pixel_shift * 2, 300))
+
+                    fix_wo_shift_scale = np.zeros((300, 600))
+                    fix_wo_shift_scale[:, pixel_shift:600 - pixel_shift] = fix_wo_shift
+
+                    # process the w sound fixation maps with shift and scale
+                    fix_w_shift = fix_w.copy()
+                    fix_w_l = fix_w[:, :pixel_shift]
+                    fix_w_r = fix_w[:, pixel_shift:]
+
+                    fix_w_shift[:, :-pixel_shift] = fix_w_r
+                    fix_w_shift[:, -pixel_shift:] = fix_w_l
+
+                    fix_w_shift = cv2.resize(fix_w_shift, (600 - pixel_shift * 2, 300))
+
+                    fix_w_shift_scale = np.zeros((300, 600))
+                    fix_w_shift_scale[:, pixel_shift:600 - pixel_shift] = fix_w_shift
+
+                    # generate the wo sound heatmap of the current frame
+                    fix_wo_shift_scale = fix_wo_shift_scale[:, :, np.newaxis]
+                    fixation_wo = []
+                    for i in range(3):
+                        fixation_wo.append(fix_wo_shift_scale)
+                    fixation_wo = np.concatenate(fixation_wo, axis=2)
+
+                    fixation_wo = cv2.resize(fixation_wo, (seq_width, seq_height))
+                    fixation_wo = cv2.normalize(fixation_wo, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
+                                               dtype=cv2.CV_8UC1)
+                    fixation_wo = cv2.applyColorMap(fixation_wo, cv2.COLORMAP_OCEAN)
+
+                    # generate the w sound heatmap of the current frame
+                    fix_w_shift_scale = fix_w_shift_scale[:, :, np.newaxis]
+                    fixation_w = []
+                    for i in range(3):
+                        fixation_w.append(fix_w_shift_scale)
+                    fixation_w = np.concatenate(fixation_w, axis=2)
+
+                    fixation_w = cv2.resize(fixation_w, (seq_width, seq_height))
+                    fixation_w = cv2.normalize(fixation_w, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
+                                                dtype=cv2.CV_8UC1)
+                    fixation_w = cv2.applyColorMap(fixation_w, cv2.COLORMAP_HOT)
+
+                    # overlay
+                    heatmap = cv2.addWeighted(fixation_wo, 1, fixation_w, 1, 0)
+                    overlay = cv2.addWeighted(frame, 0.5, heatmap, 1, 0)
+
+                    # write the current key frame
+                    oly_vid.write(overlay[:, vid_edge: seq_width - vid_edge, :])
+
+                count_frm += 1
+                print("{} frames processed.".format(count_frm))
+
+            count_seq += 1
+            print("{} videos processed.".format(count_seq))
+
+            oly_vid.release()
+
 
 if __name__ == '__main__':
     pvsod = PanoVSOD_stts()
@@ -385,3 +493,6 @@ if __name__ == '__main__':
 
     if bool_frm2vid == True:
         pvsod.ImgToVideo()
+
+    if bool_shift_scale == True:
+        pvsod.auto_oly_2()
