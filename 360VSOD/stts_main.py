@@ -33,9 +33,10 @@ bool_shift = False
 bool_frm2vid = False
 
 # auto overlay (final version)
-frm_interval = 10
+frm_interval = 100
 bool_shift_scale = True
 pixel_shift = 20
+pixel_up = 10
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -407,6 +408,12 @@ class PanoVSOD_stts():
                     fix_wo_shift[:, :-pixel_shift] = fix_wo_r
                     fix_wo_shift[:, -pixel_shift:] = fix_wo_l
 
+                    if seq_height == 1920:  # up shift
+                        fix_wo_shift = np.roll(fix_wo_shift, -pixel_up, axis=0)
+
+                    if seq_height == 2160: # down shift
+                        fix_wo_shift = np.roll(fix_wo_shift, int(pixel_up / 2), axis=0)
+
                     fix_wo_shift = cv2.resize(fix_wo_shift, (600 - pixel_shift * 2, 300))
 
                     fix_wo_shift_scale = np.zeros((300, 600))
@@ -419,6 +426,12 @@ class PanoVSOD_stts():
 
                     fix_w_shift[:, :-pixel_shift] = fix_w_r
                     fix_w_shift[:, -pixel_shift:] = fix_w_l
+
+                    if seq_height == 1920:  # up shift
+                        fix_w_shift = np.roll(fix_w_shift, -pixel_up, axis=0)
+
+                    if seq_height == 2160:  # down shift
+                        fix_w_shift = np.roll(fix_w_shift, int(pixel_up / 2), axis=0)
 
                     fix_w_shift = cv2.resize(fix_w_shift, (600 - pixel_shift * 2, 300))
 
