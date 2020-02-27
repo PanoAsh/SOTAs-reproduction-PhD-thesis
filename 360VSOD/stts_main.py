@@ -34,7 +34,7 @@ bool_frm2vid = False
 
 # auto overlay (final version)
 frm_interval = 100
-bool_shift_scale = False
+bool_shift_scale = True
 pixel_shift = 20
 pixel_up = 10
 
@@ -366,7 +366,21 @@ class PanoVSOD_stts():
         file_ids = os.listdir(os.getcwd() + '/fixations_w_sound/')
 
         count_seq = 0
+        count_special = 0
         for id in file_ids:
+            bool_special_shift_wo = False
+            bool_special_shift_w = False
+            fix_wo_special_list = ['_-1An41lDIJ6Q', '_-SdGCX2H-_Uk', '_-3DMhSnlf3Oo']
+            fix_w_special_list = ['_-ZuXCMpVR24I']
+            if id in fix_wo_special_list:
+                bool_special_shift_wo = True
+                special_shift_wo = int(-1 * 13)
+                count_special += 1
+            if id in fix_w_special_list:
+                bool_special_shift_w = True
+                special_shift_w = int(-1 * 13)
+                count_special += 1
+
             fix_wo_path = os.path.join(os.getcwd() + '/fixations_wo_sound/', id)
             fix_wo_files = os.listdir(fix_wo_path)
             fix_wo_files.sort(key=lambda x: x[:-4])
@@ -383,8 +397,8 @@ class PanoVSOD_stts():
             vid_edge = int((seq_width - int((600 - pixel_shift * 2) / 600 * seq_width)) / 2)
 
             oly_vid_path = os.getcwd() + '/' + id + '.avi'
-            #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width - vid_edge * 2, seq_height))
-            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
+            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width - vid_edge * 2, seq_height))
+            #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
 
             count_frm = 0
             for idx in range(seq_numFrm):
@@ -399,9 +413,15 @@ class PanoVSOD_stts():
                     #fix_wo = np.load(npy_wo_path)
                     fix_wo = cv2.imread(png_wo_path, cv2.IMREAD_GRAYSCALE)
 
+                    if bool_special_shift_wo == True:
+                        fix_wo = np.roll(fix_wo, special_shift_wo, axis=0)
+
                     png_w_path = fix_w_path + '/' + fix_w_files[idx]
                   #  fix_w = np.load(npy_w_path)
                     fix_w = cv2.imread(png_w_path, cv2.IMREAD_GRAYSCALE)
+
+                    if bool_special_shift_w == True:
+                        fix_w = np.roll(fix_w, special_shift_w, axis=0)
 
                     # process the wo sound fixation maps with shift and scale
                     fix_wo_shift = fix_wo.copy()
@@ -471,7 +491,7 @@ class PanoVSOD_stts():
 
                     # write the current key frame
                     oly_write = overlay[:, vid_edge: seq_width - vid_edge, :]
-                    oly_write = cv2.resize(oly_write, (560, 300))
+                   # oly_write = cv2.resize(oly_write, (560, 300))
                     oly_vid.write(oly_write)
 
                 count_frm += 1
@@ -481,6 +501,8 @@ class PanoVSOD_stts():
             print("{} videos processed.".format(count_seq))
 
             oly_vid.release()
+
+        print("totally {} special videos.".format(count_special))
 
 
 if __name__ == '__main__':
