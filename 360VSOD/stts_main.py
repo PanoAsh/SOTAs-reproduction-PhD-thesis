@@ -34,7 +34,7 @@ bool_frm2vid = False
 
 # auto overlay (final version)
 frm_interval = 100
-bool_shift_scale = True
+bool_shift_scale = False
 pixel_shift = 20
 pixel_up = 10
 
@@ -55,19 +55,23 @@ class PanoVSOD_stts():
 
         f = open(os.getcwd() + '/360vSOD_stts.txt', 'w')
         frames_num = []
+        duration_num = []
         count = 0
         for seq in seq_list:
             if seq.endswith('.mp4'):
                 seq_path = os.path.join(os.path.abspath(self.path_sor), seq)
                 cap = cv2.VideoCapture(seq_path)
                 frames_num.append(int(cap.get(7)))
-                line = seq[:-4] + '    ' + str(frames_num[count]) + '\n'
+                duration_num.append(int(cap.get(7) / (cap.get(5))))
+                line = seq[:-4] + '    ' + str(frames_num[count]) + '    ' + str(duration_num[count]) + '    ' + '\n'
                 f.write(line)
                 count += 1
                 print(" {} videos processed".format(count))
 
         total_frames = np.sum(frames_num)
-        f.write(str(total_frames))
+        total_duration = np.sum(duration_num)
+        f.write(str(total_frames) + '\n')
+        f.write(str(total_duration))
         f.close()
 
         return total_frames
@@ -402,8 +406,8 @@ class PanoVSOD_stts():
             vid_edge = int((seq_width - int((600 - pixel_shift * 2) / 600 * seq_width)) / 2)
 
             oly_vid_path = os.getcwd() + '/' + id + '.avi'
-            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width - vid_edge * 2, seq_height))
-            #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
+            #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width - vid_edge * 2, seq_height))
+            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
 
             count_frm = 0
             for idx in range(seq_numFrm):
@@ -496,7 +500,7 @@ class PanoVSOD_stts():
 
                     # write the current key frame
                     oly_write = overlay[:, vid_edge: seq_width - vid_edge, :]
-                   # oly_write = cv2.resize(oly_write, (560, 300))
+                    oly_write = cv2.resize(oly_write, (560, 300))
                     oly_vid.write(oly_write)
 
                 count_frm += 1
