@@ -53,6 +53,7 @@ class PanoVSOD_stts():
     def num_frames_count(self):
         seq_list = os.listdir(self.path_sor)
 
+        f = open(os.getcwd() + '/360vSOD_stts.txt', 'w')
         frames_num = []
         count = 0
         for seq in seq_list:
@@ -60,10 +61,14 @@ class PanoVSOD_stts():
                 seq_path = os.path.join(os.path.abspath(self.path_sor), seq)
                 cap = cv2.VideoCapture(seq_path)
                 frames_num.append(int(cap.get(7)))
+                line = seq[:-4] + '    ' + str(frames_num[count]) + '\n'
+                f.write(line)
                 count += 1
                 print(" {} videos processed".format(count))
 
         total_frames = np.sum(frames_num)
+        f.write(str(total_frames))
+        f.close()
 
         return total_frames
 
