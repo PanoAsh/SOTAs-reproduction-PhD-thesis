@@ -33,10 +33,12 @@ bool_shift = False
 bool_frm2vid = False
 
 # auto overlay (final version)
-frm_interval = 100
-bool_shift_scale = False
+frm_interval = 10
+bool_shift_scale = True
 pixel_shift = 20
+pixel_reserve = 15
 pixel_up = 10
+pole_cut = 30
 
 bool_numFrm = True
 
@@ -374,13 +376,26 @@ class PanoVSOD_stts():
     def auto_oly_2(self):
         file_ids = os.listdir(os.getcwd() + '/fixations_w_sound/')
 
+        fix_wo_special_list = ['_-1An41lDIJ6Q', '_-SdGCX2H-_Uk', '_-3DMhSnlf3Oo', '_-gSueCRQO_5g', '_-MFVmxoXgeNQ',
+                               '_-MzcdEI-tSUc_1', '_-nDu57CGqbLM', '_-dd39herpgXA', '_-eqmjLZGZ36k', '_-G8pABGosD38',
+                               '_-G8pABGosD38_B', '_-gqLmxlTXU64', '_-ByBF08H-wDA_B', '_-I6EHQIQ_StU_B', '_-JbGlLbNYBy8_B',
+                               '_-ZOqHvzhhb_8_B']
+        fix_w_special_list = ['_-ZuXCMpVR24I', '_-gSueCRQO_5g', '_-MFVmxoXgeNQ', '_-MzcdEI-tSUc_1', '_-nDu57CGqbLM',
+                              '_-dd39herpgXA', '_-eqmjLZGZ36k', '_-G8pABGosD38', '_-G8pABGosD38_B', '_-gqLmxlTXU64',
+                              '_-ByBF08H-wDA_B', '_-I6EHQIQ_StU_B', '_-JbGlLbNYBy8_B', '_-ZOqHvzhhb_8_B']
+        fix_reserve_left_list = ['_-0cfJOmUaNNI_1', '_-0suxwissusc', '_-7P37xEKbLrQ', '_-69Aw5PC1h4Y', '_-72f3ayGhMEA_2',
+                                 '_-72f3ayGhMEA_6', '_-Bvu9m__ZX60', '_-HNQMF7e6IL0', '_-IRG9Z7Y2uS4', '_-Ngj6C_RMK1g_2',
+                                 '_-72f3ayGhMEA_6_B', '_-MzcdEI-tSUc_1']
+        fix_reserve_right_list = ['_-Ngj6C_RMK1g_1', '_-72f3ayGhMEA_4', '_-gqLmxlTXU64', '_-ZOqHvzhhb_8_B']
+
         count_seq = 0
         count_special = 0
+        count_reserve = 0
         for id in file_ids:
             bool_special_shift_wo = False
             bool_special_shift_w = False
-            fix_wo_special_list = ['_-1An41lDIJ6Q', '_-SdGCX2H-_Uk', '_-3DMhSnlf3Oo']
-            fix_w_special_list = ['_-ZuXCMpVR24I']
+            bool_reserve_left = False
+            bool_reserve_right = False
             if id in fix_wo_special_list:
                 bool_special_shift_wo = True
                 special_shift_wo = int(-1 * 13)
@@ -389,6 +404,12 @@ class PanoVSOD_stts():
                 bool_special_shift_w = True
                 special_shift_w = int(-1 * 13)
                 count_special += 1
+            if id in fix_reserve_left_list:
+                bool_reserve_left = True
+                count_reserve += 1
+            if id in fix_reserve_right_list:
+                bool_reserve_right = True
+                count_reserve += 1
 
             fix_wo_path = os.path.join(os.getcwd() + '/fixations_wo_sound/', id)
             fix_wo_files = os.listdir(fix_wo_path)
@@ -400,14 +421,12 @@ class PanoVSOD_stts():
             seq_item = cv2.VideoCapture(os.getcwd() + '/source_videos/' + id + '.mp4')
             seq_width = int(seq_item.get(3))
             seq_height = int(seq_item.get(4))
-            seq_fps = int(seq_item.get(5)) + 1
+            seq_fps = int(seq_item.get(5))
             seq_numFrm = int(seq_item.get(7))
 
-            vid_edge = int((seq_width - int((600 - pixel_shift * 2) / 600 * seq_width)) / 2)
-
             oly_vid_path = os.getcwd() + '/' + id + '.avi'
-            #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width - vid_edge * 2, seq_height))
-            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
+            #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
+            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (1080, 540))
 
             count_frm = 0
             for idx in range(seq_numFrm):
@@ -419,14 +438,12 @@ class PanoVSOD_stts():
 
                     # find the corresponding w/wo sound fixation maps + shifting
                     png_wo_path = fix_wo_path + '/' + fix_wo_files[idx]
-                    #fix_wo = np.load(npy_wo_path)
                     fix_wo = cv2.imread(png_wo_path, cv2.IMREAD_GRAYSCALE)
 
                     if bool_special_shift_wo == True:
                         fix_wo = np.roll(fix_wo, special_shift_wo, axis=0)
 
                     png_w_path = fix_w_path + '/' + fix_w_files[idx]
-                  #  fix_w = np.load(npy_w_path)
                     fix_w = cv2.imread(png_w_path, cv2.IMREAD_GRAYSCALE)
 
                     if bool_special_shift_w == True:
@@ -451,6 +468,17 @@ class PanoVSOD_stts():
                     fix_wo_shift_scale = np.zeros((300, 600))
                     fix_wo_shift_scale[:, pixel_shift:600 - pixel_shift] = fix_wo_shift
 
+                    if bool_reserve_left == True:
+                        fix_wo_shift_scale[:, (pixel_shift-pixel_reserve):pixel_shift] = fix_wo_shift[:, -pixel_reserve:]
+                        fix_wo_shift_scale[:, -(pixel_reserve + pixel_shift):-pixel_shift] = 0
+
+                    if bool_reserve_right == True:
+                        fix_wo_shift_scale[:, -pixel_shift:-(pixel_shift-pixel_reserve)] = fix_wo_shift[:, :pixel_reserve]
+                        fix_wo_shift_scale[:, pixel_shift:(pixel_reserve + pixel_shift)] = 0
+
+                    fix_wo_shift_scale[-pole_cut:, :] = 0 # cut the border
+                    fix_wo_shift_scale[:pole_cut, :] = 0
+
                     # process the w sound fixation maps with shift and scale
                     fix_w_shift = fix_w.copy()
                     fix_w_l = fix_w[:, :pixel_shift]
@@ -469,6 +497,17 @@ class PanoVSOD_stts():
 
                     fix_w_shift_scale = np.zeros((300, 600))
                     fix_w_shift_scale[:, pixel_shift:600 - pixel_shift] = fix_w_shift
+
+                    if bool_reserve_left == True:
+                        fix_w_shift_scale[:, (pixel_shift - pixel_reserve):pixel_shift] = fix_w_shift[:, -pixel_reserve:]
+                        fix_w_shift_scale[:, -(pixel_reserve + pixel_shift):-pixel_shift] = 0
+
+                    if bool_reserve_right == True:
+                        fix_w_shift_scale[:, -pixel_shift:-(pixel_shift-pixel_reserve)] = fix_w_shift[:, :pixel_reserve]
+                        fix_w_shift_scale[:, pixel_shift:(pixel_reserve + pixel_shift)] = 0
+
+                    fix_w_shift_scale[-pole_cut:, :] = 0
+                    fix_w_shift_scale[:pole_cut, :] = 0
 
                     # generate the wo sound heatmap of the current frame
                     fix_wo_shift_scale = fix_wo_shift_scale[:, :, np.newaxis]
@@ -499,8 +538,7 @@ class PanoVSOD_stts():
                     overlay = cv2.addWeighted(frame, 0.5, heatmap, 1, 0)
 
                     # write the current key frame
-                    oly_write = overlay[:, vid_edge: seq_width - vid_edge, :]
-                    oly_write = cv2.resize(oly_write, (560, 300))
+                    oly_write = cv2.resize(overlay, (1080, 540))
                     oly_vid.write(oly_write)
 
                 count_frm += 1
@@ -512,6 +550,7 @@ class PanoVSOD_stts():
             oly_vid.release()
 
         print("totally {} special videos.".format(count_special))
+        print("totally {} videos with special edge processing.".format(count_reserve))
 
 
 if __name__ == '__main__':
