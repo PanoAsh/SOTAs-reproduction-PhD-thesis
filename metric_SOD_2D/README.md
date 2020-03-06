@@ -1,4 +1,6 @@
 ## Evaluation on saliency object detection(Evaluate SOD)
+
+With correct E-measure and F-measure
 ---
 A **One-key** fast evaluation on saliency object detection with GPU implementation including **MAE, Max F-measure, S-measure, E-measure**.
 
