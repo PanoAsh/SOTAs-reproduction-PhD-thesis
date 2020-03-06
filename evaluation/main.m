@@ -122,10 +122,11 @@ for midx=1:length(MD_ALL),
                     E_curve(i,thr_e) = Enhancedmeasure(Bi_sal,gt);
                 end 
                  
-                % to debug
+                %to debug
                 %gt_show = [gt_name(1:3) '.jpg'];
                 %imwrite(gt, gt_show);
-                %sal_show = [sal_name(1:3) '_MAE_' num2str(MAE(i)) '_S_' num2str(Smeasure(i)) '_E_' num2str(Emeasure(i)) '_wF_' num2str(wFmeasure(i)) '.png'];
+              %  sal_show = [sal_name(1:3) '_MAE_' num2str(MAE(i)) '_S_' num2str(Smeasure(i)) '_E_' num2str(Emeasure(i)) '_wF_' num2str(wFmeasure(i)) '.png'];
+                %sal_show = [sal_name(1:3) '_MAE_' num2str(MAE(i)) '_S_' num2str(Smeasure(i)) '_wF_' num2str(wFmeasure(i)) '.png'];
                 %imwrite(sal, sal_show);
                 
                 disp(i);
@@ -146,12 +147,14 @@ for midx=1:length(MD_ALL),
             %%
             Sm = mean2(Smeasure);
             Fm = max(F_curve);
-            Em = mean2(Emeasure); 
+          %  Em = mean2(Emeasure); 
+            Em = mean2(E_curve);
             mae = mean2(MAE);
             wFm = mean2(wFmeasure);
 
             Sm_std = std2(Smeasure);
-            Em_std = std2(Emeasure);
+          %  Em_std = std2(Emeasure);
+            Em_std = std2(E_curve);
             mae_std = std2(MAE);
             wFm_std = std2(wFmeasure);
             

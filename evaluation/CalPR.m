@@ -39,10 +39,10 @@ targetHist = cumsum( targetHist );
 nontargetHist = cumsum( nontargetHist );
 U = cumsum( U )+gtPxlNum-targetHist;
 %%
-precision = targetHist ./(targetHist+ nontargetHist+1e-5);
+precision = targetHist ./(targetHist+ nontargetHist+eps);
 %%
 if any(isnan(precision))
     warning('there exists NAN in precision, this is because of your saliency map do not have a full range specified by cutThreshes\n');
 end
 recall = targetHist / gtPxlNum;
-IOU = targetHist./(U+1e-5);
+IOU = targetHist./(U+eps);

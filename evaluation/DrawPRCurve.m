@@ -31,7 +31,7 @@ for k = 1:num
     
 %     gtName = strrep(smapName, smapSuffix, gtSuffix);
 %     gtImg = imread(fullfile(GT, gtNam
-    if exist(fullfile(SMAP, strrep(smapName, gtSuffix,smapSuffix)),'file')&&sum(gtImg(:))
+    if exist(fullfile(SMAP, strrep(smapName, gtSuffix,smapSuffix)),'file')&&sum(gtImg(:)) % totally black GTs are excluded
         smapImg = imread(fullfile(SMAP, strrep(smapName, gtSuffix,smapSuffix)));
         kk = kk+1;
     else
@@ -80,5 +80,5 @@ F = f;
 % else
 %     plot(rec, prec, 'r','LineStyle',line, 'linewidth', 2);
 % end
-% axis([0,255,0,0.9]);%��������᷶�?
+% axis([0,255,0,0.9]);%��������᷶�?
 % set(gca, 'XTick', [0 51 102 153 204 255]);
