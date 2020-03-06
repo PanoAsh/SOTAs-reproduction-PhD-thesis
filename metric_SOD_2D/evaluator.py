@@ -4,6 +4,8 @@ import time
 import numpy as np
 import torch
 from torchvision import transforms
+import scipy
+import scipy.ndimage
 
 
 class Eval_thread():
@@ -13,14 +15,22 @@ class Eval_thread():
         self.dataset = dataset
         self.cuda = cuda
         self.logfile = os.path.join(output_dir, 'result.txt')
+
     def run(self):
         start_time = time.time()
         mae = self.Eval_mae()
         max_f = self.Eval_fmeasure()
         max_e = self.Eval_Emeasure()
         s = self.Eval_Smeasure()
-        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure, {:.4f} S-measure..\n'.format(self.dataset, self.method, mae, max_f, max_e, s))
-        return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure, {:.4f} S-measure..'.format(time.time()-start_time, self.dataset, self.method, mae, max_f, max_e, s)
+        fbw = self.Eval_Fbw_measure()
+        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure, {:.4f} S-measure, '
+                 '{:.4f} Fbw-measure.\n'
+                 .format(self.dataset, self.method, mae, max_f, max_e, s, fbw))
+
+        return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure,' \
+               ' {:.4f} S-measure, {:.4f} Fbw-measure'\
+            .format(time.time()-start_time, self.dataset, self.method, mae, max_f, max_e, s, fbw)
+
     def Eval_mae(self):
         print('eval[MAE]:{} dataset with {} method.'.format(self.dataset, self.method))
         avg_mae, img_num = 0.0, 0.0
@@ -40,6 +50,7 @@ class Eval_thread():
                     avg_mae += mea
                     img_num += 1.0
             avg_mae /= img_num
+
             return avg_mae.item()
     
     def Eval_fmeasure(self):
@@ -70,6 +81,62 @@ class Eval_thread():
                 score = avg_f / img_num
 
             return score.max().item()
+
+    def Eval_Fbw_measure(self):
+        print('eval[Fbw_measure]:{} dataset with {} method.'.format(self.dataset, self.method))
+        beta2 = 0.3
+
+        with torch.no_grad():
+            trans = transforms.Compose([transforms.ToTensor()])
+            scores = 0
+            imgs_num = 0
+            for pred, gt in self.loader:
+                if self.cuda:
+                    pred = trans(pred).cuda()
+                    gt = trans(gt).cuda()
+                else:
+                    pred = trans(pred)
+                    gt = trans(gt)
+                pred = pred.detach().cpu().numpy()[0]
+                gt = gt.detach().cpu().numpy()[0]
+
+                if np.mean(gt) == 0: # the ground truth is totally black
+                    scores += 1 - np.mean(pred)
+                    imgs_num += 1
+                else:
+                    if not np.all(np.isclose(gt, 0) | np.isclose(gt, 1)):
+                        raise ValueError("'gt' must be a 0/1 or boolean array")
+                    gt_mask = np.isclose(gt, 1)
+                    not_gt_mask = np.logical_not(gt_mask)
+
+                    E = np.abs(pred - gt)
+                    dist, idx = scipy.ndimage.morphology.distance_transform_edt(not_gt_mask, return_indices=True)
+
+                    # Pixel dependency
+                    Et = np.array(E)
+                    # To deal correctly with the edges of the foreground region:
+                    Et[not_gt_mask] = E[idx[0, not_gt_mask], idx[1, not_gt_mask]]
+                    sigma = 5.0
+                    EA = scipy.ndimage.gaussian_filter(Et, sigma=sigma, truncate=3 / sigma, mode='constant', cval=0.0)
+                    min_E_EA = np.minimum(E, EA, where=gt_mask, out=np.array(E))
+
+                    # Pixel importance
+                    B = np.ones(gt.shape)
+                    B[not_gt_mask] = 2 - np.exp(np.log(1 - 0.5) / 5 * dist[not_gt_mask])
+                    Ew = min_E_EA * B
+
+                    # Final metric computation
+                    eps = np.spacing(1)
+                    TPw = np.sum(gt) - np.sum(Ew[gt_mask])
+                    FPw = np.sum(Ew[not_gt_mask])
+                    R = 1 - np.mean(Ew[gt_mask])  # Weighed Recall
+                    P = TPw / (eps + TPw + FPw)  # Weighted Precision
+
+                    # Q = 2 * (R * P) / (eps + R + P)  # Beta=1
+                    scores += (1 + beta2) * (R * P) / (eps + R + (beta2 * P))
+                    imgs_num += 1
+
+            return scores / imgs_num
 
     def Eval_Emeasure(self):
         print('eval[EMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
@@ -120,7 +187,9 @@ class Eval_thread():
                 img_num += 1.0
                 avg_q += Q.item()
             avg_q /= img_num
+
             return avg_q
+
     def LOG(self, output):
         with open(self.logfile, 'a') as f:
             f.write(output)
@@ -170,6 +239,7 @@ class Eval_thread():
         o_bg = self._object(bg, 1-gt)
         u = gt.mean()
         Q = u * o_fg + (1-u) * o_bg
+
         return Q
 
     def _object(self, pred, gt):
@@ -190,6 +260,7 @@ class Eval_thread():
         Q4 = self._ssim(p4, gt4)
         Q = w1*Q1 + w2*Q2 + w3*Q3 + w4*Q4
         # print(Q)
+
         return Q
     
     def _centroid(self, gt):
@@ -212,6 +283,7 @@ class Eval_thread():
                 j = torch.from_numpy(np.arange(0,rows)).float()
             X = torch.round((gt.sum(dim=0)*i).sum() / total)
             Y = torch.round((gt.sum(dim=1)*j).sum() / total)
+
         return X.long(), Y.long()
     
     def _divideGT(self, gt, X, Y):
@@ -228,6 +300,7 @@ class Eval_thread():
         w2 = (w - X) * Y / area
         w3 = X * (h - Y) / area
         w4 = 1 - w1 - w2 - w3
+
         return LT, RT, LB, RB, w1, w2, w3, w4
 
     def _dividePrediction(self, pred, X, Y):
@@ -237,6 +310,7 @@ class Eval_thread():
         RT = pred[:Y, X:w]
         LB = pred[Y:h, :X]
         RB = pred[Y:h, X:w]
+
         return LT, RT, LB, RB
 
     def _ssim(self, pred, gt):
@@ -258,4 +332,5 @@ class Eval_thread():
             Q = 1.0
         else:
             Q = 0
+
         return Q

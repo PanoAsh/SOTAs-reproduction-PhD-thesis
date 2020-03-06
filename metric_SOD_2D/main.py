@@ -34,7 +34,7 @@ def main(cfg):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--methods', type=str, default='EGNet')
+    parser.add_argument('--methods', type=str, default='GCPANet')
     parser.add_argument('--datasets', type=str, default='F360iSOD')
     parser.add_argument('--root_dir', type=str, default=os.getcwd())
     parser.add_argument('--save_dir', type=str, default=os.getcwd() + '/score/')
