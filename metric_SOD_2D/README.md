@@ -1,47 +1,14 @@
-## Evaluation on saliency object detection(Evaluate SOD)
+## Evaluation on salient object detection(Evaluate SOD)
 
-With correct E-measure and F-measure and Fbw-measure
+A PYTHON implementation of popular SOD metrics including MAE, F-measure, S-measure, E-measure and weighted F-measure
 ---
-A **One-key** fast evaluation on saliency object detection with GPU implementation including **MAE, Max F-measure, S-measure, E-measure**.
+A fast evaluation on salient object detection with GPU implementation including **MAE, Max F-measure, S-measure, E-measure**.
 
-Code are reimplemented from the matlab version which are available from http://dpfan.net/
+Code are reimplemented from the matlab version which are available from http://dpfan.net/, modified from https://github.com/Hanqer/Evaluate-SOD
+
+Note that the totally black ground truths are considered in E-measure, weighted F-measure and S-measure; excluded in F-measure (which is consistent with the Matlab code from https://github.com/wenguanwang/SODsurvey).
 
 * GPU implementation with pytorch which can be easier embedding into eval code.
-* One-key evaluation
-
-Usage:
-```
-python main.py --root_dir 'your_dir' --save_dir 'your_dir' --methods 'DSS RAS' --dataset 'ECSSD SOD'    (if --methods and --dataset is not set, using all methods and datasets.)
-```
-**example:**
-```
-python main.py --root_dir './' --save_dir './'
-```
-example root_dir:
-```
-.
-├── gt
-│   ├── ECSSD
-│   │   ├── 0001.png
-│   │   └── 0002.png
-│   ├── PASCAL-S
-│   │   ├── 1.png
-│   │   └── 2.png
-│   └── SOD
-│       ├── 2092.png
-│       └── 3096.png
-└── pred
-    └── dss
-        ├── ECSSD
-        │   ├── 0001.png
-        │   └── 0002.png
-        ├── PASCAL-S
-        │   ├── 1.png
-        │   └── 2.png
-        └── SOD
-            ├── 2092.png
-            └── 3096.png
-```
 
 
 If you find the code useful to your research, please cite the following papers.
