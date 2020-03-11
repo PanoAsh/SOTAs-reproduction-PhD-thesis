@@ -1,5 +1,8 @@
 import numpy as np
 import pano_utils as utils
+import os
+import xml.etree.ElementTree as ET
+from PIL import Image
 
 
 def e2c(e_img, face_w, mode='bilinear', cube_format='list'):
@@ -97,3 +100,39 @@ def c2e(cubemap, h, w, mode='bilinear', cube_format='list'):
     ], axis=-1)
 
     return equirec
+
+def bbox2sod(name):
+    crop_path = os.getcwd() + '/SOD_crop/' + name
+    path = os.getcwd() + '/xml_files/' + name
+    raw_path = os.getcwd() + '/jpg_frames/' + name
+    xml_ids = os.listdir(path)
+
+    # process every frame; get the perspective image with only one salient object
+    xml_count = 0
+    for xml_id in xml_ids:
+        xml_path = path + '/' + xml_id
+        xml_tree = ET.parse(xml_path)
+        xml_root  = xml_tree.getroot()
+        bbox_list = []
+        obj_list = []
+
+        for obj in xml_root.iter('object'):
+            obj_list.append(obj.find('name').text)
+            bbox = obj.find('bndbox')
+            xmin = int(float(bbox.find('xmin').text))
+            ymin = int(float(bbox.find('ymin').text))
+            xmax = int(float(bbox.find('xmax').text))
+            ymax = int(float(bbox.find('ymax').text))
+            bbox_list.append([xmin, ymin, xmax, ymax])
+
+        filename = xml_root.find('filename').text
+        frm_path = raw_path + '/' + filename[:-4] + '.jpg'
+        frm = Image.open(frm_path)
+
+        num_sod = len(obj_list)
+        for idx in range(num_sod):
+            frm_crop = frm.crop(bbox_list[idx])
+            frm_crop.save(crop_path + '/' + name + '_' + format(filename[:-4], '0>4s') + '_' + obj_list[idx] + '.png')
+
+        xml_count += 1
+        print("{} frames processed.".format(xml_count))

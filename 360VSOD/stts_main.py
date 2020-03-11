@@ -34,13 +34,14 @@ bool_frm2vid = False
 
 # auto overlay (final version)
 frm_interval = 10
-bool_shift_scale = True
+bool_shift_scale = False
 pixel_shift = 20
 pixel_reserve = 15
 pixel_up = 10
 pole_cut = 30
 
-bool_numFrm = True
+bool_numFrm = False
+bool_SOD_crop = True
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -375,6 +376,7 @@ class PanoVSOD_stts():
 
     def auto_oly_2(self):
         file_ids = os.listdir(os.getcwd() + '/fixations_w_sound/')
+        #file_ids = os.listdir(os.getcwd() + '/temp/')
 
         fix_wo_special_list = ['_-1An41lDIJ6Q', '_-SdGCX2H-_Uk', '_-3DMhSnlf3Oo', '_-gSueCRQO_5g', '_-MFVmxoXgeNQ',
                                '_-MzcdEI-tSUc_1', '_-nDu57CGqbLM', '_-dd39herpgXA', '_-eqmjLZGZ36k', '_-G8pABGosD38',
@@ -383,9 +385,9 @@ class PanoVSOD_stts():
         fix_w_special_list = ['_-ZuXCMpVR24I', '_-gSueCRQO_5g', '_-MFVmxoXgeNQ', '_-MzcdEI-tSUc_1', '_-nDu57CGqbLM',
                               '_-dd39herpgXA', '_-eqmjLZGZ36k', '_-G8pABGosD38', '_-G8pABGosD38_B', '_-gqLmxlTXU64',
                               '_-ByBF08H-wDA_B', '_-I6EHQIQ_StU_B', '_-JbGlLbNYBy8_B', '_-ZOqHvzhhb_8_B']
-        fix_reserve_left_list = ['_-0cfJOmUaNNI_1', '_-0suxwissusc', '_-7P37xEKbLrQ', '_-69Aw5PC1h4Y', '_-72f3ayGhMEA_2',
+        fix_reserve_left_list = ['_-0suxwissusc', '_-7P37xEKbLrQ', '_-69Aw5PC1h4Y', '_-72f3ayGhMEA_2',
                                  '_-72f3ayGhMEA_6', '_-Bvu9m__ZX60', '_-HNQMF7e6IL0', '_-IRG9Z7Y2uS4', '_-Ngj6C_RMK1g_2',
-                                 '_-72f3ayGhMEA_6_B', '_-MzcdEI-tSUc_1']
+                                 '_-72f3ayGhMEA_6_B', '_-MzcdEI-tSUc_1', '_-0cfJOmUaNNI_1']
         fix_reserve_right_list = ['_-Ngj6C_RMK1g_1', '_-72f3ayGhMEA_4', '_-gqLmxlTXU64', '_-ZOqHvzhhb_8_B']
 
         count_seq = 0
@@ -552,6 +554,12 @@ class PanoVSOD_stts():
         print("totally {} special videos.".format(count_special))
         print("totally {} videos with special edge processing.".format(count_reserve))
 
+    def SOD_crop(self):
+        xml_names = os.listdir(os.getcwd() + '/xml_files/')
+
+        for name_xml in xml_names:
+            utils.bbox2sod(name_xml)
+
 
 if __name__ == '__main__':
     pvsod = PanoVSOD_stts()
@@ -585,3 +593,6 @@ if __name__ == '__main__':
 
     if bool_shift_scale == True:
         pvsod.auto_oly_2()
+
+    if bool_SOD_crop == True:
+        pvsod.SOD_crop()
