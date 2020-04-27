@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-pixel_shift = 512
+pixel_shift = 1024
+interval_shift = 6
 
 class ProcessingTool():
     def __init__(self):
@@ -17,13 +18,15 @@ class ProcessingTool():
         ori_list = os.listdir(self.ori_path)
         count = 0
         for item in ori_list:
-            item_path = self.ori_path + item
-            img = cv2.imread(item_path)
-            img_shift = img.copy()
-            img_shift = np.roll(img_shift, -1 * pixel_shift, axis=1)
-            cv2.imwrite(self.tar_path + item, img_shift)
-            count += 1
-            print(" {} frames have been processed.".format(count))
+            int_item = int(item[:-4])
+            if int_item % interval_shift == 0:
+                item_path = self.ori_path + item
+                img = cv2.imread(item_path)
+                img_shift = img.copy()
+                img_shift = np.roll(img_shift, -1 * pixel_shift, axis=1)
+                cv2.imwrite(self.tar_path + item, img_shift)
+                count += 1
+                print(" {} frames have been processed.".format(count))
         print(' Done ! ')
 
     def shiftRecover(self):
@@ -41,10 +44,10 @@ class ProcessingTool():
         print(' Done ! ')
 
     def frm2vid(self):
-        vid_name = '_-Uy5LTocHmoA_1'
+        vid_name = '_-6QUCaLvQ_3I'
         vid_H = 2048
         vid_W = 3840
-        vid_fps = 30
+        vid_fps = 5
 
         frm_list = os.listdir(os.getcwd() + '/' + vid_name + '/')
         frm_list.sort(key=lambda x: x[:-4])
@@ -60,7 +63,7 @@ class ProcessingTool():
         print(' Done !')
 
     def ist2obj(self):
-        ists_path = os.getcwd() + '/_-Uy5LTocHmoA_1/'
+        ists_path = os.getcwd() + '/_-Uy5LTocHmoA_2/'
         objs_path = os.getcwd() + '/obj/'
 
         count = 1
@@ -97,6 +100,36 @@ class ProcessingTool():
             count += 1
             print(" {} frames processed".format(count))
 
+    def getKeyFrm(self):
+        rawFrm_path = os.getcwd() + '/_-Uy5LTocHmoA_2/'
+        rawFrm_list = os.listdir(rawFrm_path)
+        rawFrm_list.sort(key=lambda x: x[:-4])
+
+        for frm in rawFrm_list:
+            frm_list = frm.split('_')
+            frm_list_2 = frm_list[1].split('.')
+            frm_idx = int(frm_list_2[0])
+            if frm_idx % 6 == 0:
+                KeyFrm_path = rawFrm_path + frm
+                new_path = os.getcwd() + '/' + frm
+                os.rename(KeyFrm_path, new_path)
+
+        print('Done !')
+
+    def numFrm(self):
+        file_path = os.getcwd() + '/mask_instance/'
+        file_list = os.listdir(file_path)
+
+        numFrm = 0
+        count = 0
+        for file in file_list:
+            file_cur_path = file_path + file
+            file_cur_list = os.listdir(file_cur_path)
+            numFrm += len(file_cur_list)
+            count += 1
+            print(" {} files processed".format(count))
+
+        return numFrm
 
 
 if __name__ == '__main__':
@@ -105,4 +138,6 @@ if __name__ == '__main__':
     #PT.shiftRecover()
     #PT.frm2vid()
     #PT.ist2obj()
-    PT.ist_merge()
+    #PT.ist_merge()
+    #PT.getKeyFrm()
+    print('There are: ' + str(PT.numFrm()) + ' key frames.')
