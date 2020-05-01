@@ -2,9 +2,23 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
+from time import sleep
+import sys
 
-pixel_shift = 1024
+pixel_shift = 1920
 interval_shift = 6
+
+def bar_show(prg, nFr):
+
+        sys.stdout.write('\r')
+        # the exact output you're looking for:
+        sys.stdout.write('--------------------------------------------------------------------' + '\n')
+        sys.stdout.write('360VSOD-10K  ||  ' + str(nFr) + ' / 10000  ||  ' +
+                         "[%-20s] %d%%" % ('=' * int(prg / 10000 * 20), prg / 10000 * 100) + '\n')
+        sys.stdout.write('--------------------------------------------------------------------' + '\n')
+        sys.stdout.flush()
+        sleep(0.25)
+
 
 class ProcessingTool():
     def __init__(self):
@@ -127,7 +141,7 @@ class ProcessingTool():
             file_cur_list = os.listdir(file_cur_path)
             numFrm += len(file_cur_list)
             count += 1
-            print(" {} files processed".format(count))
+            print(" {} done. ".format(count))
 
         return numFrm
 
@@ -140,4 +154,5 @@ if __name__ == '__main__':
     #PT.ist2obj()
     #PT.ist_merge()
     #PT.getKeyFrm()
-    print('There are: ' + str(PT.numFrm()) + ' key frames.')
+    #print('There are: ' + str(PT.numFrm()) + ' key frames.')
+    bar_show(PT.numFrm(), PT.numFrm())
