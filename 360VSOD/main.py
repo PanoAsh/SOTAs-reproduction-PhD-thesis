@@ -8,13 +8,13 @@ import sys
 pixel_shift = 1920
 interval_shift = 6
 
-def bar_show(prg, nFr):
+def bar_show(nFr):
 
         sys.stdout.write('\r')
         # the exact output you're looking for:
         sys.stdout.write('--------------------------------------------------------------------' + '\n')
         sys.stdout.write('360VSOD-10K  ||  ' + str(nFr) + ' / 10000  ||  ' +
-                         "[%-20s] %d%%" % ('=' * int(prg / 10000 * 20), prg / 10000 * 100) + '\n')
+                         "[%-20s] %d%%" % ('=' * int(nFr / 10000 * 20), nFr / 10000 * 100) + '\n')
         sys.stdout.write('--------------------------------------------------------------------' + '\n')
         sys.stdout.flush()
         sleep(0.25)
@@ -27,6 +27,8 @@ class ProcessingTool():
         self.sft_path = os.getcwd() + '/msk_shift/'
         self.fin_path = os.getcwd() + '/msk_fin/'
         self.pts_path = os.getcwd() + '/parts/'
+        self.src_path = os.getcwd() + '/source_videos/'
+
 
     def split2whole(self):
         ori_list = os.listdir(self.ori_path)
@@ -145,6 +147,48 @@ class ProcessingTool():
 
         return numFrm
 
+    def frmStt(self):
+        seq_list = os.listdir(self.src_path)
+
+        f = open(os.getcwd() + '/360VSOD_stt.txt', 'w')
+        frames_num = []
+        duration_num = []
+        count = 0
+        for seq in seq_list:
+            if seq.endswith('.mp4'):
+                seq_path = os.path.join(os.path.abspath(self.src_path), seq)
+                cap = cv2.VideoCapture(seq_path)
+                frames_num.append(int(cap.get(7)))
+                duration_num.append(int(cap.get(7) / (cap.get(5))))
+                line = str(count + 1) + '    ' + seq[:-4] + '    ' + str(frames_num[count]) + '    ' + \
+                       str(duration_num[count]) + '    ' + '\n'
+                f.write(line)
+                count += 1
+                print(" {} videos processed".format(count))
+
+        total_frames = np.sum(frames_num)
+        total_duration = np.sum(duration_num)
+        f.write('There are ' + str(total_frames) + ' frames.' + '\n')
+        f.write('The total duration is ' + str(total_duration) + ' s.' + '\n')
+        f.write('The average duration is ' + str(total_duration / count) + ' s.')
+        f.close()
+
+        return total_frames
+
+    def srcApl(self):
+        seq_list = os.listdir('mask_instance')
+        src_list = os.listdir('source')
+
+        count = 0
+        for seq in seq_list:
+            seq_id = seq + '.mp4'
+            if seq_id in src_list:
+                src_path = os.getcwd() + '/source/' + seq_id
+                new_path = os.getcwd() + '/source_videos/' + seq_id
+                os.rename(src_path, new_path)
+                count += 1
+                print(" {} videos transfered.".format(count))
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -155,4 +199,5 @@ if __name__ == '__main__':
     #PT.ist_merge()
     #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
-    bar_show(PT.numFrm(), PT.numFrm())
+    bar_show(PT.numFrm())
+    PT.frmStt()
