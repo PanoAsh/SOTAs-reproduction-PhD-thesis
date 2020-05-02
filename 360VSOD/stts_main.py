@@ -33,15 +33,15 @@ bool_shift = False
 bool_frm2vid = False
 
 # auto overlay (final version)
-frm_interval = 10
-bool_shift_scale = False
+frm_interval = 1
+bool_shift_scale = True
 pixel_shift = 20
 pixel_reserve = 15
 pixel_up = 10
 pole_cut = 30
 
 bool_numFrm = False
-bool_SOD_crop = True
+bool_SOD_crop = False
 
 class PanoVSOD_stts():
     def __init__(self):
@@ -394,6 +394,10 @@ class PanoVSOD_stts():
         count_special = 0
         count_reserve = 0
         for id in file_ids:
+            #debug
+            #id = '_-Uy5LTocHmoA_2'
+            #if count_seq == 1:
+              #  break
             bool_special_shift_wo = False
             bool_special_shift_w = False
             bool_reserve_left = False
@@ -428,7 +432,7 @@ class PanoVSOD_stts():
 
             oly_vid_path = os.getcwd() + '/' + id + '.avi'
             #oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (560, 300))
-            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (1080, 540))
+            oly_vid = cv2.VideoWriter(oly_vid_path, 0, seq_fps, (seq_width, seq_height))
 
             count_frm = 0
             for idx in range(seq_numFrm):
@@ -540,8 +544,8 @@ class PanoVSOD_stts():
                     overlay = cv2.addWeighted(frame, 0.5, heatmap, 1, 0)
 
                     # write the current key frame
-                    oly_write = cv2.resize(overlay, (1080, 540))
-                    oly_vid.write(oly_write)
+                   # oly_write = cv2.resize(overlay, (1080, 540))
+                    oly_vid.write(overlay)
 
                 count_frm += 1
                 print("{} frames processed.".format(count_frm))
