@@ -189,6 +189,73 @@ class ProcessingTool():
                 count += 1
                 print(" {} videos transfered.".format(count))
 
+    def demoMsk(self):
+        seq_list = os.listdir('mask_instance')
+        demo_w = 360
+        demo_h = 180
+        vid_oly = cv2.VideoWriter(os.getcwd() + '/demo_instance_overlay.avi', 0, 2, (demo_w, demo_h))
+
+        count = 1
+        for seq in seq_list:
+            msk_list = os.listdir(os.getcwd() + '/mask_instance/' + seq)
+            msk_list.sort(key=lambda x: x[:-4])
+            demo_itv = int(len(msk_list) / 3)
+
+            msk1_path = os.getcwd() + '/mask_instance/' + seq + '/' + msk_list[0]
+            msk1 = cv2.imread(msk1_path)
+            msk2_path = os.getcwd() + '/mask_instance/' + seq + '/' + msk_list[0 + demo_itv]
+            msk2 = cv2.imread(msk2_path)
+            msk3_path = os.getcwd() + '/mask_instance/' + seq + '/' + msk_list[0 + demo_itv * 2]
+            msk3 = cv2.imread(msk3_path)
+
+            img1_id = msk1_path[-10:]
+            img1_path = os.getcwd() + '/frames/' + seq + '/' + seq + '_' + img1_id
+            img1 = cv2.imread(img1_path)
+            img2_id = msk2_path[-10:]
+            img2_path = os.getcwd() + '/frames/' + seq + '/' + seq + '_' + img2_id
+            img2 = cv2.imread(img2_path)
+            img3_id = msk3_path[-10:]
+            img3_path = os.getcwd() + '/frames/' + seq + '/' + seq + '_' + img3_id
+            img3 = cv2.imread(img3_path)
+
+            oly1 = cv2.addWeighted(img1, 0.8, msk1, 1, 0)
+            oly1 = cv2.resize(oly1, (demo_w, demo_h))
+            vid_oly.write(oly1)
+            oly2 = cv2.addWeighted(img2, 0.8, msk2, 1, 0)
+            oly2 = cv2.resize(oly2, (demo_w, demo_h))
+            vid_oly.write(oly2)
+            oly3 = cv2.addWeighted(img3, 0.8, msk3, 1, 0)
+            oly3 = cv2.resize(oly3, (demo_w, demo_h))
+            vid_oly.write(oly3)
+            print("{} videos processed.".format(count))
+            count += 1
+
+        vid_oly.release()
+
+    def seq2frm(self):
+        seq_list = os.listdir(self.src_path)
+
+        count = 1
+        for seq in seq_list:
+            if seq.endswith('.mp4'):
+                seq_path = os.path.join(os.path.abspath(self.src_path), seq)
+                new_path = os.path.join(os.path.abspath('frames'), seq[:-4])
+                if not os.path.exists(new_path):
+                    os.makedirs(new_path)
+                frm_path = os.path.join(os.path.abspath(new_path), seq)
+                cap = cv2.VideoCapture(seq_path)
+                frames_num = int(cap.get(7))
+                countF = 0
+                for i in range(frames_num):
+                    ret, frame = cap.read()
+                    # frame = cv2.resize(frame, (Width, Height))
+                    if countF % 6 == 0:
+                        cv2.imwrite(frm_path[:-4] + '_' + format(str(countF), '0>6s') + '.png', frame)
+                        print(" {} frames are extracted.".format(countF))
+                    countF += 1
+                print(" {} videos processed".format(count))
+                count += 1
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -200,4 +267,4 @@ if __name__ == '__main__':
     #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
     bar_show(PT.numFrm())
-    PT.frmStt()
+    PT.demoMsk()
