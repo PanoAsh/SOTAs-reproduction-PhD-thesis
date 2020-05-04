@@ -117,18 +117,19 @@ class ProcessingTool():
             print(" {} frames processed".format(count))
 
     def getKeyFrm(self):
-        rawFrm_path = os.getcwd() + '/_-Uy5LTocHmoA_2/'
+        rawFrm_path = os.getcwd() + '/_-0cfJOmUaNNI_1/'
         rawFrm_list = os.listdir(rawFrm_path)
         rawFrm_list.sort(key=lambda x: x[:-4])
 
         for frm in rawFrm_list:
             frm_list = frm.split('_')
-            frm_list_2 = frm_list[1].split('.')
+            frm_list_2 = frm_list[3].split('.')
             frm_idx = int(frm_list_2[0])
             if frm_idx % 6 == 0:
-                KeyFrm_path = rawFrm_path + frm
-                new_path = os.getcwd() + '/' + frm
-                os.rename(KeyFrm_path, new_path)
+                if frm_idx % 12 != 0:
+                    KeyFrm_path = rawFrm_path + frm
+                    new_path = os.getcwd() + '/frames_part2/' + frm
+                    os.rename(KeyFrm_path, new_path)
 
         print('Done !')
 
@@ -264,7 +265,7 @@ if __name__ == '__main__':
     #PT.frm2vid()
     #PT.ist2obj()
     #PT.ist_merge()
-    #PT.getKeyFrm()
+    PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
-    bar_show(PT.numFrm())
-    PT.demoMsk()
+    #bar_show(PT.numFrm())
+    #PT.demoMsk()
