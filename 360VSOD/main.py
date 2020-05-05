@@ -117,7 +117,7 @@ class ProcessingTool():
             print(" {} frames processed".format(count))
 
     def getKeyFrm(self):
-        rawFrm_path = os.getcwd() + '/_-0cfJOmUaNNI_1/'
+        rawFrm_path = os.getcwd() + '/_-0cfJOmUaNNI_2/'
         rawFrm_list = os.listdir(rawFrm_path)
         rawFrm_list.sort(key=lambda x: x[:-4])
 
@@ -128,7 +128,7 @@ class ProcessingTool():
             if frm_idx % 6 == 0:
                 if frm_idx % 12 != 0:
                     KeyFrm_path = rawFrm_path + frm
-                    new_path = os.getcwd() + '/frames_part2/' + frm
+                    new_path = os.getcwd() + '/frames_part2/' + 'frame_' + frm[-10:]
                     os.rename(KeyFrm_path, new_path)
 
         print('Done !')
@@ -257,6 +257,17 @@ class ProcessingTool():
                 print(" {} videos processed".format(count))
                 count += 1
 
+    def mskRename(self):
+        msk_list =  os.listdir(os.getcwd() + '/SegmentationClass/')
+        msk_list.sort(key=lambda x: x[:-4])
+
+        for msk in msk_list:
+            old_path = os.getcwd() + '/SegmentationClass/' + msk
+            new_path = os.getcwd() + '/msk_may/' + 'frame_' + msk[-10:]
+            os.rename(old_path, new_path)
+
+        print('done !')
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -269,3 +280,4 @@ if __name__ == '__main__':
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
     #bar_show(PT.numFrm())
     #PT.demoMsk()
+    #PT.mskRename()
