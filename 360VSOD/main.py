@@ -117,13 +117,13 @@ class ProcessingTool():
             print(" {} frames processed".format(count))
 
     def getKeyFrm(self):
-        rawFrm_path = os.getcwd() + '/_-0cfJOmUaNNI_2/'
+        rawFrm_path = os.getcwd() + '/_-HNQMF7e6IL0/'
         rawFrm_list = os.listdir(rawFrm_path)
         rawFrm_list.sort(key=lambda x: x[:-4])
 
         for frm in rawFrm_list:
             frm_list = frm.split('_')
-            frm_list_2 = frm_list[3].split('.')
+            frm_list_2 = frm_list[2].split('.')
             frm_idx = int(frm_list_2[0])
             if frm_idx % 6 == 0:
                 if frm_idx % 12 != 0:
@@ -268,6 +268,23 @@ class ProcessingTool():
 
         print('done !')
 
+    def GTResize(self):
+        src_path = os.getcwd() + '/_-G8pABGosD38/'
+        tgt_path = os.getcwd() + '/resized/'
+        src_list = os.listdir(src_path)
+        src_list.sort(key=lambda x: x[:-4])
+
+        count = 1
+        for frm in src_list:
+            frm_path = src_path + frm
+            img = cv2.imread(frm_path)
+            img = cv2.resize(img, (3840, 1920))
+            ret, img = cv2.threshold(img, 0, 128, cv2.THRESH_BINARY)
+            new_path = tgt_path + frm
+            cv2.imwrite(new_path, img)
+            print(" {} frames processed.".format(count))
+            count += 1
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -281,3 +298,4 @@ if __name__ == '__main__':
     #bar_show(PT.numFrm())
     #PT.demoMsk()
     #PT.mskRename()
+    #PT.GTResize()
