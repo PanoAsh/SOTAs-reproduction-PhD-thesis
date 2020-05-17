@@ -34,8 +34,8 @@ class ProcessingTool():
         ori_list = os.listdir(self.ori_path)
         count = 0
         for item in ori_list:
-            int_item = int(item[:-4])
-            if int_item % interval_shift == 0:
+            #int_item = int(item[:-4])
+            #if int_item % interval_shift == 0:
                 item_path = self.ori_path + item
                 img = cv2.imread(item_path)
                 img_shift = img.copy()
@@ -49,11 +49,13 @@ class ProcessingTool():
         sft_list = os.listdir(self.sft_path)
         count = 0
         for item in sft_list:
+            item_list = item.split('_')
             item_path = self.sft_path + item
             msk = cv2.imread(item_path)
             msk_shift = msk.copy()
             msk_shift = np.roll(msk_shift, pixel_shift, axis=1)
-            msk_name = 'frame_' + format(item[:-4], '0>6s') + '.png'
+            #msk_name = 'frame_' + format(item[:-4], '0>6s') + '.png'
+            msk_name = 'frame_' + item_list[3]
             cv2.imwrite(self.fin_path + msk_name, msk_shift)
             count += 1
             print(" {} masks have been processed.".format(count))
@@ -117,7 +119,7 @@ class ProcessingTool():
             print(" {} frames processed".format(count))
 
     def getKeyFrm(self):
-        rawFrm_path = os.getcwd() + '/_-HNQMF7e6IL0/'
+        rawFrm_path = os.getcwd() + '/_-ZuXCMpVR24I/'
         rawFrm_list = os.listdir(rawFrm_path)
         rawFrm_list.sort(key=lambda x: x[:-4])
 
@@ -258,18 +260,20 @@ class ProcessingTool():
                 count += 1
 
     def mskRename(self):
-        msk_list =  os.listdir(os.getcwd() + '/SegmentationClass/')
+        msk_list = os.listdir(os.getcwd() + '/_-gSueCRQO_5g/')
         msk_list.sort(key=lambda x: x[:-4])
 
         for msk in msk_list:
-            old_path = os.getcwd() + '/SegmentationClass/' + msk
-            new_path = os.getcwd() + '/msk_may/' + 'frame_' + msk[-10:]
+            old_path = os.getcwd() + '/_-gSueCRQO_5g/' + msk
+            msk_list = msk.split('_')
+            msk_idx = int(msk_list[3][:-4])
+            new_path = os.getcwd() + '/msk_may/' + 'frame_' + format(str(msk_idx), '0>6s') + '.png'
             os.rename(old_path, new_path)
 
         print('done !')
 
     def GTResize(self):
-        src_path = os.getcwd() + '/_-G8pABGosD38/'
+        src_path = os.getcwd() + '/_-MFVmxoXgeNQ/'
         tgt_path = os.getcwd() + '/resized/'
         src_list = os.listdir(src_path)
         src_list.sort(key=lambda x: x[:-4])
@@ -279,9 +283,40 @@ class ProcessingTool():
             frm_path = src_path + frm
             img = cv2.imread(frm_path)
             img = cv2.resize(img, (3840, 1920))
-            ret, img = cv2.threshold(img, 0, 128, cv2.THRESH_BINARY)
+            #ret, img = cv2.threshold(img, 0, 128, cv2.THRESH_BINARY)
             new_path = tgt_path + frm
             cv2.imwrite(new_path, img)
+            print(" {} frames processed.".format(count))
+            count += 1
+
+    def rgbEcg(self):
+        rgb_1 = [128, 0, 0]
+        rgb_2 = [0, 128, 0]
+        rgb_3 = [128, 128, 0]
+        rgb_4 = [0, 0, 128]
+
+        listOri = os.listdir(os.getcwd() + '/listori/')
+        listOri.sort(key=lambda x: x[:-4])
+        count = 1
+        for msk_idx in listOri:
+            msk_path = os.getcwd() + '/listori/' + msk_idx
+            msk = cv2.imread(msk_path)
+            msk = cv2.cvtColor(msk, cv2.COLOR_BGR2RGB)
+            mskH, mskW, RGB = msk.shape
+            for i in range(mskH):
+                for j in range(mskW):
+                    if msk[i, j, :].tolist() == rgb_2:
+                        msk[i, j, 0] = 128
+                    elif msk[i, j, :].tolist() == rgb_3:
+                        msk[i, j, 1] = 0
+                    elif msk[i, j, :].tolist() == rgb_4:
+                        msk[i, j, 1] = 128
+                        msk[i, j, 2] = 0
+
+            listFin = os.getcwd() + '/listfin/'
+            msk_nPath = listFin + msk_idx
+            msk = cv2.cvtColor(msk, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(msk_nPath, msk)
             print(" {} frames processed.".format(count))
             count += 1
 
@@ -293,9 +328,11 @@ if __name__ == '__main__':
     #PT.frm2vid()
     #PT.ist2obj()
     #PT.ist_merge()
-    PT.getKeyFrm()
+    #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
     #bar_show(PT.numFrm())
     #PT.demoMsk()
     #PT.mskRename()
     #PT.GTResize()
+    #PT.seq2frm()
+    PT.rgbEcg()
