@@ -136,7 +136,7 @@ class ProcessingTool():
         print('Done !')
 
     def numFrm(self):
-        file_path = os.getcwd() + '/mask_instance/'
+        file_path = '/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/'
         file_list = os.listdir(file_path)
 
         numFrm = 0
@@ -151,32 +151,40 @@ class ProcessingTool():
         return numFrm
 
     def frmStt(self):
-        seq_list = os.listdir(self.src_path)
+        seq_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/source_videos/')
+        #frm_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/frames/')
+        #msk_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/')
 
         f = open(os.getcwd() + '/360VSOD_stt.txt', 'w')
         frames_num = []
         duration_num = []
+        fps_num = []
         count = 0
         for seq in seq_list:
             if seq.endswith('.mp4'):
-                seq_path = os.path.join(os.path.abspath(self.src_path), seq)
+                seq_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/source_videos/', seq)
                 cap = cv2.VideoCapture(seq_path)
-                frames_num.append(int(cap.get(7)))
-                duration_num.append(int(cap.get(7) / (cap.get(5))))
-                line = str(count + 1) + '    ' + seq[:-4] + '    ' + str(frames_num[count]) + '    ' + \
-                       str(duration_num[count]) + '    ' + '\n'
+                msk_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq[:-4])
+                frm_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/frames/',  seq[:-4])
+                if len(os.listdir(msk_path)) != len(os.listdir(frm_path)):
+                    print('Please Check !!!')
+                    break
+                frames_num.append(len(os.listdir(msk_path)))
+                fps_num.append(cap.get(5))
+                duration_num.append((len(os.listdir(msk_path)) - 1) * 6 / (int(cap.get(5)) + 1))
+                line = format(str(count + 1), '0>2s') + '    ' + 'ID: ' + seq[:-4] + '    ' + str(frames_num[count]) \
+                       + ' key frames' + '    ' + str(duration_num[count]) + ' s' + '    ' + str(fps_num[count]) + \
+                       ' fps' + '\n'
                 f.write(line)
                 count += 1
                 print(" {} videos processed".format(count))
 
         total_frames = np.sum(frames_num)
         total_duration = np.sum(duration_num)
-        f.write('There are ' + str(total_frames) + ' frames.' + '\n')
-        f.write('The total duration is ' + str(total_duration) + ' s.' + '\n')
-        f.write('The average duration is ' + str(total_duration / count) + ' s.')
+        f.write('Key frames with instance-level annotations: ' + str(total_frames) + '\n')
+        f.write('Total duration: ' + str(total_duration) + ' s' + '\n')
+        f.write('Average duration: ' + str(total_duration / count) + ' s')
         f.close()
-
-        return total_frames
 
     def srcApl(self):
         seq_list = os.listdir('mask_instance')
@@ -193,43 +201,28 @@ class ProcessingTool():
                 print(" {} videos transfered.".format(count))
 
     def demoMsk(self):
-        seq_list = os.listdir('mask_instance')
-        demo_w = 360
-        demo_h = 180
-        vid_oly = cv2.VideoWriter(os.getcwd() + '/demo_instance_overlay.avi', 0, 2, (demo_w, demo_h))
+        seq_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/')
+        demo_w = 3840
+        demo_h = 1920
+        frmShow = 10
+        vid_oly = cv2.VideoWriter(os.getcwd() + '/demo_instance_overlay.avi', 0, 3, (demo_w, demo_h))
 
         count = 1
         for seq in seq_list:
-            msk_list = os.listdir(os.getcwd() + '/mask_instance/' + seq)
+            msk_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/' + seq)
             msk_list.sort(key=lambda x: x[:-4])
-            demo_itv = int(len(msk_list) / 3)
+            demo_itv = int(len(msk_list) / frmShow)
 
-            msk1_path = os.getcwd() + '/mask_instance/' + seq + '/' + msk_list[0]
-            msk1 = cv2.imread(msk1_path)
-            msk2_path = os.getcwd() + '/mask_instance/' + seq + '/' + msk_list[0 + demo_itv]
-            msk2 = cv2.imread(msk2_path)
-            msk3_path = os.getcwd() + '/mask_instance/' + seq + '/' + msk_list[0 + demo_itv * 2]
-            msk3 = cv2.imread(msk3_path)
-
-            img1_id = msk1_path[-10:]
-            img1_path = os.getcwd() + '/frames/' + seq + '/' + seq + '_' + img1_id
-            img1 = cv2.imread(img1_path)
-            img2_id = msk2_path[-10:]
-            img2_path = os.getcwd() + '/frames/' + seq + '/' + seq + '_' + img2_id
-            img2 = cv2.imread(img2_path)
-            img3_id = msk3_path[-10:]
-            img3_path = os.getcwd() + '/frames/' + seq + '/' + seq + '_' + img3_id
-            img3 = cv2.imread(img3_path)
-
-            oly1 = cv2.addWeighted(img1, 0.8, msk1, 1, 0)
-            oly1 = cv2.resize(oly1, (demo_w, demo_h))
-            vid_oly.write(oly1)
-            oly2 = cv2.addWeighted(img2, 0.8, msk2, 1, 0)
-            oly2 = cv2.resize(oly2, (demo_w, demo_h))
-            vid_oly.write(oly2)
-            oly3 = cv2.addWeighted(img3, 0.8, msk3, 1, 0)
-            oly3 = cv2.resize(oly3, (demo_w, demo_h))
-            vid_oly.write(oly3)
+            for idx in range(frmShow):
+                msk_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq,
+                                        msk_list[idx * demo_itv])
+                msk = cv2.imread(msk_path)
+                frm_id = msk_list[idx * demo_itv].split('_')[1]
+                frm_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/frames/', seq, (seq + '_' + frm_id))
+                frm = cv2.imread(frm_path)
+                oly = cv2.addWeighted(frm, 0.8, msk, 1, 0)
+                oly = cv2.resize(oly, (demo_w, demo_h))
+                vid_oly.write(oly)
             print("{} videos processed.".format(count))
             count += 1
 
@@ -364,10 +357,11 @@ if __name__ == '__main__':
     #PT.ist_merge()
     #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
-    #bar_show(PT.numFrm())
-    #PT.demoMsk()
+    #PT.frmStt()
+    bar_show(PT.numFrm())
+    PT.demoMsk()
     #PT.mskRename()
     #PT.GTResize()
     #PT.seq2frm()
     #PT.mskRGB()
-    PT.mskEdit()
+    #PT.mskEdit()
