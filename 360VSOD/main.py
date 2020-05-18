@@ -289,7 +289,7 @@ class ProcessingTool():
             print(" {} frames processed.".format(count))
             count += 1
 
-    def rgbEcg(self):
+    def mskRGB(self):
         rgb_1 = [128, 0, 0]
         rgb_2 = [0, 128, 0]
         rgb_3 = [128, 128, 0]
@@ -320,6 +320,40 @@ class ProcessingTool():
             print(" {} frames processed.".format(count))
             count += 1
 
+    def mskEdit(self):
+        rgb_1 = [128, 0, 0]
+        rgb_2 = [0, 128, 0]
+        rgb_3 = [128, 128, 0]
+        rgb_4 = [0, 0, 128]
+
+        oriPath = os.getcwd() + '/_-Bvu9m__ZX60/'
+        mskList = os.listdir(oriPath)
+        mskList.sort(key=lambda x: x[:-4])
+        count = 1
+        for msk in mskList:
+            idx = int(msk.split('_')[1][:-4])
+            if idx % 12 == 0:
+                mskPath = oriPath + msk
+                mskImg = cv2.imread(mskPath)
+                mskImg = cv2.cvtColor(mskImg, cv2.COLOR_BGR2RGB)
+                mskH, mskW, RGB = mskImg.shape
+                for i in range(mskH):
+                    for j in range(mskW):
+                        if mskImg[i, j, :].tolist() == rgb_4:
+                            mskImg[i, j, :] = 0
+                mskPath_next = oriPath + 'frame_' + format(str(idx + 6), '0>6s') + '.png'
+                mskImgNext = cv2.imread(mskPath_next)
+                mskImgNext = cv2.cvtColor(mskImgNext, cv2.COLOR_BGR2RGB)
+                for i in range(mskH):
+                    for j in range(mskW):
+                        if mskImgNext[i, j, :].tolist() == rgb_4:
+                            mskImg[i, j, 2] = 128
+                mskPath_new = os.getcwd() + '/edit/' + msk
+                mskImg = cv2.cvtColor(mskImg, cv2.COLOR_RGB2BGR)
+                cv2.imwrite(mskPath_new, mskImg)
+                print(" {} key frames processed.".format(2 * count))
+                count += 1
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -335,4 +369,5 @@ if __name__ == '__main__':
     #PT.mskRename()
     #PT.GTResize()
     #PT.seq2frm()
-    PT.rgbEcg()
+    #PT.mskRGB()
+    PT.mskEdit()
