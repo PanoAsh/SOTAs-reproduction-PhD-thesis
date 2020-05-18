@@ -347,6 +347,104 @@ class ProcessingTool():
                 print(" {} key frames processed.".format(2 * count))
                 count += 1
 
+    def objStt(self):
+        rgb_1 = (128, 0, 0)
+        rgb_2 = (0, 128, 0)
+        rgb_3 = (128, 128, 0)
+        rgb_4 = (0, 0, 128)
+        rgb_5 = (128, 0, 128)
+        rgb_6 = (0, 128, 128)
+        rgb_7 = (128, 128, 128)
+        rgb_8 = (64, 0, 0)
+        rgb_9 = (192, 0, 0)
+
+        f = open(os.getcwd() + '/360VSOD_obj_stt.txt', 'w')
+
+        seq_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/')
+        seq_count = 0
+        num_obj_sum = 0
+        for seq in seq_list:
+            msk_list = os.listdir(os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq))
+            msk_list.sort(key=lambda x: x[:-4])
+            msk_count = 0
+            num_obj = 0
+            for msk_idx in msk_list:
+                msk_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq, msk_idx)
+                msk = Image.open(msk_path)
+                obj_count = 0
+                obj_bool = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                for pix in msk.getdata():
+                    if pix == (0, 0, 0):
+                        continue
+                    elif pix == rgb_1:
+                        if obj_bool[0] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[0] = 1
+                    elif pix == rgb_2:
+                        if obj_bool[1] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[1] = 1
+                    elif pix == rgb_3:
+                        if obj_bool[2] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[2] = 1
+                    elif pix == rgb_4:
+                        if obj_bool[3] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[3] = 1
+                    elif pix == rgb_5:
+                        if obj_bool[4] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[4] = 1
+                    elif pix == rgb_6:
+                        if obj_bool[5] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[5] = 1
+                    elif pix == rgb_7:
+                        if obj_bool[6] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[6] = 1
+                    elif pix == rgb_8:
+                        if obj_bool[7] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[7] = 1
+                    elif pix == rgb_9:
+                        if obj_bool[8] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[8] = 1
+                f_line = seq + '    ' + msk_idx + '    ' + str(obj_count) + ' objs' + '\n'
+                f.write(f_line)
+                num_obj = num_obj + obj_count
+                msk_count += 1
+                print(" {} key frames processed.".format(msk_count))
+            f_line2 = str(num_obj) + ' objects in ' + seq + '\n'
+            f.write(f_line2)
+            num_obj_sum = num_obj_sum + num_obj
+            seq_count += 1
+            print(" {} videos processed.".format(seq_count))
+        f_line3 = str(num_obj_sum) + ' objects in total.'
+        f.write(f_line3)
+        f.close()
+        print('All done !')
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -359,9 +457,10 @@ if __name__ == '__main__':
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
     #PT.frmStt()
     bar_show(PT.numFrm())
-    PT.demoMsk()
+    #PT.demoMsk()
     #PT.mskRename()
     #PT.GTResize()
     #PT.seq2frm()
     #PT.mskRGB()
     #PT.mskEdit()
+    PT.objStt()
