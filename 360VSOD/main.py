@@ -445,6 +445,23 @@ class ProcessingTool():
         f.close()
         print('All done !')
 
+    def listPrint(self):
+        startpath = os.getcwd() + '/360vsod/'
+        f = open(os.getcwd() + '/360VSOD_categories.txt', 'w')
+
+        for root, dirs, files in os.walk(startpath):
+            level = root.replace(startpath, '').count(os.sep)
+            indent = ' ' * 4 * (level)
+            print('{}{}/'.format(indent, os.path.basename(root)))
+            f.write('{}{}/'.format(indent, os.path.basename(root)) + '\n')
+            subindent = ' ' * 4 * (level + 1)
+            for f in files:
+                print('{}{}'.format(subindent, f))
+                f.write('{}{}'.format(subindent, f) + '\n')
+
+        f.close()
+        print('Done!')
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
@@ -463,4 +480,5 @@ if __name__ == '__main__':
     #PT.seq2frm()
     #PT.mskRGB()
     #PT.mskEdit()
-    PT.objStt()
+    #PT.objStt()
+    PT.listPrint()
