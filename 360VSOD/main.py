@@ -446,7 +446,7 @@ class ProcessingTool():
         print('All done !')
 
     def listPrint(self):
-        startpath = os.getcwd() + '/360vsod/'
+        startpath = os.getcwd() + '/360vsod_draft/'
         f = open(os.getcwd() + '/360VSOD_categories.txt', 'w')
 
         for root, dirs, files in os.walk(startpath):
