@@ -1,7 +1,7 @@
 /
 singing_9/
     choir/
-        _-1An41lDIJ6Q_band_CanNotStopTheFeeling-Round/
+        _-1An41lDIJ6Q_band_CanNotStopTheFeeling-Choir/
         _-dBM3eM9HOoA_UseSomebody/
         _-Oak26yVbibQ_João-e-Maria/
     vocal_solo/
