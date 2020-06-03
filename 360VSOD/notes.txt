@@ -1,0 +1,29 @@
+1. The masks 
+Some include sound source while others not; will there be problems? 
+
+Classified the dataset with the concept of sound event (e.g.: audioSet, DeepMindECCV2018)
+
+2. The difference between simple SOD (a mismatching testing method [DeepMindECCV2018])
+
+3. Object QA: a reference for the attributes conclusion
+
+4. Obj localization, how about sound obj segmentation ? A specific task (AV-SOD in 360)
+
+5. The metric: allow the uncertainty of mask prediction, because the the GTs are based on ERP, actually not the real ones .
+
+6. How audio efficiently guide the SOD, though we can propose a specific task, other considerations (dynamic changing status of sound salient object)?
+
+7. How to define salient object in our dataset (only fixation-dependent may be argued?)
+
+8. Discuss about the fixation / trajectory and ambisonic sound data.
+
+9. T-SNE-based dataset visualization / holopix-based dataset visualization
+
+
+what to do:
+
+A circle of classes and its sub-classes， renamed-videos
+
+A figure of 69 videos with its number of key frames / object masks (each)
+
+A figure of all sound event sub-classes and its number of key frames / object masks
