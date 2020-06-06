@@ -1,0 +1,15 @@
+直方图题注，加No.标示，宽度不一
+
+类别标签，narration 改为monologue，多人narration移步conversation
+
+不表现子类（看起来不均衡），直接可视化五大类
+
+围绕两大base继续探讨 （visual attention和sound）
+
+
+
+
+
+
+
+

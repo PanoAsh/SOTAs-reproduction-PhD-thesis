@@ -1,0 +1,19 @@
+
+Task: Human-centric saliency detection in audiovisual immersive environments
+
+
+Contributions: 
+
+1. We collect 69 human-centric 360-videos with ambisonic sound， which represent 5 acoustic environments: singing, conversation, monologue, instrumental performance and miscellanea.
+
+1. We propose ???-10K with instance-level annotations of salient persons (aided by fixations (w/o sound)) in 69 360-videos.
+
+2. We propose ???-?K with bounding-boxes of sounding objects in 57 (w/o miscellanea) videos.
+
+3. We propose a baseline model for salient persons segmentation in 360 videos.
+
+4. We improve the baseline by combining the other group of fixations (w sound), we discuss the relationship between sound events and human attention.
+
+5 We also (further) improve the baseline model by applying cross-modal-based sounding objects detection as an auxiliary task, we discuss the relationship between audiovisual-learning and human-centric saliency detection.
+
+% 10K指我们有10K个带实例标注的key frames
