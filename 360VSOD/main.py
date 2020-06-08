@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from time import sleep
 import sys
+import xml.etree.ElementTree as ET
 
 pixel_shift = 1920
 interval_shift = 6
@@ -266,7 +267,7 @@ class ProcessingTool():
         print('done !')
 
     def GTResize(self):
-        src_path = os.getcwd() + '/_-MFVmxoXgeNQ/'
+        src_path = os.getcwd() + '/_-eqmjLZGZ36k/'
         tgt_path = os.getcwd() + '/resized/'
         src_list = os.listdir(src_path)
         src_list.sort(key=lambda x: x[:-4])
@@ -276,7 +277,7 @@ class ProcessingTool():
             frm_path = src_path + frm
             img = cv2.imread(frm_path)
             img = cv2.resize(img, (3840, 1920))
-            #ret, img = cv2.threshold(img, 0, 128, cv2.THRESH_BINARY)
+            ret, img = cv2.threshold(img, 0, 128, cv2.THRESH_BINARY)
             new_path = tgt_path + frm
             cv2.imwrite(new_path, img)
             print(" {} frames processed.".format(count))
@@ -298,13 +299,17 @@ class ProcessingTool():
             mskH, mskW, RGB = msk.shape
             for i in range(mskH):
                 for j in range(mskW):
-                    if msk[i, j, :].tolist() == rgb_2:
-                        msk[i, j, 0] = 128
-                    elif msk[i, j, :].tolist() == rgb_3:
-                        msk[i, j, 1] = 0
-                    elif msk[i, j, :].tolist() == rgb_4:
-                        msk[i, j, 1] = 128
-                        msk[i, j, 2] = 0
+                    if j < 1980:
+                        if msk[i, j, :].tolist() == rgb_3:
+                            msk[i, j, 0] = 0
+                            msk[i, j, 1] = 0
+              #      if msk[i, j, :].tolist() == rgb_2:
+               #         msk[i, j, 0] = 128
+                #    elif msk[i, j, :].tolist() == rgb_3:
+                 #       msk[i, j, 1] = 0
+                  #  elif msk[i, j, :].tolist() == rgb_4:
+                   #     msk[i, j, 1] = 128
+                    #    msk[i, j, 2] = 0
 
             listFin = os.getcwd() + '/listfin/'
             msk_nPath = listFin + msk_idx
@@ -462,9 +467,42 @@ class ProcessingTool():
         f.close()
         print('Done!')
 
+    def bbox2reg(self):
+        obj_path = os.getcwd() + '/obj_reg/'
+        xml_path = os.getcwd() + '/_-0cfJOmUaNNI_1_part3.xml'
+        frm_path = os.getcwd() + '/_-0cfJOmUaNNI_1/'
+        xml_tree = ET.parse(xml_path)
+        xml_root = xml_tree.getroot()
+
+        bbox_list = []
+        obj_list = []
+
+        for frm in xml_root.iter('image'):
+            for obj in frm.iter('box'):
+                obj_list.append([frm.attrib['name'], obj.attrib['label']])
+                xmin = int(float(obj.attrib['xtl']))
+                ymin = int(float(obj.attrib['ytl']))
+                xmax = int(float(obj.attrib['xbr']))
+                ymax = int(float(obj.attrib['ybr']))
+                bbox_list.append([xmin, ymin, xmax, ymax])
+
+        regShow(obj_list, bbox_list, frm_path, obj_path)
+        print('done !')
+
+def regShow(obj_list, bbox_list, ori_path, save_path):
+    count = 0
+    for obj in obj_list:
+        frm = Image.open(ori_path + obj[0])
+        frm_crop = frm.crop(bbox_list[count])
+        count += 1
+        frm_crop.save(save_path + obj[0][:-4] + '_' + obj[1] + '.png')
+        print(" {} sounding objects counted.".format(count))
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
+    bar_show(PT.numFrm())
+    PT.bbox2reg()
     #PT.split2whole()
     #PT.shiftRecover()
     #PT.frm2vid()
@@ -473,7 +511,6 @@ if __name__ == '__main__':
     #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
     #PT.frmStt()
-    bar_show(PT.numFrm())
     #PT.demoMsk()
     #PT.mskRename()
     #PT.GTResize()
@@ -481,4 +518,4 @@ if __name__ == '__main__':
     #PT.mskRGB()
     #PT.mskEdit()
     #PT.objStt()
-    PT.listPrint()
+    #PT.listPrint()
