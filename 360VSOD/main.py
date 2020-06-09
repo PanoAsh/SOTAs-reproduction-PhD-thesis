@@ -6,7 +6,7 @@ from time import sleep
 import sys
 import xml.etree.ElementTree as ET
 
-pixel_shift = 1920
+pixel_shift = 640
 interval_shift = 6
 
 def bar_show(nFr):
@@ -40,7 +40,7 @@ class ProcessingTool():
                 item_path = self.ori_path + item
                 img = cv2.imread(item_path)
                 img_shift = img.copy()
-                img_shift = np.roll(img_shift, -1 * pixel_shift, axis=1)
+                img_shift = np.roll(img_shift, pixel_shift, axis=1)
                 cv2.imwrite(self.tar_path + item, img_shift)
                 count += 1
                 print(" {} frames have been processed.".format(count))
@@ -54,7 +54,7 @@ class ProcessingTool():
             item_path = self.sft_path + item
             msk = cv2.imread(item_path)
             msk_shift = msk.copy()
-            msk_shift = np.roll(msk_shift, pixel_shift, axis=1)
+            msk_shift = np.roll(msk_shift, -1 * pixel_shift, axis=1)
             #msk_name = 'frame_' + format(item[:-4], '0>6s') + '.png'
             msk_name = 'frame_' + item_list[3]
             cv2.imwrite(self.fin_path + msk_name, msk_shift)
@@ -469,8 +469,9 @@ class ProcessingTool():
 
     def bbox2reg(self):
         obj_path = os.getcwd() + '/obj_reg/'
-        xml_path = os.getcwd() + '/_-0cfJOmUaNNI_1_part3.xml'
-        frm_path = os.getcwd() + '/_-0cfJOmUaNNI_1/'
+        xml_path = os.getcwd() + '/_-0cfJOmUaNNI_2_part3.xml'
+        frm_path = os.getcwd() + '/_-0cfJOmUaNNI_2/'
+        f = open(os.getcwd() + '/_-0cfJOmUaNNI_2_part3.txt', 'w')
         xml_tree = ET.parse(xml_path)
         xml_root = xml_tree.getroot()
 
@@ -486,16 +487,23 @@ class ProcessingTool():
                 ymax = int(float(obj.attrib['ybr']))
                 bbox_list.append([xmin, ymin, xmax, ymax])
 
-        regShow(obj_list, bbox_list, frm_path, obj_path)
+        regShow(obj_list, bbox_list, frm_path, obj_path, f)
+        f.close()
         print('done !')
 
-def regShow(obj_list, bbox_list, ori_path, save_path):
+def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
     for obj in obj_list:
         frm = Image.open(ori_path + obj[0])
         frm_crop = frm.crop(bbox_list[count])
-        count += 1
         frm_crop.save(save_path + obj[0][:-4] + '_' + obj[1] + '.png')
+
+        # for those splitted
+        #bbox_list[count][0] -= pixel_shift
+        #bbox_list[count][2] -= pixel_shift
+
+        txt.write(obj[0][:-4] + '  ' + obj[1] + '  ' + str(bbox_list[count]) + '\n')
+        count += 1
         print(" {} sounding objects counted.".format(count))
 
 
