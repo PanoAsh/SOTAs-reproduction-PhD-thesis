@@ -469,9 +469,9 @@ class ProcessingTool():
 
     def bbox2reg(self):
         obj_path = os.getcwd() + '/obj_reg/'
-        xml_path = os.getcwd() + '/_-0cfJOmUaNNI_2_part3.xml'
-        frm_path = os.getcwd() + '/_-0cfJOmUaNNI_2/'
-        f = open(os.getcwd() + '/_-0cfJOmUaNNI_2_part3.txt', 'w')
+        xml_path = os.getcwd() + '/_-ZuXCMpVR24I_part2.xml'
+        frm_path = os.getcwd() + '/_-ZuXCMpVR24I/'
+        f = open(os.getcwd() + '/_-ZuXCMpVR24I_part2.txt', 'w')
         xml_tree = ET.parse(xml_path)
         xml_root = xml_tree.getroot()
 
@@ -490,6 +490,26 @@ class ProcessingTool():
         regShow(obj_list, bbox_list, frm_path, obj_path, f)
         f.close()
         print('done !')
+
+    def sobjCount(self):
+        f = open(os.getcwd() + '/sound_obj.txt', 'w')
+        pathMain = '/home/yzhang1/PythonProjects/360vSOD/data/bbox_sound_object/'
+        listMain = os.listdir(pathMain)
+        countObj = 0
+        count = 0
+        for file in listMain:
+            fileImg = file + '_img'
+            pathSub = os.path.join(pathMain, file, fileImg)
+            listFrm = os.listdir(pathSub)
+            #listFrm.sort(key=lambda x: x[:-4])
+            f.write(file + '  ' + str(len(listFrm)) + '\n')
+            countObj += len(listFrm)
+            count += 1
+            print(" {} sequences  processed.".format(count))
+        print(str(countObj) + '  sounding objects in total.')
+        f.write(str(countObj) + '  sounding objects in total.')
+        f.close()
+
 
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
@@ -510,7 +530,8 @@ def regShow(obj_list, bbox_list, ori_path, save_path, txt):
 if __name__ == '__main__':
     PT = ProcessingTool()
     bar_show(PT.numFrm())
-    PT.bbox2reg()
+    #PT.bbox2reg()
+    PT.sobjCount()
     #PT.split2whole()
     #PT.shiftRecover()
     #PT.frm2vid()
