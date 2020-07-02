@@ -82,20 +82,28 @@ class ProcessingTool():
         print(' Done !')
 
     def ist2obj(self):
-        ists_path = os.getcwd() + '/_-Uy5LTocHmoA_2/'
-        objs_path = os.getcwd() + '/obj/'
+        oriPath = '/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/'
+        trgPath = '/home/yzhang1/PythonProjects/360vSOD/data/mask_object/'
+        orilist = os.listdir(oriPath)
+        count_video = 1
+        for item in orilist:
+            ists_path = os.path.join(oriPath, item)
+            objs_path = os.path.join(trgPath, item)
+            if not os.path.exists(objs_path):
+                os.makedirs(objs_path)
 
-        count = 1
-        for item in os.listdir(ists_path):
-            ist_path = os.path.join(os.path.abspath(ists_path), item)
-            obj_path = os.path.join(os.path.abspath(objs_path), item)
-            ist = cv2.imread(ist_path)
-            ist = cv2.cvtColor(ist, cv2.COLOR_RGB2GRAY)
-            ret, obj = cv2.threshold(ist, 0, 255, cv2.THRESH_BINARY)
-            cv2.imwrite(obj_path, obj)
-            print(" {} frames processed".format(count))
-            count += 1
-        print(' Done !')
+            count = 1
+            for item in os.listdir(ists_path):
+                ist_path = os.path.join(os.path.abspath(ists_path), item)
+                obj_path = os.path.join(os.path.abspath(objs_path), item)
+                ist = cv2.imread(ist_path)
+                ist = cv2.cvtColor(ist, cv2.COLOR_RGB2GRAY)
+                ret, obj = cv2.threshold(ist, 0, 255, cv2.THRESH_BINARY)
+                cv2.imwrite(obj_path, obj)
+                print(" {} frames processed".format(count))
+                count += 1
+            print(" {} videos processed".format(count_video))
+            count_video += 1
 
     def ist_merge(self):
         main_list = os.listdir(self.pts_path + '/part1/')
@@ -531,11 +539,11 @@ if __name__ == '__main__':
     PT = ProcessingTool()
     bar_show(PT.numFrm())
     #PT.bbox2reg()
-    PT.sobjCount()
+    #PT.sobjCount()
     #PT.split2whole()
     #PT.shiftRecover()
     #PT.frm2vid()
-    #PT.ist2obj()
+    PT.ist2obj()
     #PT.ist_merge()
     #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
