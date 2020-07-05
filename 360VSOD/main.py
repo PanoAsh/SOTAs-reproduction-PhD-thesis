@@ -361,6 +361,7 @@ class ProcessingTool():
                 count += 1
 
     def objStt(self):
+        rgb_0 = (0, 0, 0)
         rgb_1 = (128, 0, 0)
         rgb_2 = (0, 128, 0)
         rgb_3 = (128, 128, 0)
@@ -381,75 +382,98 @@ class ProcessingTool():
             msk_list.sort(key=lambda x: x[:-4])
             msk_count = 0
             num_obj = 0
+            size_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            num_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             for msk_idx in msk_list:
                 msk_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq, msk_idx)
                 msk = Image.open(msk_path)
                 obj_count = 0
                 obj_bool = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                rgb_count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 for pix in msk.getdata():
-                    if pix == (0, 0, 0):
+                    if pix == rgb_0:
+                        rgb_count[0] += 1
                         continue
                     elif pix == rgb_1:
+                        rgb_count[1] += 1
                         if obj_bool[0] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[0] = 1
                     elif pix == rgb_2:
+                        rgb_count[2] += 1
                         if obj_bool[1] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[1] = 1
                     elif pix == rgb_3:
+                        rgb_count[3] += 1
                         if obj_bool[2] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[2] = 1
                     elif pix == rgb_4:
+                        rgb_count[4] += 1
                         if obj_bool[3] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[3] = 1
                     elif pix == rgb_5:
+                        rgb_count[5] += 1
                         if obj_bool[4] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[4] = 1
                     elif pix == rgb_6:
+                        rgb_count[6] += 1
                         if obj_bool[5] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[5] = 1
                     elif pix == rgb_7:
+                        rgb_count[7] += 1
                         if obj_bool[6] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[6] = 1
                     elif pix == rgb_8:
+                        rgb_count[8] += 1
                         if obj_bool[7] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[7] = 1
                     elif pix == rgb_9:
+                        rgb_count[9] += 1
                         if obj_bool[8] == 1:
                             continue
                         else:
                             obj_count += 1
                             obj_bool[8] = 1
-                f_line = seq + '    ' + msk_idx + '    ' + str(obj_count) + ' objs' + '\n'
+                rgb_ratio = rgb_count / np.sum(rgb_count)
+                for idx in range(10):
+                    if rgb_ratio[idx] != 0:
+                        num_ins[idx] += 1
+                        size_ins[idx] += rgb_ratio[idx]
+                f_line = seq + '    ' + msk_idx + '    ' + str(obj_count) + ' objs' + '  ' + str(rgb_count) + '\n'
                 f.write(f_line)
                 num_obj = num_obj + obj_count
                 msk_count += 1
                 print(" {} key frames processed.".format(msk_count))
             f_line2 = str(num_obj) + ' objects in ' + seq + '\n'
             f.write(f_line2)
+            for idx in range(10):
+                if num_ins[idx] != 0:
+                    size_ins[idx] = size_ins[idx] / num_ins[idx]
+            f_line2_1 = 'object size infomation: ' + str(size_ins) + '\n'
+            f.write(f_line2_1)
             num_obj_sum = num_obj_sum + num_obj
             seq_count += 1
             print(" {} videos processed.".format(seq_count))
@@ -543,7 +567,7 @@ if __name__ == '__main__':
     #PT.split2whole()
     #PT.shiftRecover()
     #PT.frm2vid()
-    PT.ist2obj()
+    #PT.ist2obj()
     #PT.ist_merge()
     #PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
@@ -554,5 +578,5 @@ if __name__ == '__main__':
     #PT.seq2frm()
     #PT.mskRGB()
     #PT.mskEdit()
-    #PT.objStt()
+    PT.objStt()
     #PT.listPrint()
