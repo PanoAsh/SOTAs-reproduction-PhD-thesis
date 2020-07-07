@@ -16,7 +16,7 @@ def main(config):
         train = Solver(train_loader, None, config)
         train.train()
     elif config.mode == 'test':
-        test_loader, dataset = get_loader(config.test_batch_size, mode='test',num_thread=config.num_thread)
+        test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread)
         test = Solver(None, test_loader, config, dataset.save_folder())
         test.test()
     else:
