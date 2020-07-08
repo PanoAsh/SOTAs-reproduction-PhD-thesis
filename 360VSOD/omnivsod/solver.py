@@ -19,33 +19,19 @@ import scipy.io
 import os
 import logging
 import matplotlib.pyplot as plt
-EPSILON = 1e-8
-p = OrderedDict()
-
-from dataset import get_loader
-
-p['lr_bone'] = 5e-6  # Learning rate resnet:5e-5, vgg:2e-5
-p['lr_branch'] = 0.025  # Learning rate
-p['wd'] = 0.0005  # Weight decay
-p['momentum'] = 0.90  # Momentum
-lr_decay_epoch = [100,] # [6, 9], now x3 #15
-nAveGrad = 10  # Update the weights once in 'nAveGrad' forward passes
-showEvery = 100
-tmp_path = 'tmp_see'
 
 
 class Solver(object):
-    def __init__(self, train_loader, test_loader, config, save_fold=None):
+    def __init__(self, train_loader, test_loader, config):
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.config = config
-        self.save_fold = save_fold
         if config.visdom:
             self.visual = Viz_visdom("trueUnify", 1)
         self.build_model()
         if self.config.pre_trained: self.net_bone.load_state_dict(torch.load(self.config.pre_trained))
         if config.mode == 'train':
-            #self.log_output = open("%s/logs/log.txt" % config.save_fold, 'w')
+
             print()
         else:
             print('Loading pre-trained model from %s...' % self.config.model)
