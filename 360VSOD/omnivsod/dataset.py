@@ -8,6 +8,7 @@ from torchvision.transforms import functional as F
 import numbers
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 
 class ImageDataTrain(data.Dataset):
@@ -26,16 +27,13 @@ class ImageDataTrain(data.Dataset):
 
     def __getitem__(self, item):
 
-        image = load_image(self.img_list[item%self.img_num])
-        label = load_label(self.msk_list[item%self.img_num])
-        image, label = cv_random_flip(image, label)
-        label = torch.Tensor(label)
+        ER_img = load_2dImg(self.img_list[item%self.img_num])
+        ER_msk = load_2dMsk(self.msk_list[item%self.img_num])
+        sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
 
-        sample = {'image': image, 'label': label}
         return sample
 
     def __len__(self):
-        # return max(max(self.edge_num, self.sal_num), self.skel_num)
         return self.img_num
 
 class ImageDataTest(data.Dataset):
@@ -45,8 +43,8 @@ class ImageDataTest(data.Dataset):
             # self.image_source = '/home/liuj/dataset/saliency_test/ECSSD/test.lst'
             self.image_root = '/home/liuj/dataset/HED-BSDS_PASCAL/HED-BSDS/test/'
             self.image_source = '/home/liuj/dataset/HED-BSDS_PASCAL/HED-BSDS/test.lst'
-            
-            
+
+
         elif test_mode == 1:
             if sal_mode == 'e':
                 self.image_root = '/home/liuj/dataset/saliency_test/ECSSD/Imgs/'
@@ -119,165 +117,27 @@ def get_loader(batch_size, mode='train', num_thread=1):
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
     return data_loader, dataset
 
-def load_image(pah):
-    if not os.path.exists(pah):
+def load_2dImg(pth):
+    if not os.path.exists(pth):
         print('File Not Exists')
-    im = cv2.imread(pah)
-    in_ = np.array(im, dtype=np.float32)
-    # in_ = cv2.resize(in_, im_sz, interpolation=cv2.INTER_CUBIC)
-    # in_ = in_[:,:,::-1] # only if use PIL to load image
-    in_ -= np.array((104.00699, 116.66877, 122.67892))
-    in_ = in_.transpose((2,0,1))
-    return in_
+    img = Image.open(pth)
+    preprocess = transforms.Compose([
+        transforms.Resize([512, 512]),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    img_tensor = preprocess(img)
 
-def load_image_test(pah):
-    if not os.path.exists(pah):
+    return img_tensor
+
+def load_2dMsk(pth):
+    if not os.path.exists(pth):
         print('File Not Exists')
-    im = cv2.imread(pah)
-    in_ = np.array(im, dtype=np.float32)
-    im_size = tuple(in_.shape[:2])
-    # in_ = cv2.resize(in_, (cr_size[1], cr_size[0]), interpolation=cv2.INTER_LINEAR)
-    # in_ = in_[:,:,::-1] # only if use PIL to load image
-    in_ -= np.array((104.00699, 116.66877, 122.67892))
-    in_ = in_.transpose((2,0,1))
-    return in_, im_size
+    msk = Image.open(pth)
+    preprocess = transforms.Compose([
+        transforms.Resize([512, 512]),
+        transforms.ToTensor(),
+    ])
+    msk_tensor = preprocess(msk)
 
-def load_edge_label(pah):
-    """
-    pixels > 0.5 -> 1
-    Load label image as 1 x height x width integer array of label indices.
-    The leading singleton dimension is required by the loss.
-    """
-    if not os.path.exists(pah):
-        print('File Not Exists')
-    im = Image.open(pah)
-    label = np.array(im, dtype=np.float32)
-    if len(label.shape) == 3:
-        label = label[:,:,0]
-    # label = cv2.resize(label, im_sz, interpolation=cv2.INTER_NEAREST)
-    label = label / 255.
-    label[np.where(label > 0.5)] = 1.
-    label = label[np.newaxis, ...]
-    return label
-
-def load_skel_label(pah):
-    """
-    pixels > 0 -> 1
-    Load label image as 1 x height x width integer array of label indices.
-    The leading singleton dimension is required by the loss.
-    """
-    if not os.path.exists(pah):
-        print('File Not Exists')
-    im = Image.open(pah)
-    label = np.array(im, dtype=np.float32)
-    if len(label.shape) == 3:
-        label = label[:,:,0]
-    # label = cv2.resize(label, im_sz, interpolation=cv2.INTER_NEAREST)
-    label = label / 255.
-    label[np.where(label > 0.)] = 1.
-    label = label[np.newaxis, ...]
-    return label
-
-def load_label(pah):
-    """
-    Load label image as 1 x height x width integer array of label indices.
-    The leading singleton dimension is required by the loss.
-    """
-    if not os.path.exists(pah):
-        print('File Not Exists')
-    im = Image.open(pah)
-    label = np.array(im, dtype=np.float32)
-    if len(label.shape) == 3:
-        label = label[:,:,0]
-    # label = cv2.resize(label, im_sz, interpolation=cv2.INTER_NEAREST)
-    label = label / 255.
-    label = label[np.newaxis, ...]
-    return label
-
-def load_sem_label(pah):
-    """
-    Load label image as 1 x height x width integer array of label indices.
-    The leading singleton dimension is required by the loss.
-    """
-    if not os.path.exists(pah):
-        print('File Not Exists')
-    im = Image.open(pah)
-    label = np.array(im, dtype=np.float32)
-    if len(label.shape) == 3:
-        label = label[:,:,0]
-    # label = cv2.resize(label, im_sz, interpolation=cv2.INTER_NEAREST)
-    # label = label / 255.
-    label = label[np.newaxis, ...]
-    return label
-
-def edge_thres_transform(x, thres):
-    # y0 = torch.zeros(x.size())
-    y1 = torch.ones(x.size())
-    x = torch.where(x >= thres, y1, x)
-    return x
-
-def skel_thres_transform(x, thres):
-    y0 = torch.zeros(x.size())
-    y1 = torch.ones(x.size())
-    x = torch.where(x > thres, y1, y0)
-    return x
-
-def cv_random_flip(img, label):
-    flip_flag = random.randint(0, 1)
-    if flip_flag == 1:
-        img = img[:,:,::-1].copy()
-        label = label[:,:,::-1].copy()
-    return img, label
-
-def cv_random_crop_flip(img, label, resize_size, crop_size, random_flip=True):
-    def get_params(img_size, output_size):
-        h, w = img_size
-        th, tw = output_size
-        if w == tw and h == th:
-            return 0, 0, h, w
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
-        return i, j, th, tw
-    if random_flip:
-        flip_flag = random.randint(0, 1)
-    img = img.transpose((1,2,0)) # H, W, C
-    label = label[0,:,:] # H, W
-    img = cv2.resize(img, (resize_size[1], resize_size[0]), interpolation=cv2.INTER_LINEAR)
-    label = cv2.resize(label, (resize_size[1], resize_size[0]), interpolation=cv2.INTER_NEAREST)
-    i, j, h, w = get_params(resize_size, crop_size)
-    img = img[i:i+h, j:j+w, :].transpose((2,0,1)) # C, H, W
-    label = label[i:i+h, j:j+w][np.newaxis, ...] # 1, H, W
-    if flip_flag == 1:
-        img = img[:,:,::-1].copy()
-        label = label[:,:,::-1].copy()
-    return img, label
-
-def random_crop(img, label, size, padding=None, pad_if_needed=True, fill_img=(123, 116, 103), fill_label=0, padding_mode='constant'):
-
-    def get_params(img, output_size):
-        w, h = img.size
-        th, tw = output_size
-        if w == tw and h == th:
-            return 0, 0, h, w
-
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
-        return i, j, th, tw
-
-    if isinstance(size, numbers.Number):
-        size = (int(size), int(size))
-    if padding is not None:
-        img = F.pad(img, padding, fill_img, padding_mode)
-        label = F.pad(label, padding, fill_label, padding_mode)
-
-    # pad the width if needed
-    if pad_if_needed and img.size[0] < size[1]:
-        img = F.pad(img, (int((1 + size[1] - img.size[0]) / 2), 0), fill_img, padding_mode)
-        label = F.pad(label, (int((1 + size[1] - label.size[0]) / 2), 0), fill_label, padding_mode)
-    # pad the height if needed
-    if pad_if_needed and img.size[1] < size[0]:
-        img = F.pad(img, (0, int((1 + size[0] - img.size[1]) / 2)), fill_img, padding_mode)
-        label = F.pad(label, (0, int((1 + size[0] - label.size[1]) / 2)), fill_label, padding_mode)
-
-    i, j, h, w = get_params(img, size)
-    return [F.crop(img, i, j, h, w), F.crop(label, i, j, h, w)]
+    return msk_tensor

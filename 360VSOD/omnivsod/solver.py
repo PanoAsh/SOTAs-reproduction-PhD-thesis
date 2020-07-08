@@ -4,7 +4,7 @@ from torch.nn import utils, functional as F
 from torch.optim import Adam, SGD
 from torch.autograd import Variable
 from torch.backends import cudnn
-from model import build_model, weights_init
+from model import build_model
 import scipy.misc as sm
 import numpy as np
 import os
@@ -18,6 +18,7 @@ import PIL.Image
 import scipy.io
 import os
 import logging
+import matplotlib.pyplot as plt
 EPSILON = 1e-8
 p = OrderedDict()
 
@@ -39,8 +40,6 @@ class Solver(object):
         self.test_loader = test_loader
         self.config = config
         self.save_fold = save_fold
-        self.mean = torch.Tensor([123.68, 116.779, 103.939]).view(3, 1, 1) / 255.
-        # inference: choose the side map (see paper)
         if config.visdom:
             self.visual = Viz_visdom("trueUnify", 1)
         self.build_model()
@@ -120,27 +119,19 @@ class Solver(object):
     def train(self):
         iter_num = len(self.train_loader.dataset) // self.config.batch_size
         aveGrad = 0
-        F_v = 0
 
         for epoch in range(self.config.epoch):                          
             r_edge_loss, r_sal_loss, r_sum_loss= 0,0,0
         #    self.net_bone.zero_grad()
             for i, data_batch in enumerate(self.train_loader):
-                sal_image, sal_label, sal_edge = data_batch['sal_image'], data_batch['sal_label'], data_batch['sal_edge']
-                if sal_image.size()[2:] != sal_label.size()[2:]:
+                ER_img, ER_msk= data_batch['ER_img'], data_batch['ER_msk']
+                if ER_img.size()[2:] != ER_msk.size()[2:]:
                     print("Skip this batch")
                     continue
-                sal_image, sal_label, sal_edge = Variable(sal_image), Variable(sal_label), Variable(sal_edge)
+                ER_img, ER_msk = Variable(ER_img), Variable(ER_msk)
                 if self.config.cuda: 
-                    sal_image, sal_label, sal_edge = sal_image.cuda(), sal_label.cuda(), sal_edge.cuda()
+                    ER_img, ER_msk = ER_img.cuda(), ER_msk.cuda()
 
-                up_edge, up_sal, up_sal_f = self.net_bone(sal_image)
-                # edge part
-                edge_loss = []
-                for ix in up_edge:
-                    edge_loss.append(bce2d_new(ix, sal_edge, reduction='sum'))
-                edge_loss = sum(edge_loss) / (nAveGrad * self.config.batch_size)
-                r_edge_loss += edge_loss.data
                 # sal part
                 sal_loss1= []
                 sal_loss2 = []
