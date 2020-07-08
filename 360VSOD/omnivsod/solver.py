@@ -73,21 +73,7 @@ class Solver(object):
 
     # build the network
     def build_model(self):
-        self.net_bone = build_model(base_model_cfg)
-        if self.config.cuda:
-            self.net_bone = self.net_bone.cuda()
-            
-        self.net_bone.eval()  # use_global_stats = True
-        self.net_bone.apply(weights_init)
-        if self.config.mode == 'train':
-            self.net_bone.base.load_state_dict(torch.load(self.config.resnet))
-
-
-        self.lr_bone = p['lr_bone']
-        self.lr_branch = p['lr_branch']
-        self.optimizer_bone = Adam(filter(lambda p: p.requires_grad, self.net_bone.parameters()), lr=self.lr_bone, weight_decay=p['wd'])
-
-        self.print_network(self.net_bone, 'trueUnify bone part')
+        print('model under built...')
 
     # update the learning rate
     def update_lr(self, rate):
@@ -138,7 +124,7 @@ class Solver(object):
 
         for epoch in range(self.config.epoch):                          
             r_edge_loss, r_sal_loss, r_sum_loss= 0,0,0
-            self.net_bone.zero_grad()
+        #    self.net_bone.zero_grad()
             for i, data_batch in enumerate(self.train_loader):
                 sal_image, sal_label, sal_edge = data_batch['sal_image'], data_batch['sal_label'], data_batch['sal_edge']
                 if sal_image.size()[2:] != sal_label.size()[2:]:
