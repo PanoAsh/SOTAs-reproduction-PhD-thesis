@@ -25,36 +25,45 @@ def main(config):
 
 if __name__ == '__main__':
 
-    resnet_path = os.getcwd() + '/pretrained/resnet50-19c8e357.pth'
+    fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
+    deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
     test_model_path = os.getcwd() + '/results/models/..'
     test_save_path = os.getcwd() + '/results/predicted/'
 
     parser = argparse.ArgumentParser()
 
-    # Hyper-parameters
-    parser.add_argument('--n_color', type=int, default=3)
-
+    # Training settings
+    # GPU
+    parser.add_argument('--num_thread', type=int, default=1)
     parser.add_argument('--cuda', type=bool, default=True)
 
-    # Training settings
-    parser.add_argument('--resnet', type=str, default=resnet_path)
+    #Backbones
+    parser.add_argument('--backbone', type=str, default='fcn_resnet101') # or deeplabv3_resnet101
+    parser.add_argument('--fcn', type=str, default=fcn_resnet101_path)
+    parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
+
+    # Hyper_parameters
+    parser.add_argument('--n_color', type=int, default=3)
     parser.add_argument('--epoch', type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=1)
-    parser.add_argument('--test_batch_size', type=int, default=1)
-    parser.add_argument('--num_thread', type=int, default=1)
+    parser.add_argument('--lr', type=int, default=0.001)
+    parser.add_argument('--wd', type=int, default=0.0005)
+
+    # Recording & Visualization
+    parser.add_argument('--pre_trained', type=str, default='')
+    parser.add_argument('--visdom', type=bool, default=False)
     parser.add_argument('--save_fold', type=str, default='./results')
     parser.add_argument('--epoch_save', type=int, default=1)
     parser.add_argument('--epoch_show', type=int, default=1)
-    parser.add_argument('--pre_trained', type=str, default='')
 
     # Testing settings
+    parser.add_argument('--test_batch_size', type=int, default=1)
     parser.add_argument('--model', type=str, default=test_model_path)
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
-    # Misc
+    # Mode
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--visdom', type=bool, default=False)
     
     config = parser.parse_args()
 

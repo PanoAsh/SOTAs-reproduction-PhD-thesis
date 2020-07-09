@@ -1,14 +1,8 @@
 import os
 from PIL import Image
-import cv2
 import torch
 from torch.utils import data
 from torchvision import transforms
-from torchvision.transforms import functional as F
-import numbers
-import numpy as np
-import random
-import matplotlib.pyplot as plt
 
 
 class ImageDataTrain(data.Dataset):
@@ -35,74 +29,6 @@ class ImageDataTrain(data.Dataset):
 
     def __len__(self):
         return self.img_num
-
-class ImageDataTest(data.Dataset):
-    def __init__(self, test_mode='vr', sal_mode=''):
-        if test_mode == 0:
-            # self.image_root = '/home/liuj/dataset/saliency_test/ECSSD/Imgs/'
-            # self.image_source = '/home/liuj/dataset/saliency_test/ECSSD/test.lst'
-            self.image_root = '/home/liuj/dataset/HED-BSDS_PASCAL/HED-BSDS/test/'
-            self.image_source = '/home/liuj/dataset/HED-BSDS_PASCAL/HED-BSDS/test.lst'
-
-
-        elif test_mode == 1:
-            if sal_mode == 'e':
-                self.image_root = '/home/liuj/dataset/saliency_test/ECSSD/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/ECSSD/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/ECSSD/'
-            elif sal_mode == 'p':
-                self.image_root = '/home/liuj/dataset/saliency_test/PASCALS/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/PASCALS/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/PASCALS/'
-            elif sal_mode == 'd':
-                self.image_root = '/home/liuj/dataset/saliency_test/DUTOMRON/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/DUTOMRON/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/DUTOMRON/'
-            elif sal_mode == 'h':
-                self.image_root = '/home/liuj/dataset/saliency_test/HKU-IS/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/HKU-IS/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/HKU-IS/'
-            elif sal_mode == 's':
-                self.image_root = '/home/liuj/dataset/saliency_test/SOD/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/SOD/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/SOD/'
-            elif sal_mode == 'm':
-                self.image_root = '/home/liuj/dataset/saliency_test/MSRA/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/MSRA/test.lst'
-            elif sal_mode == 'o':
-                self.image_root = '/home/liuj/dataset/saliency_test/SOC/TestSet/Imgs/'
-                self.image_source = '/home/liuj/dataset/saliency_test/SOC/TestSet/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/SOC/'
-            elif sal_mode == 't':
-                self.image_root = '/home/liuj/dataset/DUTS/DUTS-TE/DUTS-TE-Image/'
-                self.image_source = '/home/liuj/dataset/DUTS/DUTS-TE/test.lst'
-                self.test_fold = '/media/ubuntu/disk/Result/saliency/DUTS/'
-        elif test_mode == 2:
-
-            self.image_root = '/home/liuj/dataset/SK-LARGE/images/test/'
-            self.image_source = '/home/liuj/dataset/SK-LARGE/test.lst'
-
-        elif test_mode == 3:
-            self.image_root = os.getcwd() + '/data/360ISOD-TE/Imgs/'
-            self.image_source = os.getcwd() + '/data/360ISOD-TE/test.lst'
-            self.test_fold = os.getcwd() + '/results/predicted/'
-
-        with open(self.image_source, 'r') as f:
-            self.image_list = [x.strip() for x in f.readlines()]
-
-        self.image_num = len(self.image_list)
-
-    def __getitem__(self, item):
-        image, im_size = load_image_test(os.path.join(self.image_root, self.image_list[item]))
-        image = torch.Tensor(image)
-
-        return {'image': image, 'name': self.image_list[item%self.image_num], 'size': im_size}
-    def save_folder(self):
-        return self.test_fold
-
-    def __len__(self):
-        # return max(max(self.edge_num, self.skel_num), self.sal_num)
-        return self.image_num
 
 
 # get the dataloader (Note: without data augmentation, except saliency with random flip)

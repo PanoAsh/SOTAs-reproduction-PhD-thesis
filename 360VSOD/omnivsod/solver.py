@@ -1,24 +1,10 @@
 import torch
-from collections import OrderedDict
-from torch.nn import utils, functional as F
-from torch.optim import Adam, SGD
+from torch.optim import Adam
 from torch.autograd import Variable
-from torch.backends import cudnn
 from model import build_model
-import scipy.misc as sm
 import numpy as np
-import os
-import torchvision.utils as vutils
 import cv2
-import torch.nn.functional as F
-import math
-import time
-import sys
-import PIL.Image
-import scipy.io
 import os
-import logging
-import matplotlib.pyplot as plt
 
 
 class Solver(object):
@@ -27,13 +13,11 @@ class Solver(object):
         self.test_loader = test_loader
         self.config = config
         if config.visdom:
-            self.visual = Viz_visdom("trueUnify", 1)
+            print('under built...')
         self.build_model()
-        if self.config.pre_trained: self.net_bone.load_state_dict(torch.load(self.config.pre_trained))
-        if config.mode == 'train':
-
-            print()
-        else:
+        if self.config.pre_trained != '':
+            self.net_bone.load_state_dict(torch.load(self.config.pre_trained))
+        if config.mode == 'test':
             print('Loading pre-trained model from %s...' % self.config.model)
             self.net_bone.load_state_dict(torch.load(self.config.model))
             self.net_bone.eval()
@@ -42,65 +26,25 @@ class Solver(object):
         num_params = 0
         for p in model.parameters():
             num_params += p.numel()
-        print(name)
         print(model)
+        print(name)
         print("The number of parameters: {}".format(num_params))
-
-    def get_params(self, base_lr):
-        ml = []
-        for name, module in self.net_bone.named_children():
-            print(name)
-            if name == 'loss_weight':
-                ml.append({'params': module.parameters(), 'lr': p['lr_branch']})          
-            else:
-                ml.append({'params': module.parameters()})
-        return ml
 
     # build the network
     def build_model(self):
-        print('model under built...')
+        if self.config.backbone == 'fcn_resnet101':
+            self.net_bone = build_model(self.config.backbone, self.config.fcn, self.config.mode)
+        elif self.config.backbone == 'deeplabv3_resnet101':
+            self.net_bone = build_model(self.config.backbone, self.config.deeplab, self.config.mode)
+        if self.config.cuda:
+            self.net_bone = self.net_bone.cuda()
+        self.lr = self.config.lr
+        self.wd = self.config.wd
+        self.optimizer_bone = Adam(filter(lambda p: p.requires_grad, self.net_bone.parameters()), lr=self.lr,
+                                   weight_decay=self.wd)
 
-    # update the learning rate
-    def update_lr(self, rate):
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = param_group['lr'] * rate
+        self.print_network(self.net_bone, 'GLOmniNet')
 
-
-    def test(self, test_mode=0):
-        EPSILON = 1e-8
-        img_num = len(self.test_loader)
-        time_t = 0.0
-        name_t = 'EGNet_ResNet50/'
-
-
-        for i, data_batch in enumerate(self.test_loader):
-
-          #  print(self.config.test_fold)
-            images_, name, im_size = data_batch['image'], data_batch['name'][0], np.asarray(data_batch['size'])
-            
-            with torch.no_grad():
-                
-                images = Variable(images_)
-                if self.config.cuda:
-                    images = images.cuda()
-               # print(images.size())
-                time_start = time.time()
-                up_edge, up_sal, up_sal_f = self.net_bone(images)
-                torch.cuda.synchronize()
-                time_end = time.time()
-                #print(time_end - time_start)
-                time_t = time_t + time_end - time_start                              
-                pred = np.squeeze(torch.sigmoid(up_sal_f[-1]).cpu().data.numpy())             
-                multi_fuse = 255 * pred
-                
-
-                
-                cv2.imwrite(os.path.join(self.config.test_fold, name[:-4] + '.png'), multi_fuse)
-          
-        print("--- %s seconds ---" % (time_t))
-        print('Test Done!')
-
-   
     # training phase
     def train(self):
         iter_num = len(self.train_loader.dataset) // self.config.batch_size
@@ -168,21 +112,5 @@ class Solver(object):
 
         torch.save(self.net_bone.state_dict(), '%s/models/final_bone.pth' % self.config.save_fold)
         
-def bce2d_new(input, target, reduction=None):
-    assert(input.size() == target.size())
-    pos = torch.eq(target, 1).float()
-    neg = torch.eq(target, 0).float()
-    # ing = ((torch.gt(target, 0) & torch.lt(target, 1))).float()
 
-    num_pos = torch.sum(pos)
-    num_neg = torch.sum(neg)
-    num_total = num_pos + num_neg
-
-    alpha = num_neg  / num_total
-    beta = 1.1 * num_pos  / num_total
-    # target pixel = 1 -> weight beta
-    # target pixel = 0 -> weight 1-beta
-    weights = alpha * pos + beta * neg
-
-    return F.binary_cross_entropy_with_logits(input, target, weights, reduction=reduction)
 

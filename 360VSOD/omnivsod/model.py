@@ -1,9 +1,6 @@
 import torch
 from torch import nn
-import torch.nn.functional as F
-import math
 from torch.autograd import Variable
-import numpy as np
 import torchvision
 import os
 from PIL import Image
@@ -23,25 +20,27 @@ class GLOmni_bone(nn.Module):
         return x
 
 # build the whole network
-def build_model():
-    base_2d = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=1)
+def build_model(backbone_config, coco_model, mode):
+    if backbone_config == 'fcn_resnet101':
+        base_2d = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=1)
 
-    base_2d_dict = base_2d.state_dict()
-    state_dict = torch.load(os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth')
-    state_dict = {
-        k: v
-        for k, v in state_dict.items()
-        if k in base_2d_dict and v.shape == base_2d_dict[k].shape
-    }
-    base_2d.load_state_dict(state_dict, strict=False)
+        if mode == 'train':
+            base_2d_dict = base_2d.state_dict()
+            state_dict = torch.load(coco_model)
+            state_dict = {
+                k: v
+                for k, v in state_dict.items()
+                if k in base_2d_dict and v.shape == base_2d_dict[k].shape
+            }
+            base_2d.load_state_dict(state_dict, strict=False)
 
-   # base_2d = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
+    if backbone_config == 'deeplabv3_resnet101':
+        base_2d = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
 
     return GLOmni_bone(base_2d)
 
 
 if __name__ == '__main__':
-    from torch.autograd import Variable
     net = build_model().cuda()
 
     img = Image.open(os.getcwd() + '/debug/img1.png')
