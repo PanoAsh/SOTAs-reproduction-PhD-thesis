@@ -55,7 +55,6 @@ if __name__ == '__main__':
 
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default='')
-    parser.add_argument('--visdom', type=bool, default=False)
     parser.add_argument('--save_fold', type=str, default='./results')
     parser.add_argument('--showEvery', type=int, default=100)
     parser.add_argument('--epoch_save', type=int, default=1)
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
     # Mode
-    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
+    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
     
     config = parser.parse_args()
 

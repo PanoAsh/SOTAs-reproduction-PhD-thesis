@@ -14,8 +14,6 @@ class Solver(object):
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.config = config
-        if config.visdom:
-            print('under built...')
         self.build_model()
         if self.config.pre_trained != '':
             self.net.load_state_dict(torch.load(self.config.pre_trained))
@@ -79,12 +77,12 @@ class Solver(object):
                     aveGrad = 0
 
                 if i % self.config.showEvery == 0:
-                    print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  Sum : %10.4f' % (
-                        epoch, self.config.epoch, i, iter_num,
-                        gl_loss * (self.config.nAveGrad * self.config.batch_size) / self.config.showEvery))
+                    if i > 0:
+                        print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
+                            epoch, self.config.epoch, i, iter_num, gl_loss / self.config.showEvery)) # batch_size = 1
 
-                    print('Learning rate: ' + str(self.lr))
-                    gl_loss = 0
+                        print('Learning rate: ' + str(self.lr))
+                        gl_loss = 0
 
             if (epoch + 1) % self.config.epoch_save == 0:
                 torch.save(self.net.state_dict(), '%s/models/epoch_%d_bone.pth' %
