@@ -48,7 +48,7 @@ def load_2dImg(pth):
         print('File Not Exists')
     img = Image.open(pth)
     preprocess = transforms.Compose([
-        transforms.Resize([512, 512]),
+        transforms.Resize([256, 512]),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
@@ -61,7 +61,7 @@ def load_2dMsk(pth):
         print('File Not Exists')
     msk = Image.open(pth)
     preprocess = transforms.Compose([
-        transforms.Resize([512, 512]),
+        transforms.Resize([256, 512]),
         transforms.ToTensor(),
     ])
     msk_tensor = preprocess(msk)

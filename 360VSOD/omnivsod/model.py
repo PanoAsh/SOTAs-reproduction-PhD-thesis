@@ -41,11 +41,11 @@ def build_model(backbone_config, coco_model, mode):
 
 
 if __name__ == '__main__':
-    net = build_model().cuda()
+    net = build_model('fcn_resnet101', os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth', 'train').cuda()
 
     img = Image.open(os.getcwd() + '/debug/img1.png')
     preprocess = transforms.Compose([
-        transforms.Resize([512, 512]),
+        transforms.Resize([256, 512]),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
@@ -56,6 +56,6 @@ if __name__ == '__main__':
     plt.imshow(img_tensor.cpu().detach().numpy()[0,0,:,:], cmap='gray')
     plt.show()
 
-    out = net(img_tensor)['out'][0].cpu().detach().numpy()
+    out = net(img_tensor)[0].cpu().detach().numpy()
     plt.imshow(out[0,:,:], cmap='gray')
     plt.show()
