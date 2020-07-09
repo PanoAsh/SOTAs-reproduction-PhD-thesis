@@ -5,7 +5,8 @@ from model import build_model
 import numpy as np
 import cv2
 import os
-from torch.nn import utils, functional as F
+from torch.nn import functional as F
+import time
 
 
 class Solver(object):
@@ -41,7 +42,7 @@ class Solver(object):
             self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
-        self.optimizer_bone = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
+        self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                                    weight_decay=self.wd)
 
         self.print_network(self.net, 'GLOmniNet')
@@ -73,8 +74,8 @@ class Solver(object):
                 aveGrad += 1
 
                 if aveGrad % self.config.nAveGrad == 0:
-                    self.optimizer_bone.step()
-                    self.optimizer_bone.zero_grad()
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
                     aveGrad = 0
 
                 if i % self.config.showEvery == 0:
@@ -89,9 +90,32 @@ class Solver(object):
                 torch.save(self.net.state_dict(), '%s/models/epoch_%d_bone.pth' %
                            (self.config.save_fold, epoch + 1))
 
-            if epoch % self.config.lr_decay_epoch == 0:
-                self.lr_bone = self.lr_bone * 0.1
-                self.optimizer_bone = Adam(filter(lambda p: p.requires_grad, self.net.parameters()),
+            if (epoch + 1) % self.config.lr_decay_epoch == 0:
+                self.lr = self.lr * 0.1
+                self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()),
                                            lr=self.lr, weight_decay=self.wd)
 
         torch.save(self.net.state_dict(), '%s/models/final_bone.pth' % self.config.save_fold)
+
+    def test(self):
+        time_total = 0.0
+
+        for i, data_batch in enumerate(self.test_loader):
+            ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
+
+            with torch.no_grad():
+                ER_img = Variable(ER_img)
+                if self.config.cuda:
+                    ER_img = ER_img.cuda()
+                time_start = time.time()
+                ER_sal = self.net(ER_img)
+                torch.cuda.synchronize()
+                time_end = time.time()
+                time_total = time_total + time_end - time_start
+                pred = np.squeeze(torch.sigmoid(ER_sal[-1]).cpu().data.numpy())
+                pred = 255 * pred
+
+                cv2.imwrite(self.config.test_fold + img_name[0], pred)
+
+        print("--- %s seconds ---" % (time_total))
+        print('Test Done!')

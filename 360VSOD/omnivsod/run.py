@@ -17,7 +17,7 @@ def main(config):
         train.train()
     elif config.mode == 'test':
         test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread)
-        test = Solver(None, test_loader, config, dataset.save_folder())
+        test = Solver(None, test_loader, config)
         test.test()
     else:
         raise IOError("illegal input!!!")
@@ -28,8 +28,8 @@ if __name__ == '__main__':
     fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
     deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
-    test_model_path = os.getcwd() + '/results/models/..'
-    test_save_path = os.getcwd() + '/results/predicted/'
+    test_model_path = os.getcwd() + '/results/models/final_bone.pth'
+    test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
     # Mode
-    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
+    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
     
     config = parser.parse_args()
 
