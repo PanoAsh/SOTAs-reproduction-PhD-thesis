@@ -47,13 +47,17 @@ if __name__ == '__main__':
     parser.add_argument('--n_color', type=int, default=3)
     parser.add_argument('--epoch', type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=1)
-    parser.add_argument('--lr', type=int, default=0.001)
+    parser.add_argument('--lr', type=int, default=0.0001)
     parser.add_argument('--wd', type=int, default=0.0005)
+    parser.add_argument('--nAveGrad', type=int, default=10)
+    parser.add_argument('--lr_decay_epoch', type=int, default=20)
+
 
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default='')
     parser.add_argument('--visdom', type=bool, default=False)
     parser.add_argument('--save_fold', type=str, default='./results')
+    parser.add_argument('--showEvery', type=int, default=100)
     parser.add_argument('--epoch_save', type=int, default=1)
     parser.add_argument('--epoch_show', type=int, default=1)
 

@@ -9,13 +9,13 @@ import matplotlib.pyplot as plt
 
 
 # GLOmni network
-class GLOmni_bone(nn.Module):
+class GLOmniNet(nn.Module):
     def __init__(self, base_2d):
-        super(GLOmni_bone, self).__init__()
+        super(GLOmniNet, self).__init__()
         self.base_2d = base_2d
 
     def forward(self, x):
-        x = self.base_2d(x)
+        x = self.base_2d(x)['out']
 
         return x
 
@@ -37,7 +37,7 @@ def build_model(backbone_config, coco_model, mode):
     if backbone_config == 'deeplabv3_resnet101':
         base_2d = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
 
-    return GLOmni_bone(base_2d)
+    return GLOmniNet(base_2d)
 
 
 if __name__ == '__main__':
