@@ -7,6 +7,9 @@ import cv2
 import os
 from torch.nn import functional as F
 import time
+from apex import amp
+opt_level = 'O1'
+from thop import profile
 
 
 class Solver(object):
@@ -45,6 +48,9 @@ class Solver(object):
 
         self.print_network(self.net, 'GLOmniNet')
 
+        # Apex acceleration
+        #self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level=opt_level)
+
     # training phase
     def train(self):
         iter_num = len(self.train_loader.dataset) // self.config.batch_size
@@ -68,6 +74,7 @@ class Solver(object):
                           / (self.config.nAveGrad * self.config.batch_size)
 
                 gl_loss += ER_loss.data
+                #with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
                 ER_loss.backward()
                 aveGrad += 1
 
