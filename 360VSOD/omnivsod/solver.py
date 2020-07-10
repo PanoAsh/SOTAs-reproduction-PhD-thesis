@@ -55,6 +55,8 @@ class Solver(object):
     def train(self):
         iter_num = len(self.train_loader.dataset) // self.config.batch_size
         aveGrad = 0
+        f = open('%s/logs/log_file.txt' % self.config.save_fold, 'w')
+        f2 = open('%s/logs/loss_file.txt' % self.config.save_fold, 'w')
 
         for epoch in range(self.config.epoch):
             gl_loss = 0
@@ -87,19 +89,24 @@ class Solver(object):
                     if i > 0:
                         print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                             epoch, self.config.epoch, i, iter_num, gl_loss / self.config.showEvery)) # batch_size = 1
-
                         print('Learning rate: ' + str(self.lr))
+                        f.write('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
+                            epoch, self.config.epoch, i, iter_num, gl_loss / self.config.showEvery) + '  ||  lr:  ' +
+                                str(self.lr) + '\n')
+                        f2.write(str(epoch) + '_' + '%10.4f' % (gl_loss / self.config.showEvery) + '\n')
+
                         gl_loss = 0
 
             if (epoch + 1) % self.config.epoch_save == 0:
-                torch.save(self.net.state_dict(), '%s/models/epoch_%d_bone.pth' %
-                           (self.config.save_fold, epoch + 1))
+                torch.save(self.net.state_dict(), '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))
 
             if (epoch + 1) % self.config.lr_decay_epoch == 0:
                 self.lr = self.lr * 0.1
                 self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()),
-                                           lr=self.lr, weight_decay=self.wd)
+                                      lr=self.lr, weight_decay=self.wd)
 
+        f.close()
+        f2.close()
         torch.save(self.net.state_dict(), '%s/models/final_bone.pth' % self.config.save_fold)
 
     def test(self):
