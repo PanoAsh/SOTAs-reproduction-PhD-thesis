@@ -10,34 +10,64 @@ import matplotlib.pyplot as plt
 
 # GLOmni network
 class GTNet(nn.Module):
-    def __init__(self, base_2d):
+    def __init__(self, base):
         super(GTNet, self).__init__()
-        self.base_2d = base_2d
+        self.base = base
+        self.layer0_conv1 = self.base.backbone.conv1
+        self.layer0_bn1 = self.base.backbone.bn1
+        self.layer0_relu = self.base.backbone.relu
+        self.layer0_maxpool = self.base.backbone.maxpool
+        self.layer1 = self.base.backbone.layer1
+        self.layer2 = self.base.backbone.layer2
+        self.layer3 = self.base.backbone.layer3
+        self.layer4 = self.base.backbone.layer4
+        self.classifier = self.base.classifier
+
+        self.layer_g2l = glo2loc()
+        self.layer_l2g = loc2glo()
 
     def forward(self, x):
-        x = self.base_2d(x)['out']
+        x = self.base(x)['out']
+
+        return x
+
+# Global guidance to local branch
+class glo2loc(nn.Module):
+    def __init__(self):
+        super(glo2loc, self).__init__()
+
+    def forward(self, x, x_shape):
+
+        return x
+
+# Local refinement to global branch
+class loc2glo(nn.Module):
+    def __init__(self):
+        super(loc2glo, self).__init__()
+
+    def forward(self, x, x_shape):
 
         return x
 
 # build the whole network
 def build_model(backbone_config, coco_model, mode):
     if backbone_config == 'fcn_resnet101':
-        base_2d = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=1)
+        base = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=1)
 
         if mode == 'train':
-            base_2d_dict = base_2d.state_dict()
+            base_dict = base.state_dict()
             state_dict = torch.load(coco_model)
             state_dict = {
                 k: v
                 for k, v in state_dict.items()
-                if k in base_2d_dict and v.shape == base_2d_dict[k].shape
+                if k in base_dict and v.shape == base_dict[k].shape
             }
-            base_2d.load_state_dict(state_dict, strict=False)
+            base.load_state_dict(state_dict, strict=False)
 
     if backbone_config == 'deeplabv3_resnet101':
-        base_2d = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
+        base = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
 
-    return GTNet(base_2d)
+    return GTNet(base)
 
 
 if __name__ == '__main__':
