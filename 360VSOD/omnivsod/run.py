@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     # Mode
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--model_type', type=str, default='G') # or L or GL
+    parser.add_argument('--model_type', type=str, default='L') # or L or GL
     parser.add_argument('--base_level', type=int, default=0)  # for tangent images
     parser.add_argument('--sample_level', type=int, default=7)
 
