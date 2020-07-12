@@ -2,11 +2,15 @@ import argparse
 import os
 from dataset import get_loader
 from solver import Solver
+from torch.multiprocessing import set_start_method
 
 
 def main(config):
+    set_start_method('spawn')
+
     if config.mode == 'train':
-        train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread)
+        train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,
+                                           data_type=config.model_type)
         run = "omnivsod"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
@@ -67,6 +71,7 @@ if __name__ == '__main__':
 
     # Mode
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
+    parser.add_argument('--model_type', type=str, default='L') # or L or GL
     
     config = parser.parse_args()
 

@@ -46,7 +46,7 @@ class Solver(object):
         self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                                    weight_decay=self.wd)
 
-        self.print_network(self.net, 'GLOmniNet')
+        self.print_network(self.net, 'GTNet')
 
         # Apex acceleration
         #self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level=opt_level)
@@ -59,25 +59,39 @@ class Solver(object):
         f2 = open('%s/logs/loss_file.txt' % self.config.save_fold, 'w')
 
         for epoch in range(self.config.epoch):
-            gl_loss = 0
+            G_loss = 0
             self.net.zero_grad()
             for i, data_batch in enumerate(self.train_loader):
-                ER_img, ER_msk= data_batch['ER_img'], data_batch['ER_msk']
-                if ER_img.size()[2:] != ER_msk.size()[2:]:
-                    print("Skip this batch")
-                    continue
-                ER_img, ER_msk = Variable(ER_img), Variable(ER_msk)
-                if self.config.cuda: 
-                    ER_img, ER_msk = ER_img.cuda(), ER_msk.cuda()
+                if self.config.model_type == 'G':
+                    ER_img, ER_msk= data_batch['ER_img'], data_batch['ER_msk']
+                    if ER_img.size()[2:] != ER_msk.size()[2:]:
+                        print("Skip this batch")
+                        continue
+                    ER_img, ER_msk = Variable(ER_img), Variable(ER_msk)
+                    if self.config.cuda:
+                        ER_img, ER_msk = ER_img.cuda(), ER_msk.cuda()
 
-                # ERP part
-                ER_sal = self.net(ER_img)
-                ER_loss = F.binary_cross_entropy_with_logits(ER_sal, ER_msk, reduction='sum') \
+                    img_train, msk_train = ER_img, ER_msk
+
+                elif self.config.model_type == 'L':
+                    TI_imgs, TI_msks = data_batch['TI_imgs'], data_batch['TI_msks']
+                    TI_imgs, TI_msks = TI_imgs.squeeze(0), TI_msks.squeeze(0)
+
+                    img_train, msk_train = TI_imgs, TI_msks
+
+                else:
+                    ER_img, ER_msk, TI_imgs, TI_msks = data_batch['ER_img'], data_batch['ER_msk'], \
+                                                       data_batch['TI_imgs'], data_batch['TI_msks']
+                    print('under built...')
+
+                # FCN-backbone part
+                sal = self.net(img_train)
+                loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
                           / (self.config.nAveGrad * self.config.batch_size)
 
-                gl_loss += ER_loss.data
+                G_loss += loss_currIter.data
                 #with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
-                ER_loss.backward()
+                loss_currIter.backward()
                 aveGrad += 1
 
                 if aveGrad % self.config.nAveGrad == 0:
@@ -88,14 +102,17 @@ class Solver(object):
                 if i % self.config.showEvery == 0:
                     if i > 0:
                         print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
-                            epoch, self.config.epoch, i, iter_num, gl_loss / self.config.showEvery)) # batch_size = 1
+                            epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
+                            * self.config.batch_size / self.config.showEvery)) # batch_size = 1
                         print('Learning rate: ' + str(self.lr))
                         f.write('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
-                            epoch, self.config.epoch, i, iter_num, gl_loss / self.config.showEvery) + '  ||  lr:  ' +
+                            epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
+                            * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' +
                                 str(self.lr) + '\n')
-                        f2.write(str(epoch) + '_' + '%10.4f' % (gl_loss / self.config.showEvery) + '\n')
+                        f2.write(str(epoch) + '_' + '%10.4f' % (G_loss * self.config.nAveGrad *
+                                                                self.config.batch_size / self.config.showEvery) + '\n')
 
-                        gl_loss = 0
+                        G_loss = 0
 
             if (epoch + 1) % self.config.epoch_save == 0:
                 torch.save(self.net.state_dict(), '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))

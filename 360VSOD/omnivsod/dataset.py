@@ -4,12 +4,15 @@ import torch
 from torch.utils import data
 from torchvision import transforms
 import matplotlib.pyplot as plt
+from util import ER2TI, TI2ER
+import torch.nn.functional as F
 
 
 class ImageDataTrain(data.Dataset):
-    def __init__(self):
+    def __init__(self, data_type):
         self.img_source = os.getcwd() + '/data/train_img.lst'
         self.msk_source = os.getcwd() + '/data/train_msk.lst'
+        self.data_type = data_type
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -19,9 +22,22 @@ class ImageDataTrain(data.Dataset):
         self.img_num = len(self.img_list)
 
     def __getitem__(self, item):
-        ER_img = load_2dImg(self.img_list[item % self.img_num])
-        ER_msk = load_2dMsk(self.msk_list[item % self.img_num])
-        sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
+        if self.data_type == 'G':
+            ER_img = load_ERImg(self.img_list[item % self.img_num])
+            ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
+            sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
+
+        elif self.data_type == 'L':
+            TI_imgs = load_TIImg(self.img_list[item % self.img_num])
+            TI_msks = load_TIMsk(self.msk_list[item % self.img_num])
+            sample = {'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
+
+        else:
+            ER_img = load_ERImg(self.img_list[item % self.img_num])
+            ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
+            TI_imgs = load_TIImg(self.img_list[item % self.img_num])
+            TI_msks = load_TIMsk(self.msk_list[item % self.img_num])
+            sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
         return sample
 
@@ -38,7 +54,7 @@ class ImageDataTest(data.Dataset):
         self.img_num = len(self.img_list)
 
     def __getitem__(self, item):
-        ER_img = load_2dImg(self.img_list[item % self.img_num])
+        ER_img = load_ERImg(self.img_list[item % self.img_num])
 
         frm_name = self.img_list[item%self.img_num][52:]
         name_list = frm_name.split('/')
@@ -51,18 +67,18 @@ class ImageDataTest(data.Dataset):
         return self.img_num
 
 # get the dataloader (Note: without data augmentation, except saliency with random flip)
-def get_loader(batch_size, mode='train', num_thread=1):
+def get_loader(batch_size, mode='train', num_thread=1, data_type='G'):
     shuffle = False
     if mode == 'train':
         shuffle = True
-        dataset = ImageDataTrain()
+        dataset = ImageDataTrain(data_type=data_type)
     else:
         dataset = ImageDataTest()
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
 
     return data_loader, dataset
 
-def load_2dImg(pth):
+def load_ERImg(pth):
     if not os.path.exists(pth):
         print('File Not Exists')
     img = Image.open(pth)
@@ -75,7 +91,7 @@ def load_2dImg(pth):
 
     return img_tensor
 
-def load_2dMsk(pth):
+def load_ERMsk(pth):
     if not os.path.exists(pth):
         print('File Not Exists')
     msk = Image.open(pth)
@@ -86,3 +102,30 @@ def load_2dMsk(pth):
     msk_tensor = preprocess(msk)
 
     return msk_tensor
+
+def load_TIImg(pth):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    ER_img = Image.open(pth)
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    ER_img_tensor = preprocess(ER_img)
+    TI_imgs = ER2TI(ER_img_tensor)
+    TI_imgs = F.interpolate(TI_imgs, size=(64, 64), mode='bilinear', align_corners=False)
+
+    return TI_imgs
+
+def load_TIMsk(pth):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    ER_msk = Image.open(pth)
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+    ER_msk_tensor = preprocess(ER_msk)
+    TI_msks = ER2TI(ER_msk_tensor)
+    TI_msks = F.interpolate(TI_msks, size=(64, 64), mode='bilinear', align_corners=False)
+
+    return TI_msks

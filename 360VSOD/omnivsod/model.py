@@ -25,6 +25,8 @@ class GTNet(nn.Module):
 
         self.layer_g2l = glo2loc()
         self.layer_l2g = loc2glo()
+        self.layer_fusion = nn.Conv2d(2, 1, kernel_size=1, stride=1, bias=False)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         x = self.base(x)['out']
