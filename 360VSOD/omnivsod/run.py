@@ -21,7 +21,9 @@ def main(config):
         train = Solver(train_loader, None, config)
         train.train()
     elif config.mode == 'test':
-        test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread)
+        test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread,
+                                          data_type=config.model_type, base_level=config.base_level,
+                                          sample_level=config.sample_level)
         test = Solver(None, test_loader, config)
         test.test()
     else:
@@ -72,10 +74,9 @@ if __name__ == '__main__':
 
     # Mode
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--model_type', type=str, default='L') # or L or GL
-    parser.add_argument('--base_level', type=int, default=0)  # for tangent images
-    parser.add_argument('--sample_level', type=int, default=7)
-
+    parser.add_argument('--base_level', type=int, default=1)  # for tangent image branch
+    parser.add_argument('--sample_level', type=int, default=7) # for tangent image branch / comparison with 2D SOTAs
+    parser.add_argument('--model_type', type=str, default='L') # L for TI-based trainig/testing
     
     config = parser.parse_args()
 

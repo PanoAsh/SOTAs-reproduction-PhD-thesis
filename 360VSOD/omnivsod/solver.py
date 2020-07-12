@@ -24,7 +24,15 @@ class Solver(object):
             self.net.load_state_dict(torch.load(self.config.pre_trained))
         if config.mode == 'test':
             print('Loading pre-trained model from %s...' % self.config.model)
-            self.net.load_state_dict(torch.load(self.config.model))
+
+            netStatic_dict = self.net.state_dict()
+            netTest_dict = torch.load(self.config.model)
+            netTest_dict = {
+                k: v
+                for k, v in netTest_dict.items()
+                if k in netStatic_dict and v.shape == netStatic_dict[k].shape
+            } # remove the dynamic parameters declared during TI-based training phase
+            self.net.load_state_dict(netTest_dict, strict=False)
             self.net.eval()
 
     def print_network(self, model, name):
@@ -146,21 +154,36 @@ class Solver(object):
         time_total = 0.0
 
         for i, data_batch in enumerate(self.test_loader):
-            ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
+            if self.config.model_type == 'G':
+                ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
+                ER_img = Variable(ER_img)
+                if self.config.cuda: ER_img = ER_img.cuda()
+                img_test = ER_img
+            elif self.config.model_type == 'L':
+                TI_imgs, img_name = data_batch['TI_imgs'], data_batch['frm_name']
+                TI_imgs = Variable(TI_imgs)
+                if self.config.cuda: TI_imgs = TI_imgs.cuda()
+                img_test = TI_imgs
+            else:
+                print('under built...')
 
             with torch.no_grad():
-                ER_img = Variable(ER_img)
-                if self.config.cuda:
-                    ER_img = ER_img.cuda()
                 time_start = time.time()
-                ER_sal = self.net(ER_img)
+                sal = self.net(img_test)
                 torch.cuda.synchronize()
                 time_end = time.time()
                 time_total = time_total + time_end - time_start
-                pred = np.squeeze(torch.sigmoid(ER_sal[-1]).cpu().data.numpy())
-                pred = 255 * pred
 
+                if self.config.model_type == 'G':
+                    sal_ER = sal
+                elif self.config.model_type == 'L':
+                    sal_ER = TI2ER(sal[0], self.config.base_level, self.config.sample_level)
+
+                pred = np.squeeze(torch.sigmoid(sal_ER[-1]).cpu().data.numpy())
+                pred = 255 * pred
                 cv2.imwrite(self.config.test_fold + img_name[0], pred)
+
+
 
         print("--- %s seconds ---" % (time_total))
         print('Test Done!')

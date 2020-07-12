@@ -48,8 +48,11 @@ class ImageDataTrain(data.Dataset):
         return self.img_num
 
 class ImageDataTest(data.Dataset):
-    def __init__(self):
+    def __init__(self, data_type, base_level, sample_level):
         self.img_source = os.getcwd() + '/data/test_img.lst'
+        self.data_type = data_type
+        self.base_level = base_level
+        self.sample_level = sample_level
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -57,12 +60,20 @@ class ImageDataTest(data.Dataset):
         self.img_num = len(self.img_list)
 
     def __getitem__(self, item):
-        ER_img = load_ERImg(self.img_list[item % self.img_num])
-
-        frm_name = self.img_list[item%self.img_num][52:]
+        frm_name = self.img_list[item % self.img_num][52:]
         name_list = frm_name.split('/')
         frm_name = name_list[0] + '-' + name_list[1] + '-' + name_list[2]
-        sample = {'ER_img': ER_img, 'frm_name': frm_name}
+
+        if self.data_type == 'G':
+            ER_img = load_ERImg(self.img_list[item % self.img_num])
+            sample = {'ER_img': ER_img, 'frm_name': frm_name}
+
+        elif self.data_type == 'L':
+            TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
+            sample = {'TI_imgs': TI_imgs, 'frm_name': frm_name}
+
+        else:
+            print('under built...')
 
         return sample
 
@@ -76,7 +87,7 @@ def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level
         shuffle = True
         dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level)
     else:
-        dataset = ImageDataTest()
+        dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level)
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
 
     return data_loader, dataset
