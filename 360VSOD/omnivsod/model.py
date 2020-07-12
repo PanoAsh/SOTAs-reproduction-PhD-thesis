@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 # GLOmni network
 class GTNet(nn.Module):
-    def __init__(self, base):
+    def __init__(self, base, model_type, base_level):
         super(GTNet, self).__init__()
         self.base = base
         self.layer0_conv1 = self.base.backbone.conv1
@@ -28,12 +28,33 @@ class GTNet(nn.Module):
         self.layer_fusion = nn.Conv2d(2, 1, kernel_size=1, stride=1, bias=False)
         self.sigmoid = nn.Sigmoid()
 
+        self.model_type = model_type
+        self.base_level = base_level
+        self.num_TIs = 20 * 4 ** self.base_level
+
     def forward(self, x):
-        x = self.base(x)['out']
+        if self.model_type == 'G':
+            y = self.base(x)['out']
 
-        return x
+        elif self.model_type == 'L':
+            y = self.sumFeaMap(x) # Dynamic parameter declaration
+            for idx in range(self.num_TIs):
+                y[:, idx, :, :, :] = self.base(x[:, idx, :, :, :])['out']
 
-# Global guidance to local branch
+        else:
+            y = x
+            print('under built...')
+
+        return y
+
+    def sumFeaMap(self, input):
+        C1, C2, C3, C4, C5 = input.size()[0], self.num_TIs, 1, input.size()[3], input.size()[4]
+        output = input.new(C1, C2, C3, C4, C5)
+        self.FMsInit = nn.Parameter(output)
+
+        return self.FMsInit @ output
+
+    # Global guidance to local branch
 class glo2loc(nn.Module):
     def __init__(self):
         super(glo2loc, self).__init__()
@@ -52,7 +73,7 @@ class loc2glo(nn.Module):
         return x
 
 # build the whole network
-def build_model(backbone_config, coco_model, mode):
+def build_model(backbone_config, coco_model, mode, model_type, base_level):
     if backbone_config == 'fcn_resnet101':
         base = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=1)
 
@@ -69,7 +90,7 @@ def build_model(backbone_config, coco_model, mode):
     if backbone_config == 'deeplabv3_resnet101':
         base = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
 
-    return GTNet(base)
+    return GTNet(base, model_type, base_level)
 
 
 if __name__ == '__main__':

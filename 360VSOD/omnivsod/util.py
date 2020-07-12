@@ -3,6 +3,7 @@ import torch
 from spherical_distortion.util import load_torch_img, torch2numpy
 from spherical_distortion.functional import create_tangent_images, tangent_images_to_equirectangular
 from torch.autograd import Variable
+import torch.nn.functional as F
 
 
 def listTrain():
@@ -42,19 +43,21 @@ def listTrain():
     f3.close()
     f4.close()
 
-def ER2TI(ER):
-    base_order = 1  # Determines the number of planes and their location on sphere
-    sample_order = 10  # Determines the sample resolution
+def ER2TI(ER, base_order, sample_order):
 
-    ER = ER.cuda()
+    #ER = ER.cuda() # may cause out of GPU memory
     TIs = create_tangent_images(ER, base_order, sample_order)
     TIs = TIs.permute(1, 0, 2, 3)
 
     return TIs
 
-def TI2ER():
-    print()
+def TI2ER(TIs, base_level, sample_level):
+    TIs_reg = TIs.permute(1, 0, 2, 3)
+    ER = tangent_images_to_equirectangular(TIs_reg, [int(2048 / 2 ** (10 - sample_level)),
+                                                     int(4096 / 2 ** (10 - sample_level))],
+                                           base_level, sample_level)
 
+    return ER
 
 if __name__ == '__main__':
     #listTrain()

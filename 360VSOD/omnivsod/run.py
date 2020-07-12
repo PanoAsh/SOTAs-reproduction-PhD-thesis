@@ -6,11 +6,12 @@ from torch.multiprocessing import set_start_method
 
 
 def main(config):
-    set_start_method('spawn')
+    #set_start_method('spawn')
 
     if config.mode == 'train':
         train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,
-                                           data_type=config.model_type)
+                                           data_type=config.model_type, base_level=config.base_level,
+                                           sample_level=config.sample_level)
         run = "omnivsod"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
@@ -71,7 +72,10 @@ if __name__ == '__main__':
 
     # Mode
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--model_type', type=str, default='L') # or L or GL
+    parser.add_argument('--model_type', type=str, default='G') # or L or GL
+    parser.add_argument('--base_level', type=int, default=0)  # for tangent images
+    parser.add_argument('--sample_level', type=int, default=7)
+
     
     config = parser.parse_args()
 

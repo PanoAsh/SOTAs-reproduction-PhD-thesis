@@ -10,6 +10,8 @@ import time
 from apex import amp
 opt_level = 'O1'
 from thop import profile
+from util import TI2ER
+import matplotlib.pyplot as plt
 
 
 class Solver(object):
@@ -36,9 +38,11 @@ class Solver(object):
     # build the network
     def build_model(self):
         if self.config.backbone == 'fcn_resnet101':
-            self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode)
+            self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
+                                   self.config.base_level)
         elif self.config.backbone == 'deeplabv3_resnet101':
-            self.net = build_model(self.config.backbone, self.config.deeplab, self.config.mode)
+            self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
+                                   self.config.base_level)
         if self.config.cuda:
             self.net = self.net.cuda()
         self.lr = self.config.lr
@@ -74,10 +78,12 @@ class Solver(object):
                     img_train, msk_train = ER_img, ER_msk
 
                 elif self.config.model_type == 'L':
-                    TI_imgs, TI_msks = data_batch['TI_imgs'], data_batch['TI_msks']
-                    TI_imgs, TI_msks = TI_imgs.squeeze(0), TI_msks.squeeze(0)
+                    TI_imgs, ER_msk = data_batch['TI_imgs'], data_batch['ER_msk']
+                    TI_imgs, ER_msk = Variable(TI_imgs), Variable(ER_msk)
+                    if self.config.cuda:
+                        TI_imgs, ER_msk = TI_imgs.cuda(), ER_msk.cuda()
 
-                    img_train, msk_train = TI_imgs, TI_msks
+                    img_train, msk_train = TI_imgs, ER_msk
 
                 else:
                     ER_img, ER_msk, TI_imgs, TI_msks = data_batch['ER_img'], data_batch['ER_msk'], \
@@ -86,8 +92,18 @@ class Solver(object):
 
                 # FCN-backbone part
                 sal = self.net(img_train)
-                loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
-                          / (self.config.nAveGrad * self.config.batch_size)
+
+                if self.config.model_type == 'G':
+                    loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
+                                    / (self.config.nAveGrad * self.config.batch_size)
+                elif self.config.model_type == 'L':
+                    if self.config.batch_size == 1:
+                        sal_ER = TI2ER(sal[0], self.config.base_level, self.config.sample_level)
+                        sal_ER = torch.unsqueeze(sal_ER, 0)
+                    else:
+                        print('under built...')
+                    loss_currIter = F.binary_cross_entropy_with_logits(sal_ER, msk_train) \
+                                    / (self.config.nAveGrad * self.config.batch_size)
 
                 G_loss += loss_currIter.data
                 #with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
@@ -103,7 +119,7 @@ class Solver(object):
                     if i > 0:
                         print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                             epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
-                            * self.config.batch_size / self.config.showEvery)) # batch_size = 1
+                            * self.config.batch_size / self.config.showEvery))
                         print('Learning rate: ' + str(self.lr))
                         f.write('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                             epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
