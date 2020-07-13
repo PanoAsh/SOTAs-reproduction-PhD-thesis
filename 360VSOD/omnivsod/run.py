@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     # Mode
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
+    parser.add_argument('--base_level', type=int, default=1)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7) # for tangent image branch / comparison with 2D SOTAs
     parser.add_argument('--model_type', type=str, default='L') # L for TI-based trainig/testing
     
