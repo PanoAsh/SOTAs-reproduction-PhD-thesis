@@ -86,12 +86,12 @@ class Solver(object):
                     img_train, msk_train = ER_img, ER_msk
 
                 elif self.config.model_type == 'L':
-                    TI_imgs, ER_msk = data_batch['TI_imgs'], data_batch['ER_msk']
-                    TI_imgs, ER_msk = Variable(TI_imgs), Variable(ER_msk)
+                    TI_imgs, TI_msks = data_batch['TI_imgs'], data_batch['TI_msks']
+                    TI_imgs, TI_msks = Variable(TI_imgs), Variable(TI_msks)
                     if self.config.cuda:
-                        TI_imgs, ER_msk = TI_imgs.cuda(), ER_msk.cuda()
+                        TI_imgs, TI_msks = TI_imgs.cuda(), TI_msks.cuda()
 
-                    img_train, msk_train = TI_imgs, ER_msk
+                    img_train, msk_train = TI_imgs, TI_msks
 
                 else:
                     ER_img, ER_msk, TI_imgs, TI_msks = data_batch['ER_img'], data_batch['ER_msk'], \
@@ -99,20 +99,10 @@ class Solver(object):
                     print('under built...')
 
                 # FCN-backbone part
+                # sal_ER = TI2ER(sal[0], self.config.base_level, self.config.sample_level) # ER mask as supervision
                 sal = self.net(img_train)
-
-                if self.config.model_type == 'G':
-                    loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
-                                    / (self.config.nAveGrad * self.config.batch_size)
-                elif self.config.model_type == 'L':
-                    if self.config.batch_size == 1:
-                        sal_ER = TI2ER(sal[0], self.config.base_level, self.config.sample_level)
-                        sal_ER = torch.unsqueeze(sal_ER, 0)
-                    else:
-                        print('under built...')
-                    loss_currIter = F.binary_cross_entropy_with_logits(sal_ER, msk_train) \
-                                    / (self.config.nAveGrad * self.config.batch_size)
-
+                loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
+                                / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
                 #with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
                 loss_currIter.backward()
