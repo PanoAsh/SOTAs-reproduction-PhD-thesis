@@ -31,15 +31,17 @@ class GTNet(nn.Module):
         self.model_type = model_type
         self.base_level = base_level
         self.num_TIs = 20 * 4 ** self.base_level
+        self.baseIter = nn.ModuleList([self.base for idx in range(self.num_TIs)])
+        self.register_parameter('FMsInit', param=None)
 
     def forward(self, x):
         if self.model_type == 'G':
             y = self.base(x)['out']
 
         elif self.model_type == 'L':
-            y = self.sumFeaMap(x) # Dynamic parameter declaration
-            for idx in range(self.num_TIs):
-                y[:, idx, :, :, :] = self.base(x[:, idx, :, :, :])['out']
+            y = self.sumFeaMap(x)
+            for idx, currIter in enumerate(self.baseIter):
+                y[:, idx, :, :, :] = currIter(x[:, idx, :, :, :])['out']
 
         else:
             y = x
