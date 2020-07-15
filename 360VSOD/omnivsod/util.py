@@ -44,7 +44,6 @@ def listTrain():
     f4.close()
 
 def ER2TI(ER, base_order, sample_order):
-
     #ER = ER.cuda() # may cause out of GPU memory
     TIs = create_tangent_images(ER, base_order, sample_order)
     TIs = TIs.permute(1, 0, 2, 3)
@@ -52,6 +51,9 @@ def ER2TI(ER, base_order, sample_order):
     return TIs
 
 def TI2ER(TIs, base_level, sample_level):
+    size_standard = 2 ** (sample_level - base_level)
+    if TIs.size()[2] != size_standard:
+        TIs = F.interpolate(TIs, [size_standard, size_standard], mode='bilinear')
     TIs_reg = TIs.permute(1, 0, 2, 3)
     ER = tangent_images_to_equirectangular(TIs_reg, [int(2048 / 2 ** (10 - sample_level)),
                                                      int(4096 / 2 ** (10 - sample_level))],
@@ -61,4 +63,5 @@ def TI2ER(TIs, base_level, sample_level):
 
 if __name__ == '__main__':
     #listTrain()
-    ER2TI()
+    #ER2TI()
+    print()

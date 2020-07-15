@@ -9,13 +9,12 @@ import torch.nn.functional as F
 
 
 class ImageDataTrain(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, min_size):
+    def __init__(self, data_type, base_level, sample_level):
         self.img_source = os.getcwd() + '/data/train_img.lst'
         self.msk_source = os.getcwd() + '/data/train_msk.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
-        self.min_size = min_size
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -31,16 +30,16 @@ class ImageDataTrain(data.Dataset):
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
 
         elif self.data_type == 'L':
-            TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level, self.min_size)
+            TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             #ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
-            TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level, self.min_size)
+            TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level)
             sample = {'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
         else:
             ER_img = load_ERImg(self.img_list[item % self.img_num])
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
-            TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level, self.min_size)
-            TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level, self.min_size)
+            TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
+            TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level)
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
         return sample
@@ -49,12 +48,11 @@ class ImageDataTrain(data.Dataset):
         return self.img_num
 
 class ImageDataTest(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, min_size):
+    def __init__(self, data_type, base_level, sample_level):
         self.img_source = os.getcwd() + '/data/test_img.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
-        self.min_size = min_size
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -83,15 +81,13 @@ class ImageDataTest(data.Dataset):
         return self.img_num
 
 # get the dataloader (Note: without data augmentation, except saliency with random flip)
-def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level = 1, sample_level=10, min_size=224):
+def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level = 1, sample_level=10):
     shuffle = False
     if mode == 'train':
         shuffle = True
-        dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level,
-                                 min_size=min_size)
+        dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level)
     else:
-        dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level,
-                                min_size=min_size)
+        dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level)
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
 
     return data_loader, dataset
@@ -121,7 +117,7 @@ def load_ERMsk(pth):
 
     return msk_tensor
 
-def load_TIImg(pth, base_level, sample_level, min_size):
+def load_TIImg(pth, base_level, sample_level):
     if not os.path.exists(pth):
         print('File Not Exists')
     ER_img = Image.open(pth)
@@ -134,12 +130,9 @@ def load_TIImg(pth, base_level, sample_level, min_size):
     ER_img_tensor = preprocess(ER_img)
     TI_imgs = ER2TI(ER_img_tensor, base_level, sample_level)
 
-    if TI_imgs.size()[2] < min_size: # must adaptive to backbone
-        TI_imgs = F.interpolate(TI_imgs, [min_size, min_size], mode='bilinear')
-
     return TI_imgs
 
-def load_TIMsk(pth, base_level, sample_level, min_size):
+def load_TIMsk(pth, base_level, sample_level):
     if not os.path.exists(pth):
         print('File Not Exists')
     ER_msk = Image.open(pth)
@@ -149,8 +142,5 @@ def load_TIMsk(pth, base_level, sample_level, min_size):
     ])
     ER_msk_tensor = preprocess(ER_msk)
     TI_msks = ER2TI(ER_msk_tensor, base_level, sample_level)
-
-    if TI_msks.size()[2] < min_size: # must adaptive to backbone
-        TI_msks = F.interpolate(TI_msks, [min_size, min_size], mode='bilinear')
 
     return TI_msks
