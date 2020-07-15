@@ -11,7 +11,7 @@ def main(config):
     if config.mode == 'train':
         train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,
                                            data_type=config.model_type, base_level=config.base_level,
-                                           sample_level=config.sample_level)
+                                           sample_level=config.sample_level, min_size=config.min_inputSize)
         run = "omnivsod"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
@@ -23,7 +23,7 @@ def main(config):
     elif config.mode == 'test':
         test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread,
                                           data_type=config.model_type, base_level=config.base_level,
-                                          sample_level=config.sample_level)
+                                          sample_level=config.sample_level, min_size=config.min_inputSize)
         test = Solver(None, test_loader, config)
         test.test()
     else:
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     parser.add_argument('--backbone', type=str, default='fcn_resnet101') # or deeplabv3_resnet101
     parser.add_argument('--fcn', type=str, default=fcn_resnet101_path)
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
+    parser.add_argument('--min_inputSize', type=int, default=224) # the minimum input size for fcn_resnet101 backbone
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
