@@ -165,15 +165,17 @@ class Solver(object):
                 time_total = time_total + time_end - time_start
 
                 if self.config.model_type == 'G':
-                    sal_ER = sal
+                    pred = np.squeeze(torch.sigmoid(sal[-1]).cpu().data.numpy())
                 elif self.config.model_type == 'L':
-                    sal_ER = TI2ER(sal[0], self.config.base_level, self.config.sample_level)
+                    sal = sal[0,:,0,:,:]
+                    for idx in range(sal.size()[0]):
+                        sal[idx,:,:] = torch.sigmoid(sal[idx,:,:])
+                    sal = sal.unsqueeze(0)
+                    sal_ER = TI2ER(sal, self.config.base_level, self.config.sample_level)
+                    pred = np.squeeze(sal_ER[-1].cpu().data.numpy())
 
-                pred = np.squeeze(torch.sigmoid(sal_ER[-1]).cpu().data.numpy())
                 pred = 255 * pred
                 cv2.imwrite(self.config.test_fold + img_name[0], pred)
-
-
 
         print("--- %s seconds ---" % (time_total))
         print('Test Done!')

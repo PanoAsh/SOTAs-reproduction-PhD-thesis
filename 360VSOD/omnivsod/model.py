@@ -29,19 +29,21 @@ class GTNet(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
         self.model_type = model_type
-        self.base_level = base_level
-        self.num_TIs = 20 * 4 ** self.base_level
-        self.baseIter = nn.ModuleList([self.base for idx in range(self.num_TIs)])
+     #   self.base_level = base_level
+       # self.num_TIs = 20 * 4 ** self.base_level
+       # self.baseIter = nn.ModuleList([self.base for idx in range(self.num_TIs)])
         self.register_parameter('FMsInit', param=None)
 
     def forward(self, x):
+        # batch size msut equal to 1
         if self.model_type == 'G':
             y = self.base(x)['out']
 
         elif self.model_type == 'L':
             y = self.sumFeaMap(x)
-            for idx, currIter in enumerate(self.baseIter):
-                y[:, idx, :, :, :] = currIter(x[:, idx, :, :, :])['out']
+            y[0] = self.base(x[0])['out']
+          #  for idx, currIter in enumerate(self.baseIter):
+           #     y[:, idx, :, :, :] = currIter(x[:, idx, :, :, :])['out']
 
         else:
             y = x
@@ -50,7 +52,7 @@ class GTNet(nn.Module):
         return y
 
     def sumFeaMap(self, input):
-        C1, C2, C3, C4, C5 = input.size()[0], self.num_TIs, 1, input.size()[3], input.size()[4]
+        C1, C2, C3, C4, C5 = input.size()[0], input.size()[1], 1, input.size()[3], input.size()[4]
         output = input.new(C1, C2, C3, C4, C5)
         self.FMsInit = nn.Parameter(output)
 
