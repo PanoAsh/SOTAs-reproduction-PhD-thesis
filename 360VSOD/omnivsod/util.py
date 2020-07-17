@@ -4,6 +4,8 @@ from spherical_distortion.util import load_torch_img, torch2numpy
 from spherical_distortion.functional import create_tangent_images, tangent_images_to_equirectangular
 from torch.autograd import Variable
 import torch.nn.functional as F
+import cv2
+import numpy as np
 
 
 def listTrain():
@@ -61,7 +63,37 @@ def TI2ER(TIs, base_level, sample_level):
 
     return ER
 
+def demo():
+    img_pth = os.getcwd() + '/results_analysis/Img/'
+    gt_pth = os.getcwd() + '/results_analysis/GT/'
+    salEr_pth = os.getcwd() + '/results_analysis/Sal_ER/'
+    salTi_pth = os.getcwd() + '/results_analysis/Sal_TI/'
+
+    demo = cv2.VideoWriter(os.getcwd() + '/' + 'demo.avi', 0, 100, (1024, 512))
+    img_list = os.listdir(img_pth)
+    img_list.sort(key=lambda x: x[:-4])
+
+    count = 1
+    for item in (img_list):
+        img = cv2.imread(img_pth + item)
+        gt = cv2.imread(gt_pth + item)
+        salEr = cv2.imread(salEr_pth + item)
+        salTi = cv2.imread(salTi_pth + item)
+
+        frm = np.zeros((512, 1024, 3))
+        frm[:256, :512, :] = img
+        frm[:256, 512:, :] = gt
+        frm[256:, :512, :] = salEr
+        frm[256:, 512:, :] = salTi
+
+        demo.write(np.uint8(frm))
+        print("{} writen".format(count))
+        count += 1
+
+    demo.release()
+
+
 if __name__ == '__main__':
     #listTrain()
     #ER2TI()
-    print()
+    demo()
