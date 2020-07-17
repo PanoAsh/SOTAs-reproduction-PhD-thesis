@@ -20,10 +20,20 @@ class Solver(object):
         self.test_loader = test_loader
         self.config = config
         self.build_model()
-        if self.config.pre_trained != '':
-            self.net.load_state_dict(torch.load(self.config.pre_trained))
+        if self.config.pre_trained != '' and config.mode == 'train':
+            print('Loading pretrained model from %s...' % self.config.pre_trained)
+
+            netStatic_dict = self.net.state_dict()
+            netPretrain_dict = torch.load(self.config.pre_trained)
+            netPretrain_dict = {
+                k: v
+                for k, v in netPretrain_dict.items()
+                if k in netStatic_dict and v.shape == netStatic_dict[k].shape
+            }  # remove the dynamic parameters declared during TI-based training phase
+            self.net.load_state_dict(netPretrain_dict, strict=False)
+
         if config.mode == 'test':
-            print('Loading pre-trained model from %s...' % self.config.model)
+            print('Loading testing model from %s...' % self.config.model)
 
             netStatic_dict = self.net.state_dict()
             netTest_dict = torch.load(self.config.model)

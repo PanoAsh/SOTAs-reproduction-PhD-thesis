@@ -6,7 +6,7 @@ from torch.multiprocessing import set_start_method
 
 
 def main(config):
-    #set_start_method('spawn')
+    set_start_method('spawn')
 
     if config.mode == 'train':
         train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,
@@ -35,7 +35,9 @@ if __name__ == '__main__':
     fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
     deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
-    test_model_path = os.getcwd() + '/results/models/epoch_4_bone.pth'
+    pretrained_path = os.getcwd() + '/pretrained/epoch_4_bone.pth'
+
+    test_model_path = os.getcwd() + '/results/models/epoch_9_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
@@ -62,7 +64,7 @@ if __name__ == '__main__':
 
 
     # Recording & Visualization
-    parser.add_argument('--pre_trained', type=str, default='')
+    parser.add_argument('--pre_trained', type=str, default=pretrained_path)
     parser.add_argument('--save_fold', type=str, default='./results')
     parser.add_argument('--showEvery', type=int, default=100)
     parser.add_argument('--epoch_save', type=int, default=1)
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7) # for tangent image branch / comparison with 2D SOTAs
-    parser.add_argument('--model_type', type=str, default='L') # L for TI-based trainig/testing
+    parser.add_argument('--model_type', type=str, default='G') # L for TI-based trainig/testing
     
     config = parser.parse_args()
 
