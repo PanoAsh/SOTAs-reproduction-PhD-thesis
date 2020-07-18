@@ -46,7 +46,7 @@ def listTrain():
     f4.close()
 
 def ER2TI(ER, base_order, sample_order):
-    ER = ER.cuda() # may cause out of GPU memory during training
+   # ER = ER.cuda() # not suggested for the dataload get_item process
     TIs = create_tangent_images(ER, base_order, sample_order)
     TIs = TIs.permute(1, 0, 2, 3)
 
@@ -96,4 +96,5 @@ def demo():
 if __name__ == '__main__':
     #listTrain()
     #ER2TI()
-    demo()
+    #demo()
+    print()
