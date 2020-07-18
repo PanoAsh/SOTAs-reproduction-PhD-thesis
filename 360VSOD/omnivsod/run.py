@@ -37,21 +37,20 @@ if __name__ == '__main__':
 
     pretrained_path = os.getcwd() + '/pretrained/epoch_4_bone.pth'
 
-    test_model_path = os.getcwd() + '/results/models/epoch_9_bone.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_5_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
 
     # Training settings
     # Settings
-    parser.add_argument('--num_thread', type=int, default=16)
+    parser.add_argument('--num_thread', type=int, default=4)
     parser.add_argument('--cuda', type=bool, default=True)
 
     #Backbones
     parser.add_argument('--backbone', type=str, default='fcn_resnet101') # or deeplabv3_resnet101
     parser.add_argument('--fcn', type=str, default=fcn_resnet101_path)
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
-    #parser.add_argument('--min_inputSize', type=int, default=224) # the minimum input size for fcn_resnet101 backbone
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
@@ -76,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
     # Mode
-    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
+    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7) # for tangent image branch / comparison with 2D SOTAs
     parser.add_argument('--model_type', type=str, default='L') # L for TI-based trainig/testing

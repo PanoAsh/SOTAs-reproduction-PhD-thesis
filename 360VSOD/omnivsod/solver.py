@@ -41,7 +41,7 @@ class Solver(object):
                 k: v
                 for k, v in netTest_dict.items()
                 if k in netStatic_dict and v.shape == netStatic_dict[k].shape
-            } # remove the dynamic parameters declared during TI-based training phase
+            }  # remove the dynamic parameters declared during TI-based training phase
             self.net.load_state_dict(netTest_dict, strict=False)
             self.net.eval()
 
@@ -61,17 +61,18 @@ class Solver(object):
         elif self.config.backbone == 'deeplabv3_resnet101':
             self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
                                    self.config.base_level)
+
+        self.print_network(self.net, 'GTNet')
+
         if self.config.cuda:
             self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
         self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
-                                   weight_decay=self.wd)
-
-        self.print_network(self.net, 'GTNet')
+                              weight_decay=self.wd)
 
         # Apex acceleration
-        #self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level=opt_level)
+        # self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level=opt_level)
 
     # training phase
     def train(self):
@@ -109,7 +110,6 @@ class Solver(object):
                     print('under built...')
 
                 # FCN-backbone part
-                # sal_ER = TI2ER(sal[0], self.config.base_level, self.config.sample_level) # ER mask as supervision
                 sal = self.net(img_train)
                 loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
                                 / (self.config.nAveGrad * self.config.batch_size)

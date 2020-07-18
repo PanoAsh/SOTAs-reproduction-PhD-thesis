@@ -53,12 +53,12 @@ class ImageDataTest(data.Dataset):
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
-       # self.gt_source = os.getcwd() + '/data/test_msk.lst'
+        #self.gt_source = os.getcwd() + '/data/test_msk.lst'
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
-      #  with open(self.gt_source, 'r') as f:
-       #     self.gt_list = [x.strip() for x in f.readlines()]
+        #with open(self.gt_source, 'r') as f:
+         #   self.gt_list = [x.strip() for x in f.readlines()]
 
         self.img_num = len(self.img_list)
 
@@ -69,6 +69,7 @@ class ImageDataTest(data.Dataset):
 
         if self.data_type == 'G':
             ER_img = load_ERImg(self.img_list[item % self.img_num])
+          #  ER_gt = load_ERMsk(self.gt_list[item % self.img_num])
             sample = {'ER_img': ER_img, 'frm_name': frm_name}
           #  prep_demo(self.img_list[item % self.img_num], self.gt_list[item % self.img_num], frm_name)
 

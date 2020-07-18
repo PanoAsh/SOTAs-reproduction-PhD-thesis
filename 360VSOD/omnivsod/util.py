@@ -46,17 +46,13 @@ def listTrain():
     f4.close()
 
 def ER2TI(ER, base_order, sample_order):
-   # ER = ER.cuda() # not suggested for the dataload get_item process
+    #ER = ER.cuda() # not suggested for the dataload get_item process
     TIs = create_tangent_images(ER, base_order, sample_order)
     TIs = TIs.permute(1, 0, 2, 3)
 
     return TIs
 
 def TI2ER(TIs, base_level, sample_level):
- #   size_standard = 2 ** (sample_level - base_level)
-  #  if TIs.size()[2] != size_standard:
-   #     TIs = F.interpolate(TIs, [size_standard, size_standard], mode='bilinear')
-    #TIs_reg = TIs.permute(1, 0, 2, 3)
     ER = tangent_images_to_equirectangular(TIs, [int(2048 / 2 ** (10 - sample_level)),
                                                      int(4096 / 2 ** (10 - sample_level))],
                                            base_level, sample_level)
@@ -74,7 +70,7 @@ def demo():
     img_list.sort(key=lambda x: x[:-4])
 
     count = 1
-    for item in (img_list):
+    for item in img_list:
         img = cv2.imread(img_pth + item)
         gt = cv2.imread(gt_pth + item)
         salEr = cv2.imread(salEr_pth + item)
@@ -92,9 +88,20 @@ def demo():
 
     demo.release()
 
+def listTest():
+    img_pth = os.getcwd() + '/results_analysis/Img/'
+    img_list = os.listdir(img_pth)
+    img_list.sort(key=lambda x: x[:-4])
+    f = open(os.getcwd() + '/test.lst', 'w')
+
+    for item in img_list:
+        f.write(item + '\n')
+    f.close()
+
 
 if __name__ == '__main__':
     #listTrain()
     #ER2TI()
     #demo()
+    #listTest()
     print()
