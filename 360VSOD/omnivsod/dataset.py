@@ -53,12 +53,13 @@ class ImageDataTest(data.Dataset):
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
+        #self.ins_source = os.getcwd() + '/data/test_ins.lst'
         #self.gt_source = os.getcwd() + '/data/test_msk.lst'
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
-        #with open(self.gt_source, 'r') as f:
-         #   self.gt_list = [x.strip() for x in f.readlines()]
+       # with open(self.ins_source, 'r') as f:
+        #    self.ins_list = [x.strip() for x in f.readlines()]
 
         self.img_num = len(self.img_list)
 
@@ -69,9 +70,10 @@ class ImageDataTest(data.Dataset):
 
         if self.data_type == 'G':
             ER_img = load_ERImg(self.img_list[item % self.img_num])
-          #  ER_gt = load_ERMsk(self.gt_list[item % self.img_num])
+           # ER_ins = load_ERMsk(self.ins_list[item % self.img_num])
             sample = {'ER_img': ER_img, 'frm_name': frm_name}
           #  prep_demo(self.img_list[item % self.img_num], self.gt_list[item % self.img_num], frm_name)
+           # prep_ins(self.ins_list[item % self.img_num], frm_name)
 
         elif self.data_type == 'L':
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
@@ -129,6 +131,11 @@ def prep_demo(img_pth, gt_pth, name):
     gt = gt.resize((512, 256))
     img.save('/home/yzhang1/PythonProjects/omnivsod/results/Img/' + name)
     gt.save('/home/yzhang1/PythonProjects/omnivsod/results/GT/' + name)
+
+def prep_ins(ins_pth, name):
+    ins = Image.open(ins_pth)
+    ins = ins.resize((512, 256))
+    ins.save('/home/yzhang1/PythonProjects/omnivsod/results/InsGT/' + name)
 
 def load_TIImg(pth, base_level, sample_level):
     if not os.path.exists(pth):
