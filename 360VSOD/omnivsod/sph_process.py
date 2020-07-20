@@ -197,19 +197,22 @@ def py360convert_implement_c2e():
 
 def equirec2perspect():
     from equiPers.equir2pers import equir2pers
-    name = '_-Bvu9m__ZX60_000732.png'
+    name = '_-dBM3eM9HOoA_000288.png'
     img_path = os.getcwd() + '/img/' + name
-    out = equir2pers(img_path, 90, 100, -15)
+    out = equir2pers(img_path, 90, -130, 0)
     cv2.imwrite(name, out)
     print()
 
 def perspect2equirec():
     from equiPers.pers2equir import pers2equir
-    name = '_-0cfJOmUaNNI_1_000180_-90_0.png'
-    img_path = os.getcwd() + '/img_perspect/' + name
-    out = pers2equir(img_path, 90, -90, 0)
-    cv2.imwrite(name, out)
-    print()
+    count = 0
+    for name in os.listdir(os.getcwd() + '/img_perspect_bbox/'):
+        img_path = os.getcwd() + '/img_perspect_bbox/' + name
+        name_list = name.split('_')
+        out = pers2equir(img_path, 100, int(name_list[-2]), int(name_list[-1][:-4]))
+        cv2.imwrite(name, out)
+        count += 1
+        print(count)
 
 def imgPrepro():
     img_list = os.listdir(os.getcwd() + '/img/')
@@ -222,8 +225,17 @@ def imgPrepro():
         count += 1
         print(count)
 
+def jointPerspect():
+    name = '_-4fxKBGthpaw_000168.png'
+    img1 = cv2.imread(os.getcwd() + '/img_perspect_reproject/' + '_-4fxKBGthpaw_000168_70_-10.png')
+    img2 = cv2.imread(os.getcwd() + '/img_perspect_reproject/' + '_-4fxKBGthpaw_000168_-50_-20.png')
+    img3 = cv2.imread(os.getcwd() + '/img_perspect_reproject/' + '_-4fxKBGthpaw_000168_-150_-15.png')
+    img = img1 + img2 + img3
+    cv2.imwrite(name, img)
+
 
 if __name__ == '__main__':
     #imgPrepro()
-    equirec2perspect()
+    #equirec2perspect()
     #perspect2equirec()
+    jointPerspect()
