@@ -85,18 +85,18 @@ def self_plot():
 
 def sod_plot():
     # Initialize the matplotlib figure
-    f, ax = plt.subplots(figsize=(18, 15))
+    f, ax = plt.subplots(figsize=(15, 25))
 
-    SODDataSet = pd.DataFrame({'index': index, 'keyFrames': keyFrames, 'objMasks': objMasks}, index=index).\
-        sort_values('objMasks', ascending=False)
+    SODDataSet = pd.DataFrame({'index': index, 'objMasks': objMasks, 'insMasks': insMasks}, index=index).\
+        sort_values('insMasks', ascending=False)
 
     sns.set_color_codes('pastel')
-    sns.barplot(x='objMasks', y='index', data=SODDataSet, label='Instance-level Masks', color='b')
+    sns.barplot(x='insMasks', y='index', data=SODDataSet, label='Instance-level Annotations', color='b')
 
     sns.set_color_codes("muted")
-    sns.barplot(x='keyFrames', y='index', data=SODDataSet, label='Key Frames', color='b')
+    sns.barplot(x='objMasks', y='index', data=SODDataSet, label='Object-level Annotations', color='b')
 
-    ax.legend(ncol=2, loc="lower right", frameon=True)
+   # ax.legend(ncol=2, loc="best", frameon=True)
     ax.set(xlim=(0, 1200), ylabel="", xlabel="360VSOD Statistics")
     sns.despine(left=True, bottom=True)
 
@@ -131,9 +131,26 @@ def subClass_plot():
 
     plt.savefig('BarPlot_2.png')
 
+def sobj_plot():
+    # Initialize the matplotlib figure
+    f, ax = plt.subplots(figsize=(15, 25))
+
+    SODDataSet = pd.DataFrame({'index': index, 's_objBbox': s_objBbox}, index=index). \
+        sort_values('s_objBbox', ascending=False)
+
+    sns.set_color_codes("deep")
+    sns.barplot(x='s_objBbox', y='index', data=SODDataSet, label='Sounding Object Annotations', color='b')
+
+  #  ax.legend(ncol=2, loc="lower right", frameon=True)
+    ax.set(xlim=(0, 500), ylabel="", xlabel="360VSOD Statistics")
+    sns.despine(left=True, bottom=True)
+
+    plt.savefig('BarPlot_1.png')
+
 
 if __name__ == '__main__':
     print()
+    #sobj_plot()
     #subClass_plot()
     #sod_plot()
     #sns_official()
