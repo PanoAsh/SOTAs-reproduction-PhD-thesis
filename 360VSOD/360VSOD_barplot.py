@@ -8,23 +8,33 @@ index = ['CanNotStopTheFeeling-Choir', 'UseSomebody', 'João-e-Maria', 'MrChildr
              'CanNotStopTheFeeling-Solo', 'Crazy', 'Soprano', 'FrenchConversation-3', 'FrenchConversation-1',
              'ItalianConversation', 'Interview-2', 'Football', 'FrenchConversation-2', 'SpanishConversation',
              'Exhibition', 'BadmintonRackets', 'Racing', 'PianoTeaching-2', 'Grove-1', 'Lawn', 'PianoTeaching-1',
-             'Debate', 'GameOverMan', 'VoiceComic', 'Grove-2', 'Skiing', 'Audition', 'Carré-de-Flûte', 'Prelude',
-             'Cannon', 'Bluesaholic', 'Trumpet-Solo', 'Violin-Solo', 'Drums', 'PianoSaxophone', 'Badminton', 'Beach',
+             'Debate', 'GameOverMan', 'VoiceComic', 'Grove-2', 'Skiing', 'Audition', 'CarréFlûte', 'Prelude',
+             'Cannon', 'Blues', 'Trumpet', 'Violin', 'Drums', 'PianoSax.', 'Badminton', 'Beach',
              'Engine', 'Tennis', 'Train', 'Bicycling', 'Carriage', 'Road', 'WaterFall', 'Dogs-2', 'Sliding', 'Dogs-1',
              'ChineseSpeaking', 'FrenchSpeaking', 'Soliloquizing', 'Military', 'Surfing', 'AudiIntro-1', 'Greeting',
              'AudiIntro-4', 'Coaching', 'Breakfast', 'TelephoneTech', 'Guiding', 'AudiIntro-2', 'AudiIntro-3',
              'SuperPower', 'Advertising', 'WaitingForAnInterview', 'EllenShow', 'Interview-1', 'HuPoTang']
-keyFrames = [101, 130, 134, 145, 96, 201, 140, 165, 138, 220, 150, 102, 161, 150, 165, 137, 146, 136, 271, 103,
+objMasks = [101, 130, 134, 145, 96, 201, 140, 165, 138, 220, 150, 102, 161, 150, 165, 137, 146, 136, 271, 103,
                  145, 156, 154, 150, 157, 147, 150, 140, 173, 105, 89, 125, 153, 130, 77, 129, 160, 150, 117, 125, 78,
                  140, 145, 125, 125, 130, 100, 53, 150, 130, 161, 125, 218, 85, 192, 107, 101, 149, 150, 138, 115, 164,
                  201, 145, 147, 305, 144, 347, 140]
-objMasks = [387, 650, 402, 290, 428, 1005, 560, 330, 276, 220, 285, 199, 322, 300, 330, 265, 292, 402, 542, 206,
+insMasks = [387, 650, 402, 290, 428, 1005, 560, 330, 276, 220, 285, 199, 322, 300, 330, 265, 292, 402, 542, 206,
                 280, 312, 308, 598, 418, 588, 314, 454, 692, 420, 445, 375, 459, 130, 77, 188, 320, 702, 186, 125, 297,
                 280, 145, 238, 125, 130, 100, 63, 150, 130, 161, 125, 218, 85, 192, 214, 101, 149, 150, 138, 575, 164,
                 201, 290, 147, 830, 144, 1041, 560]
-subClasses = ['choir', 'vocal solo', 'dialogue', 'group chat', 'musical ensemble', 'solo', 'duet',
-            'miscellaneous sources', 'male narrator', 'female narrator', 'f&m narrators']
-numVids = [3, 6, 14, 5, 5, 2, 2, 12, 14, 4, 2]
+s_objBbox = [176, 492, 132, 276, 93, 398, 225, 330, 225, 44, 31, 72, 136, 57, 66, 131, 146, 94, 119, 102, 30, 204, 150,
+             149, 134, 120, 46, 50, 145, 311, 203, 174, 293, 116, 77, 129, 206, 0, 0, 0, 0, 0, 0, 0, 0, 231, 0, 0, 0,
+             56, 156, 123, 218, 78, 186, 6, 101, 138, 53, 45, 114, 160, 190, 72, 141, 99, 141, 259, 135]
+subClasses = ['Monologue', 'Singing', 'Conversation', 'Instrument', 'Miscellanea']
+idxSubCls = [[45,49,50,51,52,53,54,55,56,57,58,59,60,61,62,64,66],
+             [0,1,2,3,4,5,6,7,8],
+             [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,63,65,67,68],
+             [28,29,30,31,32,33,34,35,36],
+             [37,38,39,40,41,42,43,44,46,47,48]]
+numObjSubCls = [2457, 1250, 3877, 1141, 1308]
+numInsSubCls = [3024, 4328, 9356, 3106, 2411]
+numSObjSubCls = [2137, 2347, 2446, 1654, 0]
+
 
 def sns_official():
     # Initialize the matplotlib figure
@@ -123,7 +133,8 @@ def subClass_plot():
 
 
 if __name__ == '__main__':
-    subClass_plot()
-    sod_plot()
+    print()
+    #subClass_plot()
+    #sod_plot()
     #sns_official()
     #self_plot()
