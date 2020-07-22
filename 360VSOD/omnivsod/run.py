@@ -43,7 +43,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Training settings
-    # Settings
     parser.add_argument('--num_thread', type=int, default=4)
     parser.add_argument('--cuda', type=bool, default=True)
 
@@ -51,6 +50,10 @@ if __name__ == '__main__':
     parser.add_argument('--backbone', type=str, default='fcn_resnet101') # or deeplabv3_resnet101
     parser.add_argument('--fcn', type=str, default=fcn_resnet101_path)
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
+
+    #Benchmark settings
+    parser.add_argument('--benchmark_model', type=bool, default=True)
+    parser.add_argument('--benchmark_name', type=str, default='RCRNet')
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)

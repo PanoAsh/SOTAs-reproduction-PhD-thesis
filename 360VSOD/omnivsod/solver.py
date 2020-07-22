@@ -20,30 +20,35 @@ class Solver(object):
         self.test_loader = test_loader
         self.config = config
         self.build_model()
-        if self.config.pre_trained != '' and config.mode == 'train':
-            print('Loading pretrained model from %s...' % self.config.pre_trained)
+        if self.config.benchmark_model == False:
+            if self.config.pre_trained != '' and config.mode == 'train':
+                print('Loading pretrained model from %s...' % self.config.pre_trained)
 
-            netStatic_dict = self.net.state_dict()
-            netPretrain_dict = torch.load(self.config.pre_trained)
-            netPretrain_dict = {
-                k: v
-                for k, v in netPretrain_dict.items()
-                if k in netStatic_dict and v.shape == netStatic_dict[k].shape
-            }  # remove the dynamic parameters declared during TI-based training phase
-            self.net.load_state_dict(netPretrain_dict, strict=False)
+                netStatic_dict = self.net.state_dict()
+                netPretrain_dict = torch.load(self.config.pre_trained)
+                netPretrain_dict = {
+                    k: v
+                    for k, v in netPretrain_dict.items()
+                    if k in netStatic_dict and v.shape == netStatic_dict[k].shape
+                }  # remove the dynamic parameters declared during TI-based training phase
+                self.net.load_state_dict(netPretrain_dict, strict=False)
 
-        if config.mode == 'test':
-            print('Loading testing model from %s...' % self.config.model)
+            if config.mode == 'test':
+                print('Loading testing model from %s...' % self.config.model)
 
-            netStatic_dict = self.net.state_dict()
-            netTest_dict = torch.load(self.config.model)
-            netTest_dict = {
-                k: v
-                for k, v in netTest_dict.items()
-                if k in netStatic_dict and v.shape == netStatic_dict[k].shape
-            }  # remove the dynamic parameters declared during TI-based training phase
-            self.net.load_state_dict(netTest_dict, strict=False)
-            self.net.eval()
+                netStatic_dict = self.net.state_dict()
+                netTest_dict = torch.load(self.config.model)
+                netTest_dict = {
+                    k: v
+                    for k, v in netTest_dict.items()
+                    if k in netStatic_dict and v.shape == netStatic_dict[k].shape
+                }  # remove the dynamic parameters declared during TI-based training phase
+                self.net.load_state_dict(netTest_dict, strict=False)
+                self.net.eval()
+
+        else:
+              print('Now we are running benchmark models...')
+              self.net.eval()
 
     def print_network(self, model, name):
         num_params = 0
@@ -55,14 +60,23 @@ class Solver(object):
 
     # build the network
     def build_model(self):
-        if self.config.backbone == 'fcn_resnet101':
-            self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
-                                   self.config.base_level)
-        elif self.config.backbone == 'deeplabv3_resnet101':
-            self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
-                                   self.config.base_level)
+        if self.config.benchmark_model == False:
+            if self.config.backbone == 'fcn_resnet101':
+                self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
+                                       self.config.base_level)
+            elif self.config.backbone == 'deeplabv3_resnet101':
+                self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
+                                       self.config.base_level)
 
-        self.print_network(self.net, 'GTNet')
+            self.print_network(self.net, 'GTNet')
+
+        else:
+            if self.config.benchmark_name == 'RCRNet':
+                from benchmark.RCRNet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/RCRNet/models/video_best_model.pth'))
+
+                self.print_network(self.net, 'RCRNet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -159,6 +173,8 @@ class Solver(object):
                 ER_img = Variable(ER_img)
                 if self.config.cuda: ER_img = ER_img.cuda()
                 img_test = ER_img
+                if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
+                    img_test = img_test.unsqueeze(0)
             elif self.config.model_type == 'L':
                 TI_imgs, img_name = data_batch['TI_imgs'], data_batch['frm_name']
                 TI_imgs = Variable(TI_imgs)
@@ -176,6 +192,11 @@ class Solver(object):
 
                 if self.config.model_type == 'G':
                     pred = np.squeeze(torch.sigmoid(sal[-1]).cpu().data.numpy())
+
+                    if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
+                        sal = torch.sigmoid(sal[0])
+                        pred = sal[0,0,:,:].cpu().data.numpy()
+
                 elif self.config.model_type == 'L':
                     sal = sal[0,:,0,:,:]
                     for idx in range(sal.size()[0]):

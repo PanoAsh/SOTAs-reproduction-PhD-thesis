@@ -134,7 +134,8 @@ def listTest():
 
 
 if __name__ == '__main__':
+    print()
     #listTrain()
     #ER2TI()
-    demo()
+    #demo()
     #listTest()
