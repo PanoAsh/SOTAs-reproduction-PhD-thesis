@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     pretrained_path = os.getcwd() + '/pretrained/epoch_4_bone.pth'
 
-    test_model_path = os.getcwd() + '/results/models/epoch_9_bone.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_5_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
@@ -52,8 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
 
     #Benchmark settings
-    parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default='RCRNet') # or RCRNet
+    parser.add_argument('--benchmark_model', type=bool, default=False)
+    parser.add_argument('--benchmark_name', type=str, default='COSNet') # or RCRNet
     parser.add_argument('--needRef', type=bool, default=False)  # or RCRNet
 
     # Hyper_parameters
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7) # for tangent image branch / comparison with 2D SOTAs
-    parser.add_argument('--model_type', type=str, default='G') # L for TI-based trainig/testing
+    parser.add_argument('--model_type', type=str, default='L') # L for TI-based trainig/testing
     
     config = parser.parse_args()
 

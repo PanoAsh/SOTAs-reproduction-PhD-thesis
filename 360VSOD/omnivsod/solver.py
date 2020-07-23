@@ -79,7 +79,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'COSNet':
                 from benchmark.COSNet.benchmark import model, convert_state_dict
                 self.net = model
-                COSNet_pretrain = torch.load(os.getcwd() + '/benchmark/COSNet/models/co_attention.pth')['model']
+                COSNet_pretrain = torch.load(os.getcwd() + '/benchmark/COSNet/models/co_attention.pth')["model"]
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
                 self.print_network(self.net, 'COSNet')
 
@@ -199,8 +199,8 @@ class Solver(object):
                     sal_sum = 0
                     for idx in range(Ref.size()[0]):
                         ref = Variable(Ref[idx]).cuda()
-                        sal_sum = sal_sum + self.net(img_test, ref)[0][0, 0, :, :]
-                    sal = sal_sum
+                        sal_sum = sal_sum + self.net(ref, img_test)[0][0, 0, :, :]
+                    sal = sal_sum / Ref.size()[0]
                 else:
                     sal = self.net(img_test)
                 torch.cuda.synchronize()

@@ -77,9 +77,10 @@ def demo():
     salPoolnet = os.getcwd() + '/results_analysis/Sal_poolnet/'
     salScribbleSOD = os.getcwd() + '/results_analysis/Sal_scribbleSOD/'
     salScrn = os.getcwd() + '/results_analysis/Sal_scrn/'
+    salRcrnet = os.getcwd() + '/results_analysis/Sal_rcrnet/'
 
 
-    demo = cv2.VideoWriter(os.getcwd() + '/' + 'demo.avi', 0, 100, (1536, 1024))
+    demo = cv2.VideoWriter(os.getcwd() + '/' + 'demo.avi', 0, 100, (1536, 1280))
     img_list = os.listdir(img_pth)
     img_list.sort(key=lambda x: x[:-4])
 
@@ -97,9 +98,10 @@ def demo():
         salPoo = cv2.imread(salPoolnet + item[:-4] + '_sal_fuse.png')
         salSSOD = cv2.imread(salScribbleSOD + item)
         salScr = cv2.imread(salScrn + item)
+        salRcr = cv2.imread(salRcrnet + item)
 
 
-        frm = np.zeros((1024, 1536, 3))
+        frm = np.zeros((1280, 1536, 3))
         frm[:256, :512, :] = img
         frm[:256, 512:1024, :] = gt
         frm[:256, 1024:, :] = ins
@@ -112,9 +114,11 @@ def demo():
         frm[512:768, 512:1024, :] = salEgn
         frm[512:768, 1024:, :] = salF3n
 
-        frm[768:, :512, :] = salPoo
-        frm[768:, 512:1024, :] = salSSOD
-        frm[768:, 1024:, :] = salScr
+        frm[768:1024, :512, :] = salPoo
+        frm[768:1024, 512:1024, :] = salSSOD
+        frm[768:1024, 1024:, :] = salScr
+
+        frm[1024:, :512, :] = salRcr
 
         demo.write(np.uint8(frm))
         print("{} writen".format(count))
@@ -137,5 +141,5 @@ if __name__ == '__main__':
     print()
     #listTrain()
     #ER2TI()
-    #demo()
+    demo()
     #listTest()
