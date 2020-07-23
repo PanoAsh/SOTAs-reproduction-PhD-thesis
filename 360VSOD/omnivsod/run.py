@@ -11,7 +11,7 @@ def main(config):
     if config.mode == 'train':
         train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,
                                            data_type=config.model_type, base_level=config.base_level,
-                                           sample_level=config.sample_level)
+                                           sample_level=config.sample_level, ref=config.needRef)
         run = "omnivsod"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
@@ -23,7 +23,7 @@ def main(config):
     elif config.mode == 'test':
         test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread,
                                           data_type=config.model_type, base_level=config.base_level,
-                                          sample_level=config.sample_level)
+                                          sample_level=config.sample_level, ref=config.needRef)
         test = Solver(None, test_loader, config)
         test.test()
     else:
@@ -53,7 +53,8 @@ if __name__ == '__main__':
 
     #Benchmark settings
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default='RCRNet')
+    parser.add_argument('--benchmark_name', type=str, default='RCRNet') # or RCRNet
+    parser.add_argument('--needRef', type=bool, default=False)  # or RCRNet
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)

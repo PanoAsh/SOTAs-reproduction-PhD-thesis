@@ -75,8 +75,13 @@ class Solver(object):
                 from benchmark.RCRNet.benchmark import model
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/RCRNet/models/video_best_model.pth'))
-
                 self.print_network(self.net, 'RCRNet')
+            elif self.config.benchmark_name == 'COSNet':
+                from benchmark.COSNet.benchmark import model, convert_state_dict
+                self.net = model
+                COSNet_pretrain = torch.load(os.getcwd() + '/benchmark/COSNet/models/co_attention.pth')['model']
+                self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+                self.print_network(self.net, 'COSNet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -175,17 +180,29 @@ class Solver(object):
                 img_test = ER_img
                 if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
                     img_test = img_test.unsqueeze(0)
+                if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+                    Ref = data_batch['Ref_img']
+                    Ref = torch.stack(Ref)
+
             elif self.config.model_type == 'L':
                 TI_imgs, img_name = data_batch['TI_imgs'], data_batch['frm_name']
                 TI_imgs = Variable(TI_imgs)
                 if self.config.cuda: TI_imgs = TI_imgs.cuda()
                 img_test = TI_imgs
+
             else:
                 print('under built...')
 
             with torch.no_grad():
                 time_start = time.time()
-                sal = self.net(img_test)
+                if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+                    sal_sum = 0
+                    for idx in range(Ref.size()[0]):
+                        ref = Variable(Ref[idx]).cuda()
+                        sal_sum = sal_sum + self.net(img_test, ref)[0][0, 0, :, :]
+                    sal = sal_sum
+                else:
+                    sal = self.net(img_test)
                 torch.cuda.synchronize()
                 time_end = time.time()
                 time_total = time_total + time_end - time_start
@@ -195,7 +212,9 @@ class Solver(object):
 
                     if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
                         sal = torch.sigmoid(sal[0])
-                        pred = sal[0,0,:,:].cpu().data.numpy()
+                        pred = sal[0, 0, :, :].cpu().data.numpy()
+                    if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+                        pred = sal.cpu().data.numpy()
 
                 elif self.config.model_type == 'L':
                     sal = sal[0,:,0,:,:]
