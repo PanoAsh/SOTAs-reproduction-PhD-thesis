@@ -82,6 +82,11 @@ class Solver(object):
                 COSNet_pretrain = torch.load(os.getcwd() + '/benchmark/COSNet/models/co_attention.pth')["model"]
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
                 self.print_network(self.net, 'COSNet')
+            elif self.config.benchmark_name == 'EgNet':
+                from benchmark.EgNet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/EgNet/pretrained/epoch_resnet.pth'))
+                self.print_network(self.net, 'EgNet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -180,9 +185,10 @@ class Solver(object):
                 img_test = ER_img
                 if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
                     img_test = img_test.unsqueeze(0)
-                if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+                if self.config.benchmark_model == True and self.config.needRef == True:
                     Ref = data_batch['Ref_img']
                     Ref = torch.stack(Ref)
+                    Ref = Variable(Ref).cuda()
 
             elif self.config.model_type == 'L':
                 TI_imgs, img_name = data_batch['TI_imgs'], data_batch['frm_name']
@@ -194,30 +200,37 @@ class Solver(object):
                 print('under built...')
 
             with torch.no_grad():
-                time_start = time.time()
-                if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+                if self.config.benchmark_model == True and self.config.needRef == True:
+                    time_start = time.time()
                     sal_sum = 0
                     for idx in range(Ref.size()[0]):
-                        ref = Variable(Ref[idx]).cuda()
-                        sal_sum = sal_sum + self.net(ref, img_test)[0][0, 0, :, :]
+                        sal_sum = sal_sum + self.net(img_test, Ref[idx])[0][0,0,:,:]
                     sal = sal_sum / Ref.size()[0]
                 else:
+                    time_start = time.time()
                     sal = self.net(img_test)
                 torch.cuda.synchronize()
                 time_end = time.time()
                 time_total = time_total + time_end - time_start
 
                 if self.config.model_type == 'G':
-                    pred = np.squeeze(torch.sigmoid(sal[-1]).cpu().data.numpy())
+                 #   pred = np.squeeze(torch.sigmoid(sal[-1]).cpu().data.numpy())
 
+                    # depending on the forward function of each of the SOD methods
                     if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
-                        sal = torch.sigmoid(sal[0])
-                        pred = sal[0, 0, :, :].cpu().data.numpy()
-                    if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+                        salT = sal[0][0, 0, :, :]
+                        salT = (salT - salT.min()) / (salT.max() - salT.min() + 1e-8)
+                        salT = torch.sigmoid(salT)
+                        pred = salT.cpu().data.numpy()
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'EgNet':
+                        salT = sal[2][-1]
+                        salT = torch.sigmoid(salT)
+                        pred = np.squeeze(salT.cpu().data.numpy())
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
                         pred = sal.cpu().data.numpy()
 
                 elif self.config.model_type == 'L':
-                    sal = sal[0,:,0,:,:]
+                    sal = sal[0, :, 0, :, :]
                     for idx in range(sal.size()[0]):
                         sal[idx,:,:] = torch.sigmoid(sal[idx,:,:])
                     sal = sal.unsqueeze(0)
@@ -229,3 +242,12 @@ class Solver(object):
 
         print("--- %s seconds ---" % (time_total))
         print('Test Done!')
+
+    # if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
+     #               sal_sum = 0
+      #              for idx in range(Ref.size()[0]):
+       #                 sal_sum = sal_sum + self.net(img_test, Ref[idx])[0][0, 0, :, :]
+        #            sal = sal_sum / Ref.size()[0]
+         #           sal = (sal - sal.min()) / (sal.max() - sal.min() + 1e-8)
+          #      else:
+           #         sal = self.net(img_test)

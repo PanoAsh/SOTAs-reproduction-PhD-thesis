@@ -6,6 +6,8 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from util import ER2TI
 import torch.nn.functional as F
+import cv2
+import numpy as np
 
 
 class ImageDataTrain(data.Dataset):
@@ -81,7 +83,8 @@ class ImageDataTest(data.Dataset):
                 Ref_img = []
                 ER_img = load_ERImg(self.img_list[item % self.img_num])
                 [refFrm_pth.append(idx) for idx in self.img_list if idx[:-10] == self.img_list[item][:-10]]
-                [Ref_img.append(load_ERImg(pth)) for pth in refFrm_pth]
+                Ref_img.append(load_ERImg(refFrm_pth[0])) # only choose the first frame as reference
+               # [Ref_img.append(load_ERImg(pth)) for pth in refFrm_pth]
 
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'Ref_img': Ref_img}
 
@@ -109,7 +112,7 @@ def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level
 
     return data_loader, dataset
 
-def load_ERImg(pth):
+def load_ERImg_sup(pth):
     if not os.path.exists(pth):
         print('File Not Exists')
     img = Image.open(pth)
@@ -121,6 +124,18 @@ def load_ERImg(pth):
     img_tensor = preprocess(img)
 
     return img_tensor
+
+def load_ERImg(pth): # for ImageNet-based data loading
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    im = cv2.imread(pth)
+    im = cv2.resize(im, (512, 256))
+    in_ = np.array(im, dtype=np.float32)
+    in_ -= np.array((104.00699, 116.66877, 122.67892))
+    in_ = in_.transpose((2,0,1))
+    in_ = torch.Tensor(in_)
+
+    return in_
 
 def load_ERMsk(pth):
     if not os.path.exists(pth):
