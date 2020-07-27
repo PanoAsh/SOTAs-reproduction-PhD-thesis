@@ -12,6 +12,7 @@ opt_level = 'O1'
 from thop import profile
 from util import TI2ER
 import matplotlib.pyplot as plt
+from util import normPRED
 
 
 class Solver(object):
@@ -82,11 +83,16 @@ class Solver(object):
                 COSNet_pretrain = torch.load(os.getcwd() + '/benchmark/COSNet/models/co_attention.pth')["model"]
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
                 self.print_network(self.net, 'COSNet')
-            elif self.config.benchmark_name == 'EgNet':
-                from benchmark.EgNet.benchmark import model
+            elif self.config.benchmark_name == 'EGNet':
+                from benchmark.EGNet.benchmark import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/EgNet/pretrained/epoch_resnet.pth'))
-                self.print_network(self.net, 'EgNet')
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/EGNet/pretrained/epoch_resnet.pth'))
+                self.print_network(self.net, 'EGNet')
+            elif self.config.benchmark_name == 'BASNet':
+                from benchmark.BASNet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/basnet.pth'))
+                self.print_network(self.net, 'BASNet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -218,16 +224,17 @@ class Solver(object):
 
                     # depending on the forward function of each of the SOD methods
                     if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
-                        salT = sal[0][0, 0, :, :]
-                        salT = (salT - salT.min()) / (salT.max() - salT.min() + 1e-8)
-                        salT = torch.sigmoid(salT)
-                        pred = salT.cpu().data.numpy()
-                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'EgNet':
+                        salT = sal[0]
+                        pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'EGNet':
                         salT = sal[2][-1]
-                        salT = torch.sigmoid(salT)
-                        pred = np.squeeze(salT.cpu().data.numpy())
+                        pred = torch.sigmoid(salT)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
-                        pred = sal.cpu().data.numpy()
+                        pred = sal
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'BASNet':
+                        pred = sal[0]
+
+                    pred = np.squeeze(pred.cpu().data.numpy()) # to cpu
 
                 elif self.config.model_type == 'L':
                     sal = sal[0, :, 0, :, :]

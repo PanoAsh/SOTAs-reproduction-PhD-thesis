@@ -9,9 +9,9 @@ def main(config):
     #set_start_method('spawn')
 
     if config.mode == 'train':
-        train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,
-                                           data_type=config.model_type, base_level=config.base_level,
-                                           sample_level=config.sample_level, ref=config.needRef)
+        train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,data_type=config.model_type,
+                                           base_level=config.base_level, sample_level=config.sample_level,
+                                           ref=config.needRef, norm=config.data_norm)
         run = "omnivsod"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
@@ -23,7 +23,8 @@ def main(config):
     elif config.mode == 'test':
         test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread,
                                           data_type=config.model_type, base_level=config.base_level,
-                                          sample_level=config.sample_level, ref=config.needRef)
+                                          sample_level=config.sample_level, ref=config.needRef, norm=config.data_norm)
+        if not os.path.exists(config.test_fold): os.mkdir(config.test_fold)
         test = Solver(None, test_loader, config)
         test.test()
     else:
@@ -52,10 +53,11 @@ if __name__ == '__main__':
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
 
     #Benchmark settings
-    benchmark_models = ['RCRNet', 'COSNet', 'EgNet']
+    benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet'] # p,c,c,p
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[2])
-    parser.add_argument('--needRef', type=bool, default=False)  # or RCRNet
+    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[3])
+    parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
+    parser.add_argument('--data_norm', type=str, default='PIL') # cv2 / PIL
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)

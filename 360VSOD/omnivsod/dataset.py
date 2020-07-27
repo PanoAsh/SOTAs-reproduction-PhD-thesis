@@ -11,12 +11,13 @@ import numpy as np
 
 
 class ImageDataTrain(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level):
+    def __init__(self, data_type, base_level, sample_level, data_norm):
         self.img_source = os.getcwd() + '/data/train_img.lst'
         self.msk_source = os.getcwd() + '/data/train_msk.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
+        self.data_norm = data_norm
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -27,7 +28,7 @@ class ImageDataTrain(data.Dataset):
 
     def __getitem__(self, item):
         if self.data_type == 'G':
-            ER_img = load_ERImg(self.img_list[item % self.img_num])
+            ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
 
@@ -38,7 +39,7 @@ class ImageDataTrain(data.Dataset):
             sample = {'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
         else:
-            ER_img = load_ERImg(self.img_list[item % self.img_num])
+            ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level)
@@ -50,12 +51,13 @@ class ImageDataTrain(data.Dataset):
         return self.img_num
 
 class ImageDataTest(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, need_ref):
+    def __init__(self, data_type, base_level, sample_level, need_ref, data_norm):
         self.img_source = os.getcwd() + '/data/test_img.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
         self.need_ref = need_ref
+        self.data_norm = data_norm
         #self.ins_source = os.getcwd() + '/data/test_ins.lst'
         #self.gt_source = os.getcwd() + '/data/test_msk.lst'
 
@@ -73,7 +75,7 @@ class ImageDataTest(data.Dataset):
 
         if self.data_type == 'G':
             if self.need_ref == False:
-                ER_img = load_ERImg(self.img_list[item % self.img_num])
+                ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
                 # ER_ins = load_ERMsk(self.ins_list[item % self.img_num])
                 sample = {'ER_img': ER_img, 'frm_name': frm_name}
                 #  prep_demo(self.img_list[item % self.img_num], self.gt_list[item % self.img_num], frm_name)
@@ -81,10 +83,10 @@ class ImageDataTest(data.Dataset):
             else:
                 refFrm_pth = []
                 Ref_img = []
-                ER_img = load_ERImg(self.img_list[item % self.img_num])
+                ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
                 [refFrm_pth.append(idx) for idx in self.img_list if idx[:-10] == self.img_list[item][:-10]]
-                Ref_img.append(load_ERImg(refFrm_pth[0])) # only choose the first frame as reference
-               # [Ref_img.append(load_ERImg(pth)) for pth in refFrm_pth]
+                Ref_img.append(load_ERImg(refFrm_pth[0], self.data_norm)) # only choose the first frame as reference
+               # [Ref_img.append(load_ERImg(pth, self.data_norm)) for pth in refFrm_pth]
 
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'Ref_img': Ref_img}
 
@@ -101,39 +103,39 @@ class ImageDataTest(data.Dataset):
         return self.img_num
 
 # get the dataloader (Note: without data augmentation, except saliency with random flip)
-def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level = 1, sample_level=10, ref=False):
+def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level = 1, sample_level=10, ref=False,
+               norm='cv2'):
     shuffle = False
     if mode == 'train':
         shuffle = True
-        dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level)
+        dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level,
+                                 data_norm=norm)
     else:
-        dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level, need_ref=ref)
+        dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level,
+                                need_ref=ref, data_norm=norm)
+
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
 
     return data_loader, dataset
 
-def load_ERImg_sup(pth):
+def load_ERImg(pth, norm):
     if not os.path.exists(pth):
         print('File Not Exists')
-    img = Image.open(pth)
-    preprocess = transforms.Compose([
-        transforms.Resize([256, 512]),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    img_tensor = preprocess(img)
-
-    return img_tensor
-
-def load_ERImg(pth): # for ImageNet-based data loading
-    if not os.path.exists(pth):
-        print('File Not Exists')
-    im = cv2.imread(pth)
-    im = cv2.resize(im, (512, 256))
-    in_ = np.array(im, dtype=np.float32)
-    in_ -= np.array((104.00699, 116.66877, 122.67892))
-    in_ = in_.transpose((2,0,1))
-    in_ = torch.Tensor(in_)
+    if norm == 'cv2':
+        im = cv2.imread(pth)
+        im = cv2.resize(im, (512, 256))
+        in_ = np.array(im, dtype=np.float32)
+        in_ -= np.array((104.00699, 116.66877, 122.67892))
+        in_ = in_.transpose((2, 0, 1))
+        in_ = torch.Tensor(in_)
+    elif norm == 'PIL':
+        im = Image.open(pth)
+        preprocess = transforms.Compose([
+            transforms.Resize([256, 512]),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        in_ = preprocess(im)
 
     return in_
 

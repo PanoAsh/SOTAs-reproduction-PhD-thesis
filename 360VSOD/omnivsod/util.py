@@ -136,6 +136,13 @@ def listTest():
         f.write(item + '\n')
     f.close()
 
+def normPRED(d):
+    ma = torch.max(d)
+    mi = torch.min(d)
+    dn = (d-mi)/(ma-mi)
+
+    return dn
+
 
 if __name__ == '__main__':
     print()
