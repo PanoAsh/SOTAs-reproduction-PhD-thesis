@@ -118,6 +118,11 @@ class Solver(object):
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/SCRN/models/model.pth'))
                 self.print_network(self.net, 'SCRN')
+            elif self.config.benchmark_name == 'GCPANet':
+                from benchmark.GCPANet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/GCPANet/models/model.pt'))
+                self.print_network(self.net, 'GCPANet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -273,6 +278,9 @@ class Solver(object):
                         salT = sal[2]
                         pred = torch.sigmoid(salT)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'SCRN':
+                        salT = sal[0]
+                        pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'GCPANet':
                         salT = sal[0]
                         pred = torch.sigmoid(salT)
 
