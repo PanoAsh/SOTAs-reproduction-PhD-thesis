@@ -123,6 +123,11 @@ class Solver(object):
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/GCPANet/models/model.pt'))
                 self.print_network(self.net, 'GCPANet')
+            elif self.config.benchmark_name == 'MINet':
+                from benchmark.MINet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/MINet/models/MINet_Res50.pth'))
+                self.print_network(self.net, 'MINet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -283,6 +288,8 @@ class Solver(object):
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'GCPANet':
                         salT = sal[0]
                         pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'MINet':
+                        pred = torch.sigmoid(sal)
 
                     pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
