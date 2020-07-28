@@ -93,6 +93,31 @@ class Solver(object):
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/basnet.pth'))
                 self.print_network(self.net, 'BASNet')
+            elif self.config.benchmark_name == 'CPD':
+                from benchmark.CPD.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/CPD/models/CPD-R.pth'))
+                self.print_network(self.net, 'CPD')
+            elif self.config.benchmark_name == 'F3Net':
+                from benchmark.F3Net.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/F3Net/models/model-32'))
+                self.print_network(self.net, 'F3Net')
+            elif self.config.benchmark_name == 'PoolNet':
+                from benchmark.PoolNet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/PoolNet/models/final.pth'))
+                self.print_network(self.net, 'PoolNet')
+            elif self.config.benchmark_name == 'ScribbleSOD':
+                from benchmark.ScribbleSOD.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/ScribbleSOD/models/scribble_30.pth'))
+                self.print_network(self.net, 'ScribbleSOD')
+            elif self.config.benchmark_name == 'SCRN':
+                from benchmark.SCRN.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/SCRN/models/model.pth'))
+                self.print_network(self.net, 'SCRN')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -212,6 +237,9 @@ class Solver(object):
                     for idx in range(Ref.size()[0]):
                         sal_sum = sal_sum + self.net(img_test, Ref[idx])[0][0,0,:,:]
                     sal = sal_sum / Ref.size()[0]
+                elif self.config.benchmark_model == True and self.config.benchmark_name == 'PoolNet':
+                    time_start = time.time()
+                    sal = self.net(img_test, 1)
                 else:
                     time_start = time.time()
                     sal = self.net(img_test)
@@ -233,8 +261,22 @@ class Solver(object):
                         pred = sal
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'BASNet':
                         pred = sal[0]
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'CPD':
+                        salT = sal[1]
+                        pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'F3Net':
+                        salT = sal[1]
+                        pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'PoolNet':
+                        pred = torch.sigmoid(sal)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'ScribbleSOD':
+                        salT = sal[2]
+                        pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'SCRN':
+                        salT = sal[0]
+                        pred = torch.sigmoid(salT)
 
-                    pred = np.squeeze(pred.cpu().data.numpy()) # to cpu
+                    pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
                 elif self.config.model_type == 'L':
                     sal = sal[0, :, 0, :, :]

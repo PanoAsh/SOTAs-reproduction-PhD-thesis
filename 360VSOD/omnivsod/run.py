@@ -48,26 +48,26 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', type=bool, default=True)
 
     #Backbones
-    parser.add_argument('--backbone', type=str, default='fcn_resnet101') # or deeplabv3_resnet101
+    parser.add_argument('--backbone', type=str, default='fcn_resnet101')  # or deeplabv3_resnet101
     parser.add_argument('--fcn', type=str, default=fcn_resnet101_path)
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
 
     #Benchmark settings
-    benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet'] # p,c,c,p
+    # p,c,c,p,p,p,c,p,p
+    benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet', 'CPD', 'F3Net', 'PoolNet', 'ScribbleSOD', 'SCRN']
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[3])
+    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[2])
     parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
-    parser.add_argument('--data_norm', type=str, default='PIL') # cv2 / PIL
+    parser.add_argument('--data_norm', type=str, default='cv2')  # cv2 / PIL
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
     parser.add_argument('--epoch', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=1) # must be 1
+    parser.add_argument('--batch_size', type=int, default=1)  # must be 1
     parser.add_argument('--lr', type=int, default=0.00001)
     parser.add_argument('--wd', type=int, default=0.0005)
     parser.add_argument('--nAveGrad', type=int, default=10)
     parser.add_argument('--lr_decay_epoch', type=int, default=10)
-
 
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default='')
@@ -84,8 +84,8 @@ if __name__ == '__main__':
     # Mode
     parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
-    parser.add_argument('--sample_level', type=int, default=7) # for tangent image branch / comparison with 2D SOTAs
-    parser.add_argument('--model_type', type=str, default='G') # L for TI-based trainig/testing
+    parser.add_argument('--sample_level', type=int, default=7)  # for tangent image branch / comparison with 2D SOTAs
+    parser.add_argument('--model_type', type=str, default='G')  # L for TI-based trainig/testing
     
     config = parser.parse_args()
 
