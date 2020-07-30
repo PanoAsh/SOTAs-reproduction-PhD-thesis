@@ -555,12 +555,12 @@ class ProcessingTool():
             img = cv2.imread(os.path.join(img_path, idx))
             img = cv2.resize(img, (600, 300))
 
-            fix_w_s = cv2.imread(os.path.join(fix_w_sound_path, idx))
+            fix_w_s = cv2.imread(os.path.join(fix_w_sound_path, idx[:-10] + idx[-9:]))
             fix_w_s = cv2.normalize(fix_w_s, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                         dtype=cv2.CV_8UC1)
             fix_w_s = cv2.applyColorMap(fix_w_s, cv2.COLORMAP_HOT)
 
-            fix_wo_s = cv2.imread(os.path.join(fix_wo_sound_path, idx))
+            fix_wo_s = cv2.imread(os.path.join(fix_wo_sound_path, idx[:-10] + idx[-9:]))
             fix_wo_s = cv2.normalize(fix_wo_s, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                         dtype=cv2.CV_8UC1)
             fix_wo_s = cv2.applyColorMap(fix_wo_s, cv2.COLORMAP_OCEAN)
@@ -578,9 +578,11 @@ class ProcessingTool():
         count = 0
         ins_list = os.listdir(ins_pth)
         for idx in ins_list:
+            print(idx)
             img = cv2.imread(os.path.join(img_pth, idx))
             ins = cv2.imread(os.path.join(ins_pth, idx))
-            overlay = cv2.addWeighted(img, 0.4, ins, 1, 0)
+            overlay = cv2.addWeighted(img, 1, ins, 1.4, 0)
+            overlay = cv2.resize(overlay, (600, 300))
             cv2.imwrite(idx, overlay)
             print(count + 1)
             count += 1
@@ -588,8 +590,6 @@ class ProcessingTool():
     def figShow(self):
         obj_pth = os.getcwd() + '/object/'
         img_pth = os.getcwd() + '/img/'
-        fixOver_pth = os.getcwd() + '/fixation_overlay/'
-        insOver_pth = os.getcwd() + '/instance_overlay/'
         ins_pth = os.getcwd() + '/instance/'
         bbox_pth = os.getcwd() + '/img_sphe_bbox/'
         bboxSphe_pth = os.getcwd() + '/img_sphere/'
@@ -597,15 +597,11 @@ class ProcessingTool():
         obj_list = os.listdir(obj_pth)
         count = 0
         for idx in obj_list:
-            frm = np.zeros((256, 3644, 3))
+            frm = np.zeros((256, 2600, 3))
             frm.fill(255)
 
             img = cv2.imread(os.path.join(img_pth, idx))
             img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
-            fixOver = cv2.imread(os.path.join(fixOver_pth, idx[:-10] + idx[-9:]))
-            fixOver = cv2.resize(fixOver, (512, 256), interpolation=cv2.INTER_AREA)
-            insOver = cv2.imread(os.path.join(insOver_pth, idx))
-            insOver = cv2.resize(insOver, (512, 256), interpolation=cv2.INTER_AREA)
             ins = cv2.imread(os.path.join(ins_pth, idx))
             ins = cv2.resize(ins, (512, 256), interpolation=cv2.INTER_AREA)
             obj = cv2.imread(os.path.join(obj_pth, idx))
@@ -616,17 +612,52 @@ class ProcessingTool():
             bboxSphe = cv2.resize(bboxSphe, (512, 256), interpolation=cv2.INTER_AREA)
 
             frm[:, :512, :] = img
-            frm[:, 522:1034, :] = fixOver
-            frm[:, 1044:1556, :] = insOver
-            frm[:, 1566:2078, :] = ins
-            frm[:, 2088:2600, :] = obj
-            frm[:, 2610:3122, :] = bbox
-            frm[:, 3132:, :] = bboxSphe
-
+            frm[:, 522:1034, :] = ins
+            frm[:, 1044:1556, :] = obj
+            frm[:, 1566:2078, :] = bbox
+            frm[:, 2088:2600, :] = bboxSphe
             cv2.imwrite(idx, frm)
             print(count+1)
             count += 1
-            
+
+    def wholeShow_1(self):
+        fix_pth = os.getcwd() + '/fixation_overlay/'
+        ins_pth = os.getcwd() + '/instance_overlay/'
+        fix_list = os.listdir(fix_pth)
+        fig = np.zeros((300, 1210, 3))
+        fig.fill(255)
+
+        for idx in fix_list:
+            print(idx)
+            fig[:, :600, :] = cv2.imread(os.path.join(fix_pth, idx))
+            fig[:, 610:, :] = cv2.imread(os.path.join(ins_pth, idx))
+            cv2.imwrite(idx, fig)
+
+    def wholeShow_2(self):
+        pth = os.getcwd() + '/sub_3/'
+        sub_list = os.listdir(pth)
+        fig = np.zeros((2160, 3650, 3))
+        fig.fill(255)
+
+        for i in range(7):
+            for j in range(3):
+                if i != 0 and j != 0:
+                    fig[(300*i+10*i):(300*i+10*i+300), (1210*j+10*j):(1210*j+10*j+1210), :] = cv2.imread(
+                        os.path.join(pth,
+                                     sub_list[3*i+j]))
+                elif i != 0 and j == 0:
+                    fig[(300*i+10*i):(300*i+10*i+300), :1210, :] = cv2.imread(
+                        os.path.join(pth,
+                                     sub_list[3 * i + j]))
+                elif i == 0 and j != 0:
+                    fig[:300, (1210*j+10*j):(1210*j+10*j+1210), :] = cv2.imread(
+                        os.path.join(pth,
+                                     sub_list[3 * i + j]))
+                else:
+                    fig[:300, :1210, :] = cv2.imread(
+                        os.path.join(pth,
+                                     sub_list[3 * i + j]))
+        cv2.imwrite('sub_3.png', fig)
 
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
@@ -667,4 +698,5 @@ if __name__ == '__main__':
     #PT.listPrint()
     #PT.fixation_match()
     #PT.instanceOverlay()
-    PT.figShow()
+    #PT.figShow()
+    PT.wholeShow_2()
