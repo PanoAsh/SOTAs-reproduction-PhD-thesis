@@ -128,6 +128,12 @@ class Solver(object):
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/MINet/models/MINet_Res50.pth'))
                 self.print_network(self.net, 'MINet')
+            elif self.config.benchmark_name == 'Raft':
+                from benchmark.Raft.benchmark import model, convert_state_dict
+                self.net = model
+                Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-kitti.pth')
+                self.net.load_state_dict(convert_state_dict(Raft_pretrain))
+                self.print_network(self.net, 'Raft')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -222,7 +228,7 @@ class Solver(object):
             if self.config.model_type == 'G':
                 ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
                 ER_img = Variable(ER_img)
-                if self.config.cuda: ER_img = ER_img.cuda()
+                ER_img = ER_img.cuda()
                 img_test = ER_img
                 if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
                     img_test = img_test.unsqueeze(0)
@@ -230,6 +236,10 @@ class Solver(object):
                     Ref = data_batch['Ref_img']
                     Ref = torch.stack(Ref)
                     Ref = Variable(Ref).cuda()
+                if self.config.benchmark_model == True and self.config.needPair == True:
+                    ER_next = data_batch['ER_img_next']
+                    ER_next = Variable(ER_next)
+                    ER_next = ER_next.cuda()
 
             elif self.config.model_type == 'L':
                 TI_imgs, img_name = data_batch['TI_imgs'], data_batch['frm_name']
@@ -241,7 +251,7 @@ class Solver(object):
                 print('under built...')
 
             with torch.no_grad():
-                if self.config.benchmark_model == True and self.config.needRef == True:
+                if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
                     time_start = time.time()
                     sal_sum = 0
                     for idx in range(Ref.size()[0]):
@@ -250,6 +260,9 @@ class Solver(object):
                 elif self.config.benchmark_model == True and self.config.benchmark_name == 'PoolNet':
                     time_start = time.time()
                     sal = self.net(img_test, 1)
+                elif self.config.benchmark_model == True and self.config.benchmark_name == 'Raft':
+                    time_start = time.time()
+                    _, sal = self.net(img_test, ER_next, test_mode=True)
                 else:
                     time_start = time.time()
                     sal = self.net(img_test)
@@ -290,6 +303,8 @@ class Solver(object):
                         pred = torch.sigmoid(salT)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'MINet':
                         pred = torch.sigmoid(sal)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'Raft':
+                        pred = sal[:,0,:,:]
 
                     pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 

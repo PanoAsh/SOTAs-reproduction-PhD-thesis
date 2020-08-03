@@ -126,6 +126,29 @@ def demo():
 
     demo.release()
 
+def demo_facile():
+    img_pth = os.getcwd() + '/result_analysis/GTs/Img/'
+    sal_pth = os.getcwd() + '/result_analysis/Sal_test_raft_kitti/'
+
+    demo = cv2.VideoWriter(os.getcwd() + '/' + 'demo.avi', 0, 100, (1024, 256))
+    img_list = os.listdir(img_pth)
+    img_list.sort(key=lambda x: x[:-4])
+
+    count = 1
+    for item in img_list:
+        img = cv2.imread(img_pth + item)
+        sal = cv2.imread(sal_pth + item)
+
+        frm = np.zeros((256, 1024, 3))
+        frm[:256, :512, :] = img
+        frm[:256, 512:1024, :] = sal
+
+        demo.write(np.uint8(frm))
+        print("{} writen".format(count))
+        count += 1
+
+    demo.release()
+
 def listTest():
     img_pth = os.getcwd() + '/results_analysis/Img/'
     img_list = os.listdir(img_pth)
@@ -148,5 +171,5 @@ if __name__ == '__main__':
     print()
     #listTrain()
     #ER2TI()
-    demo()
+    demo_facile()
     #listTest()
