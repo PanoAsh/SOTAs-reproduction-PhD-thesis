@@ -13,6 +13,7 @@ from thop import profile
 from util import TI2ER
 import matplotlib.pyplot as plt
 from util import normPRED
+import flow_vis
 
 
 class Solver(object):
@@ -270,6 +271,7 @@ class Solver(object):
                 time_end = time.time()
                 time_total = time_total + time_end - time_start
 
+                flow_output = False
                 if self.config.model_type == 'G':
                  #   pred = np.squeeze(torch.sigmoid(sal[-1]).cpu().data.numpy())
 
@@ -304,9 +306,12 @@ class Solver(object):
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'MINet':
                         pred = torch.sigmoid(sal)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'Raft':
-                        pred = sal[:,0,:,:]
+                        flow_output = True
+                        salT = sal[0]
+                        salT = salT.permute(1, 2, 0)
+                        pred = flow_vis.flow_to_color(salT.cpu().data.numpy(), convert_to_bgr=True)
 
-                    pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
+                    if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
                 elif self.config.model_type == 'L':
                     sal = sal[0, :, 0, :, :]
@@ -316,7 +321,7 @@ class Solver(object):
                     sal_ER = TI2ER(sal, self.config.base_level, self.config.sample_level)
                     pred = np.squeeze(sal_ER[-1].cpu().data.numpy())
 
-                pred = 255 * pred
+                if flow_output == False: pred = 255 * pred
                 cv2.imwrite(self.config.test_fold + img_name[0], pred)
 
         print("--- %s seconds ---" % (time_total))

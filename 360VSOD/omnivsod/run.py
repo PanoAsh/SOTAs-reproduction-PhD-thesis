@@ -61,7 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--benchmark_name', type=str, default=benchmark_models[11])
     parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
     parser.add_argument('--data_norm', type=str, default='PIL')  # cv2 / PIL
-    parser.add_argument('--needPair', type=bool, default=True) # for flow-based methods
+    parser.add_argument('--needPair', type=bool, default=True)  # for flow-based methods
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
