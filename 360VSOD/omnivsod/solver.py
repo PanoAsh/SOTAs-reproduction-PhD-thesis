@@ -135,6 +135,19 @@ class Solver(object):
                 Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-kitti.pth')
                 self.net.load_state_dict(convert_state_dict(Raft_pretrain))
                 self.print_network(self.net, 'Raft')
+            elif self.config.benchmark_name == 'CSNet':
+                from benchmark.CSNet.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() +
+                                                    '/benchmark/CSNet/checkpoints/csnet-L-x2/csnet-L-x2.pth.tar')
+                                         ['state_dict'])
+                self.print_network(self.net, 'CSNet')
+            elif self.config.benchmark_name == 'CSFRes2Net':
+                from benchmark.CSFRes2Net.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() +
+                                        '/benchmark/CSFRes2Net/models/csf_res2net50_final.pth'), strict=False)
+                self.print_network(self.net, 'CSFRes2Net')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -310,6 +323,10 @@ class Solver(object):
                         salT = sal[0]
                         salT = salT.permute(1, 2, 0)
                         pred = flow_vis.flow_to_color(salT.cpu().data.numpy(), convert_to_bgr=True)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'CSNet':
+                        pred = torch.sigmoid(sal)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'CSFRes2Net':
+                        pred = torch.sigmoid(sal)
 
                     if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
