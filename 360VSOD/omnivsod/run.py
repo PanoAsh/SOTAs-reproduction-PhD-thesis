@@ -56,9 +56,9 @@ if __name__ == '__main__':
     #Benchmark settings
     # p,c,c,p,p,p,c,p,p,p,p,p
     benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet', 'CPD', 'F3Net', 'PoolNet', 'ScribbleSOD', 'SCRN',
-                        'GCPANet', 'MINet', 'Raft', 'CSNet', 'CSFRes2Net', 'RAS']
+                        'GCPANet', 'MINet', 'Raft', 'CSNet', 'CSFRes2Net', 'RAS', 'AADFNet']
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[14])
+    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[15])
     parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
     parser.add_argument('--data_norm', type=str, default='PIL')  # cv2 / PIL
     parser.add_argument('--needPair', type=bool, default=False)  # for flow-based methods

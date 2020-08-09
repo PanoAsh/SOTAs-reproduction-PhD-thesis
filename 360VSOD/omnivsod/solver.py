@@ -153,6 +153,12 @@ class Solver(object):
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/RAS/models/RAS.v2.pth'))
                 self.print_network(self.net, 'RAS')
+            elif self.config.benchmark_name == 'AADFNet':
+                from benchmark.AADFNet.benchmark import model, convert_state_dict
+                self.net = model
+                AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() + '/benchmark/AADFNet/models/30000.pth'))
+                self.net.load_state_dict(AADFNet_pretrain)
+                self.print_network(self.net, 'AADFNet')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -335,6 +341,8 @@ class Solver(object):
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'RAS':
                         salT = sal[0]
                         pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'AADFNet':
+                        pred = sal
 
                     if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
