@@ -148,6 +148,11 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() +
                                         '/benchmark/CSFRes2Net/models/csf_res2net50_final.pth'), strict=False)
                 self.print_network(self.net, 'CSFRes2Net')
+            elif self.config.benchmark_name == 'RAS':
+                from benchmark.RAS.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/RAS/models/RAS.v2.pth'))
+                self.print_network(self.net, 'RAS')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -327,6 +332,9 @@ class Solver(object):
                         pred = torch.sigmoid(sal)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'CSFRes2Net':
                         pred = torch.sigmoid(sal)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'RAS':
+                        salT = sal[0]
+                        pred = torch.sigmoid(salT)
 
                     if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
