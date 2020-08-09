@@ -11,7 +11,8 @@ def main(config):
     if config.mode == 'train':
         train_loader, dataset = get_loader(config.batch_size, num_thread=config.num_thread,data_type=config.model_type,
                                            base_level=config.base_level, sample_level=config.sample_level,
-                                           ref=config.needRef, norm=config.data_norm, pair=config.needPair)
+                                           ref=config.needRef, norm=config.data_norm, pair=config.needPair,
+                                           flow=config.needFlow)
         run = "omnivsod"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
@@ -24,7 +25,7 @@ def main(config):
         test_loader, dataset = get_loader(config.test_batch_size, mode='test', num_thread=config.num_thread,
                                           data_type=config.model_type, base_level=config.base_level,
                                           sample_level=config.sample_level, ref=config.needRef, norm=config.data_norm,
-                                          pair=config.needPair)
+                                          pair=config.needPair, flow=config.needFlow)
         if not os.path.exists(config.test_fold): os.mkdir(config.test_fold)
         test = Solver(None, test_loader, config)
         test.test()
@@ -56,12 +57,13 @@ if __name__ == '__main__':
     #Benchmark settings
     # p,c,c,p,p,p,c,p,p,p,p,p
     benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet', 'CPD', 'F3Net', 'PoolNet', 'ScribbleSOD', 'SCRN',
-                        'GCPANet', 'MINet', 'Raft', 'CSNet', 'CSFRes2Net', 'RAS', 'AADFNet']
+                        'GCPANet', 'MINet', 'Raft', 'CSNet', 'CSFRes2Net', 'RAS', 'AADFNet', 'MGA']
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[15])
+    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[16])
     parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
     parser.add_argument('--data_norm', type=str, default='PIL')  # cv2 / PIL
-    parser.add_argument('--needPair', type=bool, default=False)  # for flow-based methods
+    parser.add_argument('--needPair', type=bool, default=False)  # for flow generation methods
+    parser.add_argument('--needFlow', type=bool, default=True)  # for flow-guided methods
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)

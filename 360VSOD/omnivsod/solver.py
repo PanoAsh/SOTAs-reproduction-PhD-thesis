@@ -159,6 +159,11 @@ class Solver(object):
                 AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() + '/benchmark/AADFNet/models/30000.pth'))
                 self.net.load_state_dict(AADFNet_pretrain)
                 self.print_network(self.net, 'AADFNet')
+            elif self.config.benchmark_name == 'MGA':
+                from benchmark.MGA.benchmark import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/MGA/models/MGA_trained.pth'))
+                self.print_network(self.net, 'MGA')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -265,6 +270,10 @@ class Solver(object):
                     ER_next = data_batch['ER_img_next']
                     ER_next = Variable(ER_next)
                     ER_next = ER_next.cuda()
+                if self.config.benchmark_model == True and self.config.needFlow == True:
+                    ER_flow = data_batch['ER_flow']
+                    ER_flow = Variable(ER_flow)
+                    ER_flow = ER_flow.cuda()
 
             elif self.config.model_type == 'L':
                 TI_imgs, img_name = data_batch['TI_imgs'], data_batch['frm_name']
@@ -288,6 +297,9 @@ class Solver(object):
                 elif self.config.benchmark_model == True and self.config.benchmark_name == 'Raft':
                     time_start = time.time()
                     _, sal = self.net(img_test, ER_next, test_mode=True)
+                elif self.config.benchmark_model == True and self.config.benchmark_name == 'MGA':
+                    time_start = time.time()
+                    sal = self.net(img_test, ER_flow)
                 else:
                     time_start = time.time()
                     sal = self.net(img_test)
@@ -343,6 +355,10 @@ class Solver(object):
                         pred = torch.sigmoid(salT)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'AADFNet':
                         pred = sal
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'MGA':
+                        salT = sal[0]
+                        pred = torch.sigmoid(salT)
+                        pred = (pred - torch.min(pred) + 1e-8) / (torch.max(pred) - torch.min(pred) + 1e-8)
 
                     if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 

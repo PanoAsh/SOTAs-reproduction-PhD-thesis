@@ -11,7 +11,7 @@ import numpy as np
 
 
 class ImageDataTrain(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, data_norm, data_pair):
+    def __init__(self, data_type, base_level, sample_level, data_norm, data_pair, data_flow):
         self.img_source = os.getcwd() + '/data/train_img.lst'
         self.msk_source = os.getcwd() + '/data/train_msk.lst'
         self.data_type = data_type
@@ -19,6 +19,7 @@ class ImageDataTrain(data.Dataset):
         self.sample_level = sample_level
         self.data_norm = data_norm
         self.data_pair = data_pair
+        self.data_flow = data_flow
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -52,7 +53,7 @@ class ImageDataTrain(data.Dataset):
         return self.img_num
 
 class ImageDataTest(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, need_ref, data_norm, data_pair):
+    def __init__(self, data_type, base_level, sample_level, need_ref, data_norm, data_pair, data_flow):
         self.img_source = os.getcwd() + '/data/test_img.lst'
         self.data_type = data_type
         self.base_level = base_level
@@ -60,6 +61,7 @@ class ImageDataTest(data.Dataset):
         self.need_ref = need_ref
         self.data_norm = data_norm
         self.data_pair = data_pair
+        self.data_flow = data_flow
         #self.ins_source = os.getcwd() + '/data/test_ins.lst'
         #self.gt_source = os.getcwd() + '/data/test_msk.lst'
 
@@ -100,6 +102,11 @@ class ImageDataTest(data.Dataset):
 
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'ER_img_next': ER_img_next}
 
+            if self.data_flow == True:
+                flow_pth = os.path.join(os.getcwd(), 'result_analysis', 'Sal_test_raft_kitti', frm_name)
+                ER_flow = load_ERImg(flow_pth, self.data_norm)
+                sample = {'ER_img': ER_img, 'frm_name': frm_name, 'ER_flow': ER_flow}
+
         elif self.data_type == 'L':
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             sample = {'TI_imgs': TI_imgs, 'frm_name': frm_name}
@@ -114,15 +121,15 @@ class ImageDataTest(data.Dataset):
 
 # get the dataloader (Note: without data augmentation, except saliency with random flip)
 def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level = 1, sample_level=10, ref=False,
-               norm='cv2', pair=False):
+               norm='cv2', pair=False, flow=False):
     shuffle = False
     if mode == 'train':
         shuffle = True
         dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level,
-                                 data_norm=norm, data_pair=pair)
+                                 data_norm=norm, data_pair=pair, data_flow=flow)
     else:
         dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level,
-                                need_ref=ref, data_norm=norm, data_pair=pair)
+                                need_ref=ref, data_norm=norm, data_pair=pair, data_flow=flow)
 
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
 
