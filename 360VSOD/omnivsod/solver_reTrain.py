@@ -8,6 +8,7 @@ import os
 from torch.nn import functional as F
 import time
 import matplotlib.pyplot as plt
+from pthflops import count_ops
 
 
 def structure_loss(pred, mask):
@@ -94,6 +95,8 @@ class SolverReTrain(object):
 
                     if i % self.config.showEvery == 0:
                         if i > 0:
+                            GFlops = count_ops(self.net, img_train, print_readable=False)[0] * 1e-9
+
                             print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                                 epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
                                 * self.config.batch_size / self.config.showEvery))
@@ -101,12 +104,12 @@ class SolverReTrain(object):
                             f.write('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                                 epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
                                 * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' +
-                                    str(self.lr) + '\n')
+                                    str(self.lr) + '  ||  mean-GFlops:  ' + str(GFlops / self.config.showEvery) + '\n')
                             f2.write(str(epoch) + '_' + '%10.4f' % (G_loss * self.config.nAveGrad *
                                                                     self.config.batch_size / self.config.showEvery) + '\n')
 
                             G_loss = 0
-
+                   
                 if (epoch + 1) % self.config.epoch_save == 0:
                     torch.save(self.net.state_dict(),
                                '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))
