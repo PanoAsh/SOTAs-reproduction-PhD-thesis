@@ -42,7 +42,7 @@ def main(config):
             os.mkdir("%s/run-%s/models" % (config.save_fold, run))
         config.save_fold = "%s/run-%s" % (config.save_fold, run)
         train = SolverReTrain(train_loader, None, config)
-        print()
+        train.train()
     else:
         raise IOError("illegal input!!!")
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
-    parser.add_argument('--epoch', type=int, default=10)
+    parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=1)  # must be 1
     parser.add_argument('--lr', type=int, default=0.00001)
     parser.add_argument('--wd', type=int, default=0.0005)
