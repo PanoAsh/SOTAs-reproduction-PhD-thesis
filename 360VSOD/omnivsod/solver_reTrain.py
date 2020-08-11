@@ -51,6 +51,9 @@ class SolverReTrain(object):
         print(model)
         print(name)
         print("The number of parameters: {}".format(num_params))
+        f = open('%s/logs/num_paras.txt' % self.config.save_fold, 'w')
+        f.write('name:  ' + name + '    number of parameters:  ' + str(num_params))
+        f.close()
 
     def train(self):
         f = open('%s/logs/log_file.txt' % self.config.save_fold, 'w')
@@ -95,7 +98,11 @@ class SolverReTrain(object):
 
                     if i % self.config.showEvery == 0:
                         if i > 0:
-                            GFlops = count_ops(self.net, img_train, print_readable=False)[0] * 1e-9
+                            if i == self.config.showEvery:
+                                GFlops = count_ops(self.net, img_train, print_readable=False)[0] * 1e-9
+                                f3 = open('%s/logs/GFlops.txt' % self.config.save_fold, 'w')
+                                f3.write('GFlops:  ' + str(GFlops))
+                                f3.close()
 
                             print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                                 epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
@@ -103,13 +110,12 @@ class SolverReTrain(object):
                             print('Learning rate: ' + str(self.lr))
                             f.write('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                                 epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
-                                * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' +
-                                    str(self.lr) + '  ||  mean-GFlops:  ' + str(GFlops / self.config.showEvery) + '\n')
+                                * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' + str(self.lr) + '\n')
                             f2.write(str(epoch) + '_' + '%10.4f' % (G_loss * self.config.nAveGrad *
-                                                                    self.config.batch_size / self.config.showEvery) + '\n')
+                                                                self.config.batch_size / self.config.showEvery) + '\n')
 
                             G_loss = 0
-                   
+
                 if (epoch + 1) % self.config.epoch_save == 0:
                     torch.save(self.net.state_dict(),
                                '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))

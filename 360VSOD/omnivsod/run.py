@@ -81,12 +81,12 @@ if __name__ == '__main__':
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
-    parser.add_argument('--epoch', type=int, default=1)
+    parser.add_argument('--epoch', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1)  # must be 1
     parser.add_argument('--lr', type=int, default=0.00001)
     parser.add_argument('--wd', type=int, default=0.0005)
     parser.add_argument('--nAveGrad', type=int, default=10)
-    parser.add_argument('--lr_decay_epoch', type=int, default=10)
+    parser.add_argument('--lr_decay_epoch', type=int, default=100)
 
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default='')
