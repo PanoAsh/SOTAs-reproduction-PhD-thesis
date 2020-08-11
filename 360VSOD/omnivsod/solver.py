@@ -102,7 +102,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'F3Net':
                 from benchmark.F3Net.benchmark import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/F3Net/models/model-32'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/F3Net/models/epoch_3_bone.pth'))
                 self.print_network(self.net, 'F3Net')
             elif self.config.benchmark_name == 'PoolNet':
                 from benchmark.PoolNet.benchmark import model
@@ -374,6 +374,10 @@ class Solver(object):
                 cv2.imwrite(self.config.test_fold + img_name[0], pred)
 
         print("--- %s seconds ---" % (time_total))
+        print("--- %s fps ---" % (3778 / time_total))
+        f = open(os.getcwd() + '/results/fps.txt', 'w')
+        f.write(str(3778 / time_total))
+        f.close()
         print('Test Done!')
 
     # if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':

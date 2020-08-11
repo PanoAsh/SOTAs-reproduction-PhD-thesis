@@ -35,6 +35,9 @@ class SolverReTrain(object):
             self.net = model
             self.print_network(self.net, 'F3Net')
 
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/model-32'))
+
         # retrain all the benchmark models with a same optimizer setting
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
