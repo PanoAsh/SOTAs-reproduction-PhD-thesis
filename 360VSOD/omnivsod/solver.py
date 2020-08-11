@@ -14,6 +14,7 @@ from util import TI2ER
 import matplotlib.pyplot as plt
 from util import normPRED
 import flow_vis
+from flopth import flopth
 
 
 class Solver(object):
@@ -92,7 +93,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'BASNet':
                 from benchmark.BASNet.benchmark import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/basnet.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/epoch_1_bone.pth'))
                 self.print_network(self.net, 'BASNet')
             elif self.config.benchmark_name == 'CPD':
                 from benchmark.CPD.benchmark import model
@@ -102,7 +103,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'F3Net':
                 from benchmark.F3Net.benchmark import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/F3Net/models/epoch_3_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/F3Net/models/epoch_9_bone.pth'))
                 self.print_network(self.net, 'F3Net')
             elif self.config.benchmark_name == 'PoolNet':
                 from benchmark.PoolNet.benchmark import model
@@ -377,6 +378,10 @@ class Solver(object):
         print("--- %s fps ---" % (3778 / time_total))
         f = open(os.getcwd() + '/results/fps.txt', 'w')
         f.write(str(3778 / time_total))
+        f.close()
+        GFlops = flopth(self.net)
+        f = open(os.getcwd() + '/results/GFlops.txt', 'w')
+        f.write('GFlops:  ' + GFlops)
         f.close()
         print('Test Done!')
 

@@ -8,7 +8,9 @@ import os
 from torch.nn import functional as F
 import time
 import matplotlib.pyplot as plt
-from pthflops import count_ops
+#from pthflops import count_ops
+import torch.nn as nn
+#from flopth import flopth
 
 
 def structure_loss(pred, mask):
@@ -22,6 +24,32 @@ def structure_loss(pred, mask):
     wiou  = 1-(inter+1)/(union-inter+1)
     return (wbce+wiou).mean()
 
+import retrain.BASNet.pytorch_ssim as pytorch_ssim
+import retrain.BASNet.pytorch_iou as pytorch_iou
+bce_loss = nn.BCELoss(size_average=True)
+ssim_loss = pytorch_ssim.SSIM(window_size=11,size_average=True)
+iou_loss = pytorch_iou.IOU(size_average=True)
+
+def bce_ssim_loss(pred,target):
+    bce_out = bce_loss(pred,target)
+    ssim_out = 1 - ssim_loss(pred,target)
+    iou_out = iou_loss(pred,target)
+    loss = bce_out + ssim_out + iou_out
+
+    return loss
+
+def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, d7, labels_v):
+    loss0 = bce_ssim_loss(d0,labels_v)
+    loss1 = bce_ssim_loss(d1,labels_v)
+    loss2 = bce_ssim_loss(d2,labels_v)
+    loss3 = bce_ssim_loss(d3,labels_v)
+    loss4 = bce_ssim_loss(d4,labels_v)
+    loss5 = bce_ssim_loss(d5,labels_v)
+    loss6 = bce_ssim_loss(d6,labels_v)
+    loss7 = bce_ssim_loss(d7,labels_v)
+    loss = loss0 + loss1 + loss2 + loss3 + loss4 + loss5 + loss6 + loss7#+ 5.0*lossa
+
+    return loss0, loss
 
 class SolverReTrain(object):
     def __init__(self, train_loader, test_loader, config):
@@ -37,6 +65,14 @@ class SolverReTrain(object):
 
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/model-32'))
+
+        elif self.config.benchmark_name == 'BASNet':
+            from retrain.BASNet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'BASNet')
+
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/BASNet/fine_tune_init/basnet.pth'))
 
         # retrain all the benchmark models with a same optimizer setting
         if self.config.cuda: self.net = self.net.cuda()
@@ -101,12 +137,6 @@ class SolverReTrain(object):
 
                     if i % self.config.showEvery == 0:
                         if i > 0:
-                            if i == self.config.showEvery:
-                                GFlops = count_ops(self.net, img_train, print_readable=False)[0] * 1e-9
-                                f3 = open('%s/logs/GFlops.txt' % self.config.save_fold, 'w')
-                                f3.write('GFlops:  ' + str(GFlops))
-                                f3.close()
-
                             print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
                                 epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
                                 * self.config.batch_size / self.config.showEvery))
@@ -116,6 +146,61 @@ class SolverReTrain(object):
                                 * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' + str(self.lr) + '\n')
                             f2.write(str(epoch) + '_' + '%10.4f' % (G_loss * self.config.nAveGrad *
                                                                 self.config.batch_size / self.config.showEvery) + '\n')
+
+                            G_loss = 0
+
+                if (epoch + 1) % self.config.epoch_save == 0:
+                    torch.save(self.net.state_dict(),
+                               '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))
+
+                if (epoch + 1) % self.config.lr_decay_epoch == 0:
+                    self.lr = self.lr * 0.1
+                    self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()),
+                                          lr=self.lr, weight_decay=self.wd)
+
+        elif self.config.benchmark_name == 'BASNet':
+            iter_num = len(self.train_loader.dataset) // self.config.batch_size
+            aveGrad = 0
+
+            for epoch in range(self.config.epoch):
+                G_loss = 0
+                self.net.zero_grad()
+                for i, data_batch in enumerate(self.train_loader):
+                    ER_img, ER_msk = data_batch['ER_img'], data_batch['ER_msk']
+                    if ER_img.size()[2:] != ER_msk.size()[2:]:
+                        print("Skip this batch")
+                        continue
+                    ER_img, ER_msk = Variable(ER_img), Variable(ER_msk)
+                    if self.config.cuda:
+                        ER_img, ER_msk = ER_img.cuda(), ER_msk.cuda()
+                    img_train, msk_train = ER_img, ER_msk
+
+                    d0, d1, d2, d3, d4, d5, d6, d7 = self.net(img_train)
+                    loss2, loss = muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, d7, msk_train)
+
+                    loss_currIter = loss \
+                                    / (self.config.nAveGrad * self.config.batch_size)
+                    G_loss += loss_currIter.data
+                    # with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
+                    loss_currIter.backward()
+                    aveGrad += 1
+
+                    if aveGrad % self.config.nAveGrad == 0:
+                        self.optimizer.step()
+                        self.optimizer.zero_grad()
+                        aveGrad = 0
+
+                    if i % self.config.showEvery == 0:
+                        if i > 0:
+                            print('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
+                                epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
+                                * self.config.batch_size / self.config.showEvery))
+                            print('Learning rate: ' + str(self.lr))
+                            f.write('epoch: [%2d/%2d], iter: [%5d/%5d]  ||  loss : %10.4f' % (
+                                epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
+                                * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' + str(self.lr) + '\n')
+                            f2.write(str(epoch) + '_' + '%10.4f' % (G_loss * self.config.nAveGrad *
+                                                                    self.config.batch_size / self.config.showEvery) + '\n')
 
                             G_loss = 0
 

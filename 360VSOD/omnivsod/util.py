@@ -1,7 +1,7 @@
 import os
 import torch
-#from spherical_distortion.util import load_torch_img, torch2numpy
-#from spherical_distortion.functional import create_tangent_images, tangent_images_to_equirectangular
+from spherical_distortion.util import load_torch_img, torch2numpy
+from spherical_distortion.functional import create_tangent_images, tangent_images_to_equirectangular
 from torch.autograd import Variable
 import torch.nn.functional as F
 import cv2
