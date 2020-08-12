@@ -71,6 +71,15 @@ def label_edge_prediction(label):
     label_grad = torch.gt(label_grad, contour_th).float()
 
     return label_grad
+
+def bce_iou_loss(pred, mask):
+    bce   = F.binary_cross_entropy_with_logits(pred, mask, reduction='mean')
+    pred  = torch.sigmoid(pred)
+    inter = (pred*mask).sum(dim=(2,3))
+    union = (pred+mask).sum(dim=(2,3))
+    iou   = 1-(inter+1)/(union-inter+1)
+
+    return (bce+iou).mean()
 # ----------------------------- utils above ----------------------------- #
 
 class SolverReTrain(object):
@@ -120,6 +129,14 @@ class SolverReTrain(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/GCPANet/fine_tune_init/model-100045448.pt'))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'RAS':
+            from retrain.RAS.retrain import model
+            self.net = model
+            self.print_network(self.net, 'RAS')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/RAS/fine_tune_init/RAS.v2.pth'))
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -129,7 +146,7 @@ class SolverReTrain(object):
             self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                               weight_decay=self.wd)
         elif self.config.optimizer_name == 'SGD':
-            if self.config.benchmark_name == 'F3Net' or 'GCPANet':
+            if self.config.benchmark_name == 'F3Net' or 'GCPANet' or 'RAS':
                 base, head = [], []
                 for name, param in self.net.named_parameters():
                     if 'bkbone.conv1' in name or 'bkbone.bn1' in name:
@@ -208,6 +225,13 @@ class SolverReTrain(object):
                     loss4 = F.binary_cross_entropy_with_logits(out4, msk_train)
                     loss5 = F.binary_cross_entropy_with_logits(out5, msk_train)
                     loss = loss2 * 1 + loss3 * 0.8 + loss4 * 0.6 + loss5 * 0.4
+                elif self.config.benchmark_name == 'RAS':
+                    out2, out3, out4, out5 = self.net(img_train)
+                    loss2 = bce_iou_loss(out2, msk_train)
+                    loss3 = bce_iou_loss(out3, msk_train)
+                    loss4 = bce_iou_loss(out4, msk_train)
+                    loss5 = bce_iou_loss(out5, msk_train)
+                    loss = loss2 + loss3 + loss4 + loss5
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

@@ -150,9 +150,9 @@ class Solver(object):
                                         '/benchmark/CSFRes2Net/models/csf_res2net50_final.pth'), strict=False)
                 self.print_network(self.net, 'CSFRes2Net')
             elif self.config.benchmark_name == 'RAS':
-                from benchmark.RAS.benchmark import model
+                from retrain.RAS.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/RAS/models/RAS.v2.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/RAS/fine_tune_init/RAS.v2.pth'))
                 self.print_network(self.net, 'RAS')
             elif self.config.benchmark_name == 'AADFNet':
                 from benchmark.AADFNet.benchmark import model, convert_state_dict
