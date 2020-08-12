@@ -84,7 +84,6 @@ class SolverReTrain(object):
             from retrain.F3Net.retrain import model
             self.net = model
             self.print_network(self.net, 'F3Net')
-
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/model-32'))
                 print('fine tuning ...')
@@ -93,7 +92,6 @@ class SolverReTrain(object):
             from retrain.BASNet.retrain import model
             self.net = model
             self.print_network(self.net, 'BASNet')
-
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/BASNet/fine_tune_init/basnet.pth'))
                 print('fine tuning ...')
@@ -102,7 +100,6 @@ class SolverReTrain(object):
             from retrain.CPD.retrain import model
             self.net = model
             self.print_network(self.net, 'CPD')
-
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/CPD-R.pth'))
                 print('fine tuning ...')
@@ -111,9 +108,16 @@ class SolverReTrain(object):
             from retrain.SCRN.retrain import model
             self.net = model
             self.print_network(self.net, 'SCRN')
-
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/model.pth'))
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'GCPANet':
+            from retrain.GCPANet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'GCPANet')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/GCPANet/fine_tune_init/model-100045448.pt'))
                 print('fine tuning ...')
 
         if self.config.cuda: self.net = self.net.cuda()
@@ -125,7 +129,7 @@ class SolverReTrain(object):
             self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                               weight_decay=self.wd)
         elif self.config.optimizer_name == 'SGD':
-            if self.config.benchmark_name == 'F3Net':
+            if self.config.benchmark_name == 'F3Net' or 'GCPANet':
                 base, head = [], []
                 for name, param in self.net.named_parameters():
                     if 'bkbone.conv1' in name or 'bkbone.bn1' in name:
@@ -197,6 +201,13 @@ class SolverReTrain(object):
                     loss1 = CE(pred_sal, msk_train)
                     loss2 = CE(pred_edge, msk_train_edge)
                     loss = loss1 + loss2
+                elif self.config.benchmark_name == 'GCPANet':
+                    out2, out3, out4, out5 = self.net(img_train)
+                    loss2 = F.binary_cross_entropy_with_logits(out2, msk_train)
+                    loss3 = F.binary_cross_entropy_with_logits(out3, msk_train)
+                    loss4 = F.binary_cross_entropy_with_logits(out4, msk_train)
+                    loss5 = F.binary_cross_entropy_with_logits(out5, msk_train)
+                    loss = loss2 * 1 + loss3 * 0.8 + loss4 * 0.6 + loss5 * 0.4
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

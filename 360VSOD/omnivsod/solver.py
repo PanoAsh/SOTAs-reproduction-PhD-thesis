@@ -118,12 +118,12 @@ class Solver(object):
             elif self.config.benchmark_name == 'SCRN':
                 from retrain.SCRN.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/model.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/epoch_9_bone.pth'))
                 self.print_network(self.net, 'SCRN')
             elif self.config.benchmark_name == 'GCPANet':
-                from benchmark.GCPANet.benchmark import model
+                from retrain.GCPANet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/GCPANet/models/model.pt'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/GCPANet/fine_tune_init/model-100045448.pt'))
                 self.print_network(self.net, 'GCPANet')
             elif self.config.benchmark_name == 'MINet':
                 from benchmark.MINet.benchmark import model
