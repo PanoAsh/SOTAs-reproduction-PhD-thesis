@@ -1,5 +1,5 @@
 import torch
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 from torch.autograd import Variable
 from model import build_model
 import numpy as np
@@ -74,12 +74,28 @@ class SolverReTrain(object):
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/BASNet/fine_tune_init/basnet.pth'))
 
-        # retrain all the benchmark models with a same optimizer setting
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
-        self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
+
+        # optimizer
+        if self.config.optimizer_name == 'Adam':
+            self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                               weight_decay=self.wd)
+        elif self.config.optimizer_name == 'SGD':
+            if self.config.benchmark_name == 'F3Net':
+                base, head = [], []
+                for name, param in self.net.named_parameters():
+                    if 'bkbone.conv1' in name or 'bkbone.bn1' in name:
+                        print(name)
+                    elif 'bkbone' in name:
+                        base.append(param)
+                    else:
+                        head.append(param)
+                self.optimizer = SGD([{'params': base}, {'params': head}], lr=self.lr, momentum=0.9,
+                                            weight_decay=self.wd, nesterov=True)
+                self.optimizer.param_groups[0]['lr'] = self.lr * 0.1
+                self.optimizer.param_groups[1]['lr'] = self.lr
 
         print('Now we are trying to retrain the benchmark models...')
 
@@ -153,11 +169,6 @@ class SolverReTrain(object):
                     torch.save(self.net.state_dict(),
                                '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))
 
-                if (epoch + 1) % self.config.lr_decay_epoch == 0:
-                    self.lr = self.lr * 0.1
-                    self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()),
-                                          lr=self.lr, weight_decay=self.wd)
-
         elif self.config.benchmark_name == 'BASNet':
             iter_num = len(self.train_loader.dataset) // self.config.batch_size
             aveGrad = 0
@@ -200,18 +211,13 @@ class SolverReTrain(object):
                                 epoch, self.config.epoch, i, iter_num, G_loss * self.config.nAveGrad
                                 * self.config.batch_size / self.config.showEvery) + '  ||  lr:  ' + str(self.lr) + '\n')
                             f2.write(str(epoch) + '_' + '%10.4f' % (G_loss * self.config.nAveGrad *
-                                                                    self.config.batch_size / self.config.showEvery) + '\n')
+                                                                 self.config.batch_size / self.config.showEvery) + '\n')
 
                             G_loss = 0
 
                 if (epoch + 1) % self.config.epoch_save == 0:
                     torch.save(self.net.state_dict(),
                                '%s/models/epoch_%d_bone.pth' % (self.config.save_fold, epoch + 1))
-
-                if (epoch + 1) % self.config.lr_decay_epoch == 0:
-                    self.lr = self.lr * 0.1
-                    self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()),
-                                          lr=self.lr, weight_decay=self.wd)
 
         f.close()
         f2.close()

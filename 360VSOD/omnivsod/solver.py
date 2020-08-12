@@ -93,7 +93,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'BASNet':
                 from benchmark.BASNet.benchmark import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/epoch_1_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/final_bone.pth'))
                 self.print_network(self.net, 'BASNet')
             elif self.config.benchmark_name == 'CPD':
                 from benchmark.CPD.benchmark import model
