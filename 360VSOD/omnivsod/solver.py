@@ -91,19 +91,19 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/EGNet/pretrained/epoch_resnet.pth'))
                 self.print_network(self.net, 'EGNet')
             elif self.config.benchmark_name == 'BASNet':
-                from benchmark.BASNet.benchmark import model
+                from retrain.BASNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/BASNet/models/final_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/BASNet/fine_tune_init/basnet.pth'))
                 self.print_network(self.net, 'BASNet')
             elif self.config.benchmark_name == 'CPD':
-                from benchmark.CPD.benchmark import model
+                from retrain.CPD.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/CPD/models/CPD-R.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/CPD-R.pth'))
                 self.print_network(self.net, 'CPD')
             elif self.config.benchmark_name == 'F3Net':
-                from benchmark.F3Net.benchmark import model
+                from retrain.F3Net.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/F3Net/models/epoch_9_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/model-32'))
                 self.print_network(self.net, 'F3Net')
             elif self.config.benchmark_name == 'PoolNet':
                 from benchmark.PoolNet.benchmark import model
