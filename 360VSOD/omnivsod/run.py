@@ -73,7 +73,7 @@ if __name__ == '__main__':
     benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet', 'CPD', 'F3Net', 'PoolNet', 'ScribbleSOD', 'SCRN',
                         'GCPANet', 'MINet', 'Raft', 'CSNet', 'CSFRes2Net', 'RAS', 'AADFNet', 'MGA']
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[4])
+    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[8])
     parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
     parser.add_argument('--data_norm', type=str, default='PIL')  # cv2 / PIL
     parser.add_argument('--needPair', type=bool, default=False)  # for flow generation methods
@@ -86,9 +86,9 @@ if __name__ == '__main__':
     parser.add_argument('--nAveGrad', type=int, default=10)
     parser.add_argument('--lr_decay_epoch', type=int, default=100)
     # Hyper_parameters (please check before retrain)
-    parser.add_argument('--lr', type=float, default=0.00001)
-    parser.add_argument('--wd', type=float, default=0)
-    parser.add_argument('--optimizer_name', type=str, default='Adam')  # Adam, SGD
+    parser.add_argument('--lr', type=float, default=2e-4)  # 1/10 of default Lr for benchmark models
+    parser.add_argument('--wd', type=float, default=5e-4)
+    parser.add_argument('--optimizer_name', type=str, default='SGD')  # Adam, SGD
 
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default='')

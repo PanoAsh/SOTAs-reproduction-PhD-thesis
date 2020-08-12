@@ -116,9 +116,9 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/ScribbleSOD/models/scribble_30.pth'))
                 self.print_network(self.net, 'ScribbleSOD')
             elif self.config.benchmark_name == 'SCRN':
-                from benchmark.SCRN.benchmark import model
+                from retrain.SCRN.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/SCRN/models/model.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/model.pth'))
                 self.print_network(self.net, 'SCRN')
             elif self.config.benchmark_name == 'GCPANet':
                 from benchmark.GCPANet.benchmark import model

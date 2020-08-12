@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import torch.nn as nn
 #from flopth import flopth
 
-
+# ---------------------------- utils ---------------------------------- #
 def structure_loss(pred, mask):
     weit  = 1+5*torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15)-mask)
     wbce  = F.binary_cross_entropy_with_logits(pred, mask, reduce='none')
@@ -53,6 +53,26 @@ def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, d7, labels_v):
 
 CE = nn.BCEWithLogitsLoss()
 
+fx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).astype(np.float32)
+fy = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).astype(np.float32)
+fx = np.reshape(fx, (1, 1, 3, 3))
+fy = np.reshape(fy, (1, 1, 3, 3))
+fx = Variable(torch.from_numpy(fx)).cuda()
+fy = Variable(torch.from_numpy(fy)).cuda()
+contour_th = 1.5
+
+def label_edge_prediction(label):
+    # convert label to edge
+    label = label.gt(0.5).float()
+    label = F.pad(label, (1, 1, 1, 1), mode='replicate')
+    label_fx = F.conv2d(label, fx)
+    label_fy = F.conv2d(label, fy)
+    label_grad = torch.sqrt(torch.mul(label_fx, label_fx) + torch.mul(label_fy, label_fy))
+    label_grad = torch.gt(label_grad, contour_th).float()
+
+    return label_grad
+# ----------------------------- utils above ----------------------------- #
+
 class SolverReTrain(object):
     def __init__(self, train_loader, test_loader, config):
         self.train_loader = train_loader
@@ -87,6 +107,15 @@ class SolverReTrain(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/CPD-R.pth'))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'SCRN':
+            from retrain.SCRN.retrain import model
+            self.net = model
+            self.print_network(self.net, 'SCRN')
+
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/model.pth'))
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -109,6 +138,9 @@ class SolverReTrain(object):
                                             weight_decay=self.wd, nesterov=True)
                 self.optimizer.param_groups[0]['lr'] = self.lr * 0.1
                 self.optimizer.param_groups[1]['lr'] = self.lr
+            elif self.config.benchmark_name == 'SCRN':
+                params = self.net.parameters()
+                self.optimizer = SGD(params, self.lr, momentum=0.9, weight_decay=self.wd)
 
         print('Now we are trying to retrain the benchmark models...')
 
@@ -158,6 +190,12 @@ class SolverReTrain(object):
                     atts, dets = self.net(img_train)
                     loss1 = CE(atts, msk_train)
                     loss2 = CE(dets, msk_train)
+                    loss = loss1 + loss2
+                elif self.config.benchmark_name == 'SCRN':
+                    msk_train_edge = label_edge_prediction(msk_train)
+                    pred_sal, pred_edge = self.net(img_train)
+                    loss1 = CE(pred_sal, msk_train)
+                    loss2 = CE(pred_edge, msk_train_edge)
                     loss = loss1 + loss2
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
