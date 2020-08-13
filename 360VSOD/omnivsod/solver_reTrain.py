@@ -137,6 +137,25 @@ class SolverReTrain(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/RAS/fine_tune_init/RAS.v2.pth'))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'CSFRes2Net':
+            from retrain.CSFRes2Net.retrain import model
+            self.net = model
+            self.print_network(self.net, 'CSFRes2Net')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() +
+                                    '/retrain/CSFRes2Net/fine_tune_init/csf_res2net50_final.pth'), strict=False)
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'CSNet':
+            from retrain.CSNet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'CSNet')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() +
+                                                    '/retrain/CSNet/checkpoints/csnet-L-x2/csnet-L-x2.pth.tar')
+                                         ['state_dict'])
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -232,6 +251,9 @@ class SolverReTrain(object):
                     loss4 = bce_iou_loss(out4, msk_train)
                     loss5 = bce_iou_loss(out5, msk_train)
                     loss = loss2 + loss3 + loss4 + loss5
+                elif self.config.benchmark_name == 'CSFRes2Net' or 'CSNet':
+                    sal_pred = self.net(img_train)
+                    loss = F.binary_cross_entropy_with_logits(sal_pred, msk_train)
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

@@ -137,17 +137,17 @@ class Solver(object):
                 self.net.load_state_dict(convert_state_dict(Raft_pretrain))
                 self.print_network(self.net, 'Raft')
             elif self.config.benchmark_name == 'CSNet':
-                from benchmark.CSNet.benchmark import model
+                from retrain.CSNet.retrain import model
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() +
-                                                    '/benchmark/CSNet/checkpoints/csnet-L-x2/csnet-L-x2.pth.tar')
+                                                    '/retrain/CSNet/checkpoints/csnet-L-x2/csnet-L-x2.pth.tar')
                                          ['state_dict'])
                 self.print_network(self.net, 'CSNet')
             elif self.config.benchmark_name == 'CSFRes2Net':
-                from benchmark.CSFRes2Net.benchmark import model
+                from retrain.CSFRes2Net.retrain import model
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() +
-                                        '/benchmark/CSFRes2Net/models/csf_res2net50_final.pth'), strict=False)
+                                       '/retrain/CSFRes2Net/fine_tune_init/csf_res2net50_final.pth'), strict=False)
                 self.print_network(self.net, 'CSFRes2Net')
             elif self.config.benchmark_name == 'RAS':
                 from retrain.RAS.retrain import model
