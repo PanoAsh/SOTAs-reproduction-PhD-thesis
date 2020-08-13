@@ -106,9 +106,9 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/model-32'))
                 self.print_network(self.net, 'F3Net')
             elif self.config.benchmark_name == 'PoolNet':
-                from benchmark.PoolNet.benchmark import model
+                from retrain.PoolNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/PoolNet/models/final.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/PoolNet/fine_tune_init/final.pth'))
                 self.print_network(self.net, 'PoolNet')
             elif self.config.benchmark_name == 'ScribbleSOD':
                 from benchmark.ScribbleSOD.benchmark import model

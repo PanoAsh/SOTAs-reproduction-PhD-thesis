@@ -80,6 +80,23 @@ def bce_iou_loss(pred, mask):
     iou   = 1-(inter+1)/(union-inter+1)
 
     return (bce+iou).mean()
+
+def bce2d(input, target, reduction=None):
+    assert(input.size() == target.size())
+    pos = torch.eq(target, 1).float()
+    neg = torch.eq(target, 0).float()
+
+    num_pos = torch.sum(pos)
+    num_neg = torch.sum(neg)
+    num_total = num_pos + num_neg
+
+    alpha = num_neg  / num_total
+    beta = 1.1 * num_pos  / num_total
+    # target pixel = 1 -> weight beta
+    # target pixel = 0 -> weight 1-beta
+    weights = alpha * pos + beta * neg
+
+    return F.binary_cross_entropy_with_logits(input, target, weights, reduction=reduction)
 # ----------------------------- utils above ----------------------------- #
 
 class SolverReTrain(object):
@@ -172,6 +189,14 @@ class SolverReTrain(object):
                 AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() +
                                                                  '/retrain/AADFNet/fine_tune_init/30000.pth'))
                 self.net.load_state_dict(AADFNet_pretrain)
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'PoolNet':
+            from retrain.PoolNet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'PoolNet')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/PoolNet/fine_tune_init/final.pth'))
                 print('fine tuning ...')
 
         if self.config.cuda: self.net = self.net.cuda()
@@ -280,6 +305,9 @@ class SolverReTrain(object):
                 elif self.config.benchmark_name == 'AADFNet':
                     print('under built ...')
                     break
+                elif self.config.benchmark_name == 'PoolNet':
+                    sal_pred = self.net(img_train, mode=1)
+                    loss = F.binary_cross_entropy_with_logits(sal_pred, msk_train)
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
