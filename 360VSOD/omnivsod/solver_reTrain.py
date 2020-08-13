@@ -156,6 +156,24 @@ class SolverReTrain(object):
                                          ['state_dict'])
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'MINet':
+            from retrain.MINet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'MINet')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MINet/fine_tune_init/MINet_Res50.pth'))
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'AADFNet':
+            from retrain.AADFNet.retrain import model, convert_state_dict
+            self.net = model
+            self.print_network(self.net, 'AADFNet')
+            if self.config.fine_tune == True:
+                AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() +
+                                                                 '/retrain/AADFNet/fine_tune_init/30000.pth'))
+                self.net.load_state_dict(AADFNet_pretrain)
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -165,7 +183,8 @@ class SolverReTrain(object):
             self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                               weight_decay=self.wd)
         elif self.config.optimizer_name == 'SGD':
-            if self.config.benchmark_name == 'F3Net' or 'GCPANet' or 'RAS':
+            if self.config.benchmark_name == 'F3Net' or self.config.benchmark_name == 'GCPANet' \
+                    or self.config.benchmark_name == 'RAS':
                 base, head = [], []
                 for name, param in self.net.named_parameters():
                     if 'bkbone.conv1' in name or 'bkbone.bn1' in name:
@@ -178,7 +197,8 @@ class SolverReTrain(object):
                                             weight_decay=self.wd, nesterov=True)
                 self.optimizer.param_groups[0]['lr'] = self.lr * 0.1
                 self.optimizer.param_groups[1]['lr'] = self.lr
-            elif self.config.benchmark_name == 'SCRN':
+            elif self.config.benchmark_name == 'SCRN' or self.config.benchmark_name == 'MINet'\
+                    or self.config.benchmark_name == 'AADFNet':
                 params = self.net.parameters()
                 self.optimizer = SGD(params, self.lr, momentum=0.9, weight_decay=self.wd)
 
@@ -251,9 +271,15 @@ class SolverReTrain(object):
                     loss4 = bce_iou_loss(out4, msk_train)
                     loss5 = bce_iou_loss(out5, msk_train)
                     loss = loss2 + loss3 + loss4 + loss5
-                elif self.config.benchmark_name == 'CSFRes2Net' or 'CSNet':
+                elif self.config.benchmark_name == 'CSFRes2Net' or self.config.benchmark_name == 'CSNet':
                     sal_pred = self.net(img_train)
                     loss = F.binary_cross_entropy_with_logits(sal_pred, msk_train)
+                elif self.config.benchmark_name == 'MINet':
+                    sal_pred = self.net(img_train)
+                    loss = CE(sal_pred, msk_train)
+                elif self.config.benchmark_name == 'AADFNet':
+                    print('under built ...')
+                    break
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

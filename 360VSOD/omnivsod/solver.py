@@ -126,9 +126,9 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/GCPANet/fine_tune_init/model-100045448.pt'))
                 self.print_network(self.net, 'GCPANet')
             elif self.config.benchmark_name == 'MINet':
-                from benchmark.MINet.benchmark import model
+                from retrain.MINet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/MINet/models/MINet_Res50.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MINet/fine_tune_init/MINet_Res50.pth'))
                 self.print_network(self.net, 'MINet')
             elif self.config.benchmark_name == 'Raft':
                 from benchmark.Raft.benchmark import model, convert_state_dict
@@ -155,9 +155,10 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/RAS/fine_tune_init/RAS.v2.pth'))
                 self.print_network(self.net, 'RAS')
             elif self.config.benchmark_name == 'AADFNet':
-                from benchmark.AADFNet.benchmark import model, convert_state_dict
+                from retrain.AADFNet.retrain import model, convert_state_dict
                 self.net = model
-                AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() + '/benchmark/AADFNet/models/30000.pth'))
+                AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() +
+                                                                 '/retrain/AADFNet/fine_tune_init/30000.pth'))
                 self.net.load_state_dict(AADFNet_pretrain)
                 self.print_network(self.net, 'AADFNet')
             elif self.config.benchmark_name == 'MGA':
