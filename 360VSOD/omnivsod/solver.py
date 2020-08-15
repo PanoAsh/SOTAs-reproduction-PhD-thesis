@@ -81,9 +81,9 @@ class Solver(object):
                                                     '/retrain/RCRNet/fine_tune_init/video_best_model.pth'))
                 self.print_network(self.net, 'RCRNet')
             elif self.config.benchmark_name == 'COSNet':
-                from benchmark.COSNet.benchmark import model, convert_state_dict
+                from retrain.COSNet.retrain import model, convert_state_dict
                 self.net = model
-                COSNet_pretrain = torch.load(os.getcwd() + '/benchmark/COSNet/models/co_attention.pth')["model"]
+                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
                 self.print_network(self.net, 'COSNet')
             elif self.config.benchmark_name == 'EGNet':
@@ -324,6 +324,7 @@ class Solver(object):
                         pred = torch.sigmoid(salT)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
                         pred = sal
+                        pred = (pred - torch.min(pred) + 1e-8) / (torch.max(pred) - torch.min(pred) + 1e-8)
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'BASNet':
                         pred = sal[0]
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'CPD':

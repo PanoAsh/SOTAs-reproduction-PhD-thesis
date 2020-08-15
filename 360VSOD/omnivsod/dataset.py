@@ -34,6 +34,16 @@ class ImageDataTrain(data.Dataset):
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
 
+            if self.data_pair == True:
+                if item != self.img_num - 1:
+                    ER_img_next = load_ERImg(self.img_list[(item+1) % self.img_num], self.data_norm)
+                    ER_msk_next = load_ERMsk(self.msk_list[(item+1) % self.img_num])
+                else:
+                    ER_img_next = ER_img
+                    ER_msk_next = ER_msk
+
+                sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'ER_img_next': ER_img_next, 'ER_msk_next': ER_msk_next}
+
         elif self.data_type == 'L':
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             #ER_msk = load_ERMsk(self.msk_list[item % self.img_num])

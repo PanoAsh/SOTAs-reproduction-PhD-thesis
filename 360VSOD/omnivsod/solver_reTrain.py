@@ -96,6 +96,42 @@ def bce2d(input, target, reduction=None):
     weights = alpha * pos + beta * neg
 
     return F.binary_cross_entropy_with_logits(input, target, weights, reduction=reduction)
+
+def loss_calc1(pred, label):
+    """
+    This function returns cross entropy loss for semantic segmentation
+    """
+    labels = torch.ge(label, 0.5).float()
+    #
+    batch_size = label.size()
+    # print(batch_size)
+    num_labels_pos = torch.sum(labels)
+    #
+    batch_1 = batch_size[0] * batch_size[2]
+    batch_1 = batch_1 * batch_size[3]
+    weight_1 = torch.div(num_labels_pos, batch_1)  # pos ratio
+    weight_1 = torch.reciprocal(weight_1)
+    # print(num_labels_pos, batch_1)
+    weight_2 = torch.div(batch_1 - num_labels_pos, batch_1)
+    # print('postive ratio', weight_2, weight_1)
+    weight_22 = torch.mul(weight_1, torch.ones(batch_size[0], batch_size[1], batch_size[2], batch_size[3]).cuda())
+    # weight_11 = torch.mul(weight_1,  torch.ones(batch_size[0], batch_size[1], batch_size[2]).cuda())
+    criterion = torch.nn.BCELoss(
+        weight=weight_22)  # weight = torch.Tensor([0,1]) .cuda() #torch.nn.CrossEntropyLoss(ignore_index=args.ignore_label).cuda()
+    # loss = class_balanced_cross_entropy_loss(pred, label).cuda()
+
+    return criterion(pred, label)
+
+def loss_calc2(pred, label):
+    """
+    This function returns cross entropy loss for semantic segmentation
+    """
+    # out shape batch_size x channels x h x w -> batch_size x channels x h x w
+    # label shape h x w x 1 x batch_size  -> batch_size x 1 x h x w
+    # Variable(label.long()).cuda()
+    criterion = torch.nn.L1Loss()  # .cuda() #torch.nn.CrossEntropyLoss(ignore_index=args.ignore_label).cuda()
+
+    return criterion(pred, label)
 # ----------------------------- utils above ----------------------------- #
 
 class SolverReTrain(object):
@@ -223,6 +259,15 @@ class SolverReTrain(object):
                                                     '/retrain/RCRNet/fine_tune_init/video_best_model.pth'))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'COSNet':
+            from retrain.COSNet.retrain import model, convert_state_dict
+            self.net = model
+            self.print_network(self.net, 'COSNet')
+            if self.config.fine_tune == True:
+                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
+                self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -247,7 +292,7 @@ class SolverReTrain(object):
                 self.optimizer.param_groups[0]['lr'] = self.lr * 0.1
                 self.optimizer.param_groups[1]['lr'] = self.lr
             elif self.config.benchmark_name == 'SCRN' or self.config.benchmark_name == 'MINet'\
-                    or self.config.benchmark_name == 'AADFNet':
+                    or self.config.benchmark_name == 'AADFNet' or self.config.benchmark_name == 'COSNet':
                 params = self.net.parameters()
                 self.optimizer = SGD(params, self.lr, momentum=0.9, weight_decay=self.wd)
 
@@ -275,12 +320,15 @@ class SolverReTrain(object):
             self.net.zero_grad()
             for i, data_batch in enumerate(self.train_loader):
                 ER_img, ER_msk = data_batch['ER_img'], data_batch['ER_msk']
+                if self.config.needPair == True: ER_img_n, ER_msk_n = data_batch['ER_img_next'], data_batch['ER_msk_next']
                 if ER_img.size()[2:] != ER_msk.size()[2:]:
                     print("Skip this batch")
                     continue
                 ER_img, ER_msk = Variable(ER_img), Variable(ER_msk)
+                if self.config.needPair == True: ER_img_n, ER_msk_n = Variable(ER_img_n), Variable(ER_msk_n)
                 if self.config.cuda:
                     ER_img, ER_msk = ER_img.cuda(), ER_msk.cuda()
+                    if self.config.needPair == True: ER_img_n, ER_msk_n = ER_img_n.cuda(), ER_msk_n.cuda()
                 img_train, msk_train = ER_img, ER_msk
 
                 if self.config.benchmark_name == 'F3Net':
@@ -366,6 +414,10 @@ class SolverReTrain(object):
                     img_train = img_train.unsqueeze(0)
                     pred = self.net(img_train)[0]
                     loss = CE(pred, msk_train)
+                elif self.config.benchmark_name == 'COSNet':
+                    pred1, pred2, pred3 = self.net(img_train, ER_img_n)
+                    loss = loss_calc1(pred1, msk_train) + 0.8 * loss_calc2(pred1, msk_train) \
+                           + loss_calc1(pred2, ER_msk_n) + 0.8 * loss_calc2(pred2, ER_msk_n)
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
