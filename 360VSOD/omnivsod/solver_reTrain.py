@@ -51,7 +51,7 @@ def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, d7, labels_v):
 
     return loss0, loss
 
-CE = nn.BCEWithLogitsLoss()
+CE = nn.BCEWithLogitsLoss(reduction='sum')
 
 fx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).astype(np.float32)
 fy = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).astype(np.float32)
@@ -92,8 +92,7 @@ def bce2d(input, target, reduction=None):
 
     alpha = num_neg  / num_total
     beta = 1.1 * num_pos  / num_total
-    # target pixel = 1 -> weight beta
-    # target pixel = 0 -> weight 1-beta
+
     weights = alpha * pos + beta * neg
 
     return F.binary_cross_entropy_with_logits(input, target, weights, reduction=reduction)
@@ -197,6 +196,31 @@ class SolverReTrain(object):
             self.print_network(self.net, 'PoolNet')
             if self.config.fine_tune == True:
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/PoolNet/fine_tune_init/final.pth'))
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'EGNet':
+            from retrain.EGNet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'EGNet')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_resnet.pth'))
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'ScribbleSOD':
+            from retrain.ScribbleSOD.retrain import model
+            self.net = model
+            self.print_network(self.net, 'ScribbleSOD')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/ScribbleSOD/fine_tune_init/scribble_30.pth'))
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'RCRNet':
+            from retrain.RCRNet.retrain import model
+            self.net = model
+            self.print_network(self.net, 'RCRNet')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() +
+                                                    '/retrain/RCRNet/fine_tune_init/video_best_model.pth'))
                 print('fine tuning ...')
 
         if self.config.cuda: self.net = self.net.cuda()
@@ -303,11 +327,45 @@ class SolverReTrain(object):
                     sal_pred = self.net(img_train)
                     loss = CE(sal_pred, msk_train)
                 elif self.config.benchmark_name == 'AADFNet':
-                    print('under built ...')
+                    print('error in the training codes ...')
                     break
                 elif self.config.benchmark_name == 'PoolNet':
+                    msk_train_edge = label_edge_prediction(msk_train)
+                    # edge part
+                    edge_pred = self.net(img_train, mode=0)
+                    edge_loss_fuse = bce2d(edge_pred[0], msk_train_edge, reduction='sum')
+                    edge_loss_part = []
+                    for ix in edge_pred[1]:
+                        edge_loss_part.append(bce2d(ix, msk_train_edge, reduction='sum'))
+                    edge_loss = (edge_loss_fuse + sum(edge_loss_part))
+                    # sal part
                     sal_pred = self.net(img_train, mode=1)
-                    loss = F.binary_cross_entropy_with_logits(sal_pred, msk_train)
+                    sal_loss = F.binary_cross_entropy_with_logits(sal_pred, msk_train, reduction='sum')
+                    loss = edge_loss + sal_loss
+                elif self.config.benchmark_name == 'EGNet':
+                    msk_train_edge = label_edge_prediction(msk_train)
+                    up_edge, up_sal, up_sal_f = self.net(img_train)
+                    # edge part
+                    edge_loss = []
+                    for ix in up_edge:
+                        edge_loss.append(bce2d(ix, msk_train_edge, reduction='sum'))
+                    edge_loss = sum(edge_loss)
+                    # sal part
+                    sal_loss1 = []
+                    sal_loss2 = []
+                    for ix in up_sal:
+                        sal_loss1.append(F.binary_cross_entropy_with_logits(ix, msk_train, reduction='sum'))
+                    for ix in up_sal_f:
+                        sal_loss2.append(F.binary_cross_entropy_with_logits(ix, msk_train, reduction='sum'))
+                    sal_loss = (sum(sal_loss1) + sum(sal_loss2))
+                    loss = edge_loss + sal_loss
+                elif self.config.benchmark_name == 'ScribbleSOD':
+                    print('this is a weak supervised SOD mdoel ...')
+                    break
+                elif self.config.benchmark_name == 'RCRNet':
+                    img_train = img_train.unsqueeze(0)
+                    pred = self.net(img_train)[0]
+                    loss = CE(pred, msk_train)
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

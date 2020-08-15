@@ -75,9 +75,10 @@ class Solver(object):
 
         else:
             if self.config.benchmark_name == 'RCRNet':
-                from benchmark.RCRNet.benchmark import model
+                from retrain.RCRNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/RCRNet/models/video_best_model.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() +
+                                                    '/retrain/RCRNet/fine_tune_init/video_best_model.pth'))
                 self.print_network(self.net, 'RCRNet')
             elif self.config.benchmark_name == 'COSNet':
                 from benchmark.COSNet.benchmark import model, convert_state_dict
@@ -86,9 +87,9 @@ class Solver(object):
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
                 self.print_network(self.net, 'COSNet')
             elif self.config.benchmark_name == 'EGNet':
-                from benchmark.EGNet.benchmark import model
+                from retrain.EGNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/EGNet/pretrained/epoch_resnet.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_resnet.pth'))
                 self.print_network(self.net, 'EGNet')
             elif self.config.benchmark_name == 'BASNet':
                 from retrain.BASNet.retrain import model
@@ -111,9 +112,10 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/PoolNet/fine_tune_init/final.pth'))
                 self.print_network(self.net, 'PoolNet')
             elif self.config.benchmark_name == 'ScribbleSOD':
-                from benchmark.ScribbleSOD.benchmark import model
+                from retrain.ScribbleSOD.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/ScribbleSOD/models/scribble_30.pth'))
+                self.net.load_state_dict(
+                    torch.load(os.getcwd() + '/retrain/ScribbleSOD/fine_tune_init/scribble_30.pth'))
                 self.print_network(self.net, 'ScribbleSOD')
             elif self.config.benchmark_name == 'SCRN':
                 from retrain.SCRN.retrain import model
