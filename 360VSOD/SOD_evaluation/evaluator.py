@@ -145,9 +145,10 @@ class Eval_thread():
                     P = TPw / (eps + TPw + FPw)  # Weighted Precision
 
                     # Q = 2 * (R * P) / (eps + R + P)  # Beta=1
-                    scores += (1 + beta2) * (R * P) / (eps + R + (beta2 * P))
+                    Q = (1 + beta2) * (R * P) / (eps + R + (beta2 * P))
+                    scores += Q
                     imgs_num += 1
-                    fLog.write(img_id + '  ' + str((1 + beta2) * (R * P) / (eps + R + (beta2 * P))) + '\n')
+                    fLog.write(img_id + '  ' + str(Q) + '\n')
 
                 print("{} done".format(imgs_num))
             fLog.close()
@@ -170,9 +171,10 @@ class Eval_thread():
                 else:
                     pred = trans(pred)
                     gt = trans(gt)
-                scores += self._eval_e(pred, gt, 255)
+                Q = self._eval_e(pred, gt, 255)
+                scores += Q
                 img_num += 1
-                fLog.write(img_id + '  ' + str(self._eval_e(pred, gt, 255).max().item()) + '\n')
+                fLog.write(img_id + '  ' + str(Q.max().item()) + '\n')
                 print("{} done".format(img_num))
             scores /= img_num
             for i in range(255):
