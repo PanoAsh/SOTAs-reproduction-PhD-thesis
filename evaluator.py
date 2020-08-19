@@ -18,20 +18,20 @@ class Eval_thread():
 
     def run(self):
         start_time = time.time()
-        mae = self.Eval_mae()
-        max_f = self.Eval_fmeasure()
+        mae = self.Eval_MAE()
+        max_f = self.Eval_Fmeasure()
         mean_e = self.Eval_Emeasure()
         s = self.Eval_Smeasure()
         fbw = self.Eval_Fbw_measure()
-        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure, {:.4f} S-measure, '
+        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure, {:.4f} S-measure, '
                  '{:.4f} Fbw-measure.\n'
                  .format(self.dataset, self.method, mae, max_f, mean_e, s, fbw))
 
-        return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure,' \
+        return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure,' \
                ' {:.4f} S-measure, {:.4f} Fbw-measure'\
             .format(time.time()-start_time, self.dataset, self.method, mae, max_f, mean_e, s, fbw)
 
-    def Eval_mae(self):
+    def Eval_MAE(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_MAE' + '.txt', 'w')
         print('eval[MAE]:{} dataset with {} method.'.format(self.dataset, self.method))
         avg_mae, img_num = 0.0, 0
@@ -57,7 +57,7 @@ class Eval_thread():
 
             return avg_mae.item()
     
-    def Eval_fmeasure(self):
+    def Eval_Fmeasure(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_FMeasure' + '.txt', 'w')
         print('eval[FMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
         beta2 = 0.3
@@ -86,6 +86,8 @@ class Eval_thread():
                 score = avg_f / img_num
                 print("{} done".format(img_num))
                 fLog.write(img_id + '  ' + str(f_score.max().item()) + '\n')
+            for i in range(255):
+                fLog.write(str(score[i].item()) + '\n')
             fLog.close()
 
             return score.max().item()
@@ -170,12 +172,14 @@ class Eval_thread():
                     gt = trans(gt)
                 scores += self._eval_e(pred, gt, 255)
                 img_num += 1
-                fLog.write(img_id + '  ' + str(self._eval_e(pred, gt, 255).mean().item()) + '\n')
+                fLog.write(img_id + '  ' + str(self._eval_e(pred, gt, 255).max().item()) + '\n')
                 print("{} done".format(img_num))
-            fLog.close()
-                
             scores /= img_num
-            return scores.mean().item()
+            for i in range(255):
+                fLog.write(str(scores[i].item()) + '\n')
+            fLog.close()
+
+            return scores.max().item()
 
     def Eval_Smeasure(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_SMeasure' + '.txt', 'w')
