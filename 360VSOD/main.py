@@ -556,17 +556,21 @@ class ProcessingTool():
             img = cv2.resize(img, (600, 300))
 
             fix_w_s = cv2.imread(os.path.join(fix_w_sound_path, idx[:-10] + idx[-9:]))
+            fix_w_s = cv2.GaussianBlur(fix_w_s, (45, 45), 10)
             fix_w_s = cv2.normalize(fix_w_s, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                         dtype=cv2.CV_8UC1)
-            fix_w_s = cv2.applyColorMap(fix_w_s, cv2.COLORMAP_HOT)
+            fix_w_s[:, :, 0] = 0
+            #fix_w_s = cv2.applyColorMap(fix_w_s, cv2.COLORMAP_HOT)
 
             fix_wo_s = cv2.imread(os.path.join(fix_wo_sound_path, idx[:-10] + idx[-9:]))
+            fix_wo_s = cv2.GaussianBlur(fix_wo_s, (45, 45), 10)
             fix_wo_s = cv2.normalize(fix_wo_s, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                         dtype=cv2.CV_8UC1)
-            fix_wo_s = cv2.applyColorMap(fix_wo_s, cv2.COLORMAP_OCEAN)
+            fix_wo_s[:, :, 0] = 0
+            #fix_wo_s = cv2.applyColorMap(fix_wo_s, cv2.COLORMAP_HOT)
 
             heatmap = cv2.addWeighted(fix_w_s, 1, fix_wo_s, 1, 0)
-            overlay = cv2.addWeighted(img, 0.4, heatmap, 2, 0)
+            overlay = cv2.addWeighted(img, 0.4, heatmap, 1.6, 0)
             cv2.imwrite(os.getcwd() + '/overlay/' + idx, overlay)
 
             count += 1
@@ -581,7 +585,7 @@ class ProcessingTool():
             print(idx)
             img = cv2.imread(os.path.join(img_pth, idx))
             ins = cv2.imread(os.path.join(ins_pth, idx))
-            overlay = cv2.addWeighted(img, 1, ins, 1.4, 0)
+            overlay = cv2.addWeighted(img, 0.8, ins, 1.6, 0)
             overlay = cv2.resize(overlay, (600, 300))
             cv2.imwrite(idx, overlay)
             print(count + 1)
@@ -659,6 +663,73 @@ class ProcessingTool():
                                      sub_list[3 * i + j]))
         cv2.imwrite('sub_3.png', fig)
 
+    def qlt_show(self):
+        num_model_img = 13
+        num_model_vid = 3
+        sample_list = os.listdir(os.getcwd() + '/GT/')
+
+        pth_gt = '/home/yzhang1/PythonProjects/omnivsod/results_test/GTs/GT/'
+        pth_img = '/home/yzhang1/PythonProjects/omnivsod/results_test/GTs/Img/'
+        pth_sal_img = [pth_img,
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_basnet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_cpd-r/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_poolnet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_egnet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_scrn/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_AADFNet_wo_crf/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_RAS/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_gcpanet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_f3net/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_minet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_scribblesod/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_CSNet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_CSFRes2Net/',
+                       pth_gt]
+        pth_sal_vid = [pth_img,
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_rcrnet/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_MGA_raftkitti/',
+                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_cosnet/',
+                       pth_gt]
+
+        fig_img = np.zeros((256 * (num_model_img + 2) + 10 * (num_model_img + 1), 512 * 8 + 70, 3))
+        fig_img.fill(255)
+        fig_vid = np.zeros((256 * (num_model_vid + 2) + 10 * (num_model_vid + 1), 512 * 8 + 70, 3))
+        fig_vid.fill(255)
+
+        count = 0
+        for item in sample_list:
+            for idx in range(num_model_img + 2):
+                pthCurr = os.path.join(pth_sal_img[idx], item)
+                imgCurr = cv2.imread(pthCurr)
+                if idx == 0 and count == 0:
+                    fig_img[:256, :512, :] = imgCurr
+                elif idx == 0 and count != 0:
+                    fig_img[:256, count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+                elif idx != 0 and count == 0:
+                    fig_img[idx * (10 + 256): idx * (10 + 256) + 256, :512, :] = imgCurr
+                else:
+                    fig_img[idx * (10 + 256): idx * (10 + 256) + 256,
+                    count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+
+            for idx in range(num_model_vid + 2):
+                pthCurr = os.path.join(pth_sal_vid[idx], item)
+                imgCurr = cv2.imread(pthCurr)
+                if idx == 0 and count == 0:
+                    fig_vid[:256, :512, :] = imgCurr
+                elif idx == 0 and count != 0:
+                    fig_vid[:256, count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+                elif idx != 0 and count == 0:
+                    fig_vid[idx * (10 + 256): idx * (10 + 256) + 256, :512, :] = imgCurr
+                else:
+                    fig_vid[idx * (10 + 256): idx * (10 + 256) + 256,
+                    count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+
+            count += 1
+
+        cv2.imwrite('fig_test_imgSOD.png', fig_img)
+        cv2.imwrite('fig_test_vidSOD.png', fig_vid)
+
+
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
     for obj in obj_list:
@@ -699,4 +770,5 @@ if __name__ == '__main__':
     #PT.fixation_match()
     #PT.instanceOverlay()
     #PT.figShow()
-    PT.wholeShow_2()
+    #PT.wholeShow_2()
+    PT.qlt_show()
