@@ -86,6 +86,8 @@ class Eval_thread():
                 score = avg_f / img_num
                 print("{} done".format(img_num))
                 fLog.write(img_id + '  ' + str(f_score.max().item()) + '\n')
+            for i in range(255):
+                fLog.write(str(score[i].item()) + '\n')
             fLog.close()
 
             return score.max().item()
@@ -170,12 +172,14 @@ class Eval_thread():
                     gt = trans(gt)
                 scores += self._eval_e(pred, gt, 255)
                 img_num += 1
-                fLog.write(img_id + '  ' + str(self._eval_e(pred, gt, 255).mean().item()) + '\n')
+                fLog.write(img_id + '  ' + str(self._eval_e(pred, gt, 255).max().item()) + '\n')
                 print("{} done".format(img_num))
-            fLog.close()
-                
             scores /= img_num
-            return scores.mean().item()
+            for i in range(255):
+                fLog.write(str(scores[i].item()) + '\n')
+            fLog.close()
+
+            return scores.max().item()
 
     def Eval_Smeasure(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_SMeasure' + '.txt', 'w')
