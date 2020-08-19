@@ -34,8 +34,9 @@ def main(cfg):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--methods', type=str, default='BASNet')
-    parser.add_argument('--datasets', type=str, default='HSAV360')
+    parser.add_argument('--methods', type=str, default='AADFNet BASNet COSNet CPD CSFRes2Net CSNet EGNet F3Net '
+                                                       'GCPANet MGA MINet PoolNet RAS RCRNet ScribbleSOD SCRN')
+    parser.add_argument('--datasets', type=str, default='Debug')
     parser.add_argument('--root_dir', type=str, default=os.getcwd())
     parser.add_argument('--save_dir', type=str, default=os.getcwd() + '/score/')
     parser.add_argument('--cuda', type=bool, default=True)

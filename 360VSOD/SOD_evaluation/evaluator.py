@@ -32,12 +32,13 @@ class Eval_thread():
             .format(time.time()-start_time, self.dataset, self.method, mae, max_f, mean_e, s, fbw)
 
     def Eval_mae(self):
+        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_MAE' + '.txt', 'w')
         print('eval[MAE]:{} dataset with {} method.'.format(self.dataset, self.method))
-        avg_mae, img_num = 0.0, 0.0
+        avg_mae, img_num = 0.0, 0
         #mae_list = [] # for debug
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt, img_id in self.loader:
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -48,21 +49,24 @@ class Eval_thread():
                 if mea == mea: # for Nan
                     #mae_list.append(mea)
                     avg_mae += mea
-                    img_num += 1.0
-                print("{} done".format(img_num))
+                    img_num += 1
+                    print("{} done".format(img_num))
+                    fLog.write(img_id + '  ' + str(mea.item()) + '\n')
             avg_mae /= img_num
+            fLog.close()
 
             return avg_mae.item()
     
     def Eval_fmeasure(self):
+        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_FMeasure' + '.txt', 'w')
         print('eval[FMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
         beta2 = 0.3
-        avg_f, img_num = 0.0, 0.0
+        avg_f, img_num = 0.0, 0
         score = torch.zeros(255)
 
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt, img_id in self.loader:
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -78,13 +82,16 @@ class Eval_thread():
                 f_score = (1 + beta2) * prec * recall / (beta2 * prec + recall)
                 f_score[f_score != f_score] = 0 # for Nan
                 avg_f += f_score
-                img_num += 1.0
+                img_num += 1
                 score = avg_f / img_num
                 print("{} done".format(img_num))
+                fLog.write(img_id + '  ' + str(f_score.max().item()) + '\n')
+            fLog.close()
 
             return score.max().item()
 
     def Eval_Fbw_measure(self):
+        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_FbwMeasure' + '.txt', 'w')
         print('eval[Fbw_measure]:{} dataset with {} method.'.format(self.dataset, self.method))
         beta2 = 0.3
 
@@ -92,7 +99,7 @@ class Eval_thread():
             trans = transforms.Compose([transforms.ToTensor()])
             scores = 0
             imgs_num = 0
-            for pred, gt in self.loader:
+            for pred, gt, img_id in self.loader:
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -105,6 +112,7 @@ class Eval_thread():
                 if np.mean(gt) == 0: # the ground truth is totally black
                     scores += 1 - np.mean(pred)
                     imgs_num += 1
+                    fLog.write(img_id + '  ' + str(1 - np.mean(pred)) + '\n')
                 else:
                     if not np.all(np.isclose(gt, 0) | np.isclose(gt, 1)):
                         raise ValueError("'gt' must be a 0/1 or boolean array")
@@ -137,20 +145,23 @@ class Eval_thread():
                     # Q = 2 * (R * P) / (eps + R + P)  # Beta=1
                     scores += (1 + beta2) * (R * P) / (eps + R + (beta2 * P))
                     imgs_num += 1
+                    fLog.write(img_id + '  ' + str((1 + beta2) * (R * P) / (eps + R + (beta2 * P))) + '\n')
 
                 print("{} done".format(imgs_num))
+            fLog.close()
 
             return scores / imgs_num
 
     def Eval_Emeasure(self):
+        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_EMeasure' + '.txt', 'w')
         print('eval[EMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
-        avg_e, img_num = 0.0, 0.0
+        avg_e, img_num = 0.0, 0
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
             scores = torch.zeros(255)
             if self.cuda:
                 scores = scores.cuda()
-            for pred, gt in self.loader:
+            for pred, gt, img_id in self.loader:
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -158,18 +169,21 @@ class Eval_thread():
                     pred = trans(pred)
                     gt = trans(gt)
                 scores += self._eval_e(pred, gt, 255)
-                img_num += 1.0
+                img_num += 1
+                fLog.write(img_id + '  ' + str(self._eval_e(pred, gt, 255).mean().item()) + '\n')
                 print("{} done".format(img_num))
+            fLog.close()
                 
             scores /= img_num
             return scores.mean().item()
 
     def Eval_Smeasure(self):
+        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_SMeasure' + '.txt', 'w')
         print('eval[SMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
-        alpha, avg_q, img_num = 0.7, 0.0, 0.0 # alpha = 0.7; cited from the F-360iSOD
+        alpha, avg_q, img_num = 0.7, 0.0, 0 # alpha = 0.7; cited from the F-360iSOD
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt, img_id in self.loader:
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -189,10 +203,12 @@ class Eval_thread():
                     Q = alpha * self._S_object(pred, gt) + (1-alpha) * self._S_region(pred, gt)
                     if Q.item() < 0:
                         Q = torch.FloatTensor([0.0])
-                img_num += 1.0
+                img_num += 1
                 avg_q += Q.item()
+                fLog.write(img_id + '  ' + str(Q.item()) + '\n')
                 print("{} done".format(img_num))
             avg_q /= img_num
+            fLog.close()
 
             return avg_q
 
