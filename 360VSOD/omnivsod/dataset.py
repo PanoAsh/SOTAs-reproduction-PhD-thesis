@@ -77,8 +77,8 @@ class ImageDataTest(data.Dataset):
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
-       # with open(self.ins_source, 'r') as f:
-        #    self.ins_list = [x.strip() for x in f.readlines()]
+        #with open(self.gt_source, 'r') as f:
+         #   self.gt_list = [x.strip() for x in f.readlines()]
 
         self.img_num = len(self.img_list)
 
@@ -93,7 +93,7 @@ class ImageDataTest(data.Dataset):
             if self.need_ref == False:
                 # ER_ins = load_ERMsk(self.ins_list[item % self.img_num])
                 sample = {'ER_img': ER_img, 'frm_name': frm_name}
-                #  prep_demo(self.img_list[item % self.img_num], self.gt_list[item % self.img_num], frm_name)
+                #prep_score(self.gt_list[item % self.img_num], frm_name)
                 # prep_ins(self.ins_list[item % self.img_num], frm_name)
             else:
                 refFrm_pth = []
@@ -185,6 +185,10 @@ def prep_demo(img_pth, gt_pth, name):
     gt = gt.resize((512, 256))
     img.save('/home/yzhang1/PythonProjects/omnivsod/results/Img/' + name)
     gt.save('/home/yzhang1/PythonProjects/omnivsod/results/GT/' + name)
+
+def prep_score(gt_pth, name):
+    gt = Image.open(gt_pth)
+    gt.save('/home/yzhang1/PythonProjects/omnivsod/results/GT_ori/' + name)
 
 def prep_ins(ins_pth, name):
     ins = Image.open(ins_pth)

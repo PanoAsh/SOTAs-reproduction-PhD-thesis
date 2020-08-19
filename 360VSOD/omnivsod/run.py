@@ -73,10 +73,10 @@ if __name__ == '__main__':
     benchmark_models = ['RCRNet', 'COSNet', 'EGNet', 'BASNet', 'CPD', 'F3Net', 'PoolNet', 'ScribbleSOD', 'SCRN',
                         'GCPANet', 'MINet', 'Raft', 'CSNet', 'CSFRes2Net', 'RAS', 'AADFNet', 'MGA']
     parser.add_argument('--benchmark_model', type=bool, default=True)
-    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[1])
+    parser.add_argument('--benchmark_name', type=str, default=benchmark_models[2])
     parser.add_argument('--needRef', type=bool, default=False)  # for COSNet ...
     parser.add_argument('--data_norm', type=str, default='cv2')  # cv2 / PIL
-    parser.add_argument('--needPair', type=bool, default=True)  # for flow generation methods, COSNet
+    parser.add_argument('--needPair', type=bool, default=False)  # for flow generation methods, COSNet
     parser.add_argument('--needFlow', type=bool, default=False)  # for flow-guided methods
 
     # Hyper_parameters
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
     # Mode
-    parser.add_argument('--mode', type=str, default='re-train', choices=['train', 'test', 're-train'])
+    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test', 're-train'])
     parser.add_argument('--fine_tune', type=bool, default=True)  # fine tune under re-train mode
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7)  # for tangent image branch / comparison with 2D SOTAs
