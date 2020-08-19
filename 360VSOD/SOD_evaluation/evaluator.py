@@ -18,20 +18,20 @@ class Eval_thread():
 
     def run(self):
         start_time = time.time()
-        mae = self.Eval_mae()
-        max_f = self.Eval_fmeasure()
+        mae = self.Eval_MAE()
+        max_f = self.Eval_Fmeasure()
         mean_e = self.Eval_Emeasure()
         s = self.Eval_Smeasure()
         fbw = self.Eval_Fbw_measure()
-        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure, {:.4f} S-measure, '
+        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure, {:.4f} S-measure, '
                  '{:.4f} Fbw-measure.\n'
                  .format(self.dataset, self.method, mae, max_f, mean_e, s, fbw))
 
-        return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} mean-Emeasure,' \
+        return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure,' \
                ' {:.4f} S-measure, {:.4f} Fbw-measure'\
             .format(time.time()-start_time, self.dataset, self.method, mae, max_f, mean_e, s, fbw)
 
-    def Eval_mae(self):
+    def Eval_MAE(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_MAE' + '.txt', 'w')
         print('eval[MAE]:{} dataset with {} method.'.format(self.dataset, self.method))
         avg_mae, img_num = 0.0, 0
@@ -57,7 +57,7 @@ class Eval_thread():
 
             return avg_mae.item()
     
-    def Eval_fmeasure(self):
+    def Eval_Fmeasure(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_FMeasure' + '.txt', 'w')
         print('eval[FMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
         beta2 = 0.3
