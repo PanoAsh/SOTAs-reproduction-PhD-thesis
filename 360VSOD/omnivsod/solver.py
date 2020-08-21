@@ -83,8 +83,10 @@ class Solver(object):
             elif self.config.benchmark_name == 'COSNet':
                 from retrain.COSNet.retrain import model, convert_state_dict
                 self.net = model
-                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
-                self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+              #  COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
+               # self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/epoch_1_bone.pth')
+                self.net.load_state_dict(COSNet_pretrain)
                 self.print_network(self.net, 'COSNet')
             elif self.config.benchmark_name == 'EGNet':
                 from retrain.EGNet.retrain import model
@@ -94,7 +96,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'BASNet':
                 from retrain.BASNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/BASNet/fine_tune_init/basnet.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/BASNet/fine_tune_init/final_bone.pth'))
                 self.print_network(self.net, 'BASNet')
             elif self.config.benchmark_name == 'CPD':
                 from retrain.CPD.retrain import model
@@ -383,10 +385,10 @@ class Solver(object):
         f = open(os.getcwd() + '/results/fps.txt', 'w')
         f.write(str(3778 / time_total))
         f.close()
-        GFlops = flopth(self.net)
-        f = open(os.getcwd() + '/results/GFlops.txt', 'w')
-        f.write('GFlops:  ' + GFlops)
-        f.close()
+        #GFlops = flopth(self.net)
+        #f = open(os.getcwd() + '/results/GFlops.txt', 'w')
+        #f.write('GFlops:  ' + GFlops)
+        #f.close()
         print('Test Done!')
 
     # if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
