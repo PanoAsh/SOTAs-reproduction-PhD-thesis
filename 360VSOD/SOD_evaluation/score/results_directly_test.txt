@@ -1,0 +1,16 @@
+HSAV360 dataset with AADFNet method get 0.0900 mae, 0.3406 max-fmeasure, 0.5888 max-Emeasure, 0.7226 S-measure, 0.2466 Fbw-measure.
+HSAV360 dataset with BASNet method get 0.1218 mae, 0.3298 max-fmeasure, 0.6315 max-Emeasure, 0.7000 S-measure, 0.2481 Fbw-measure.
+HSAV360 dataset with COSNet method get 0.0601 mae, 0.2641 max-fmeasure, 0.6233 max-Emeasure, 0.7098 S-measure, 0.1897 Fbw-measure.
+HSAV360 dataset with CPD method get 0.1189 mae, 0.3547 max-fmeasure, 0.6075 max-Emeasure, 0.7018 S-measure, 0.2904 Fbw-measure.
+HSAV360 dataset with CSFRes2Net method get 0.1530 mae, 0.2624 max-fmeasure, 0.5217 max-Emeasure, 0.6565 S-measure, 0.2081 Fbw-measure.
+HSAV360 dataset with CSNet method get 0.2018 mae, 0.2338 max-fmeasure, 0.5512 max-Emeasure, 0.6359 S-measure, 0.1186 Fbw-measure.
+HSAV360 dataset with EGNet method get 0.1075 mae, 0.3115 max-fmeasure, 0.5822 max-Emeasure, 0.7012 S-measure, 0.2216 Fbw-measure.
+HSAV360 dataset with F3Net method get 0.1174 mae, 0.3524 max-fmeasure, 0.6230 max-Emeasure, 0.7127 S-measure, 0.2514 Fbw-measure.
+HSAV360 dataset with GCPANet method get 0.1392 mae, 0.3215 max-fmeasure, 0.5825 max-Emeasure, 0.6961 S-measure, 0.2280 Fbw-measure.
+HSAV360 dataset with MGA method get 0.0346 mae, 0.5019 max-fmeasure, 0.7478 max-Emeasure, 0.7834 S-measure, 0.3924 Fbw-measure.
+HSAV360 dataset with MINet method get 0.1229 mae, 0.2677 max-fmeasure, 0.6031 max-Emeasure, 0.6802 S-measure, 0.1971 Fbw-measure.
+HSAV360 dataset with PoolNet method get 0.0997 mae, 0.3308 max-fmeasure, 0.5979 max-Emeasure, 0.7132 S-measure, 0.2398 Fbw-measure.
+HSAV360 dataset with RAS method get 0.1113 mae, 0.3667 max-fmeasure, 0.6251 max-Emeasure, 0.7126 S-measure, 0.2850 Fbw-measure.
+HSAV360 dataset with RCRNet method get 0.0476 mae, 0.4958 max-fmeasure, 0.7528 max-Emeasure, 0.7849 S-measure, 0.3676 Fbw-measure.
+HSAV360 dataset with ScribbleSOD method get 0.1621 mae, 0.2413 max-fmeasure, 0.5543 max-Emeasure, 0.6393 S-measure, 0.1651 Fbw-measure.
+HSAV360 dataset with SCRN method get 0.1393 mae, 0.3378 max-fmeasure, 0.5749 max-Emeasure, 0.6907 S-measure, 0.2201 Fbw-measure.

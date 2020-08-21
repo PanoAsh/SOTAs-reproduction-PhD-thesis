@@ -1,0 +1,16 @@
+Debug dataset with AADFNet method get 0.0852 mae, 0.9002 max-fmeasure, 0.9599 max-Emeasure, 0.8666 S-measure, 0.7695 Fbw-measure.
+Debug dataset with BASNet method get 0.0552 mae, 0.9003 max-fmeasure, 0.9415 max-Emeasure, 0.8785 S-measure, 0.8415 Fbw-measure.
+Debug dataset with COSNet method get 0.1134 mae, 0.8706 max-fmeasure, 0.9324 max-Emeasure, 0.7473 S-measure, 0.7238 Fbw-measure.
+Debug dataset with CPD method get 0.1189 mae, 0.7437 max-fmeasure, 0.8936 max-Emeasure, 0.7193 S-measure, 0.6541 Fbw-measure.
+Debug dataset with CSFRes2Net method get 0.1236 mae, 0.6982 max-fmeasure, 0.8600 max-Emeasure, 0.7174 S-measure, 0.6248 Fbw-measure.
+Debug dataset with CSNet method get 0.1472 mae, 0.6511 max-fmeasure, 0.8444 max-Emeasure, 0.7016 S-measure, 0.4828 Fbw-measure.
+Debug dataset with EGNet method get 0.1458 mae, 0.6242 max-fmeasure, 0.8542 max-Emeasure, 0.6981 S-measure, 0.4800 Fbw-measure.
+Debug dataset with F3Net method get 0.0553 mae, 0.8918 max-fmeasure, 0.9491 max-Emeasure, 0.8890 S-measure, 0.8175 Fbw-measure.
+Debug dataset with GCPANet method get 0.0609 mae, 0.8945 max-fmeasure, 0.9420 max-Emeasure, 0.8808 S-measure, 0.8142 Fbw-measure.
+Debug dataset with MGA method get 0.0548 mae, 0.9246 max-fmeasure, 0.9700 max-Emeasure, 0.9047 S-measure, 0.8760 Fbw-measure.
+Debug dataset with MINet method get 0.0713 mae, 0.8606 max-fmeasure, 0.9317 max-Emeasure, 0.8608 S-measure, 0.7667 Fbw-measure.
+Debug dataset with PoolNet method get 0.1323 mae, 0.6495 max-fmeasure, 0.8772 max-Emeasure, 0.7315 S-measure, 0.5344 Fbw-measure.
+Debug dataset with RAS method get 0.0906 mae, 0.8034 max-fmeasure, 0.9084 max-Emeasure, 0.7981 S-measure, 0.7480 Fbw-measure.
+Debug dataset with RCRNet method get 0.1058 mae, 0.8139 max-fmeasure, 0.9243 max-Emeasure, 0.7750 S-measure, 0.7292 Fbw-measure.
+Debug dataset with ScribbleSOD method get 0.1475 mae, 0.6452 max-fmeasure, 0.8803 max-Emeasure, 0.7502 S-measure, 0.4577 Fbw-measure.
+Debug dataset with SCRN method get 0.1354 mae, 0.6905 max-fmeasure, 0.8587 max-Emeasure, 0.6854 S-measure, 0.5904 Fbw-measure.
