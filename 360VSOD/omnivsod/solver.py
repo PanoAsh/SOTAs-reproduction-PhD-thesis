@@ -91,7 +91,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'EGNet':
                 from retrain.EGNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_resnet.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_5_bone.pth'))
                 self.print_network(self.net, 'EGNet')
             elif self.config.benchmark_name == 'BASNet':
                 from retrain.BASNet.retrain import model
@@ -101,7 +101,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'CPD':
                 from retrain.CPD.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/CPD-R.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/final_bone.pth'))
                 self.print_network(self.net, 'CPD')
             elif self.config.benchmark_name == 'F3Net':
                 from retrain.F3Net.retrain import model
@@ -143,15 +143,17 @@ class Solver(object):
             elif self.config.benchmark_name == 'CSNet':
                 from retrain.CSNet.retrain import model
                 self.net = model
+             #   self.net.load_state_dict(torch.load(os.getcwd() +
+              #                                      '/retrain/CSNet/checkpoints/csnet-L-x2/csnet-L-x2.pth.tar')
+               #                          ['state_dict'])
                 self.net.load_state_dict(torch.load(os.getcwd() +
-                                                    '/retrain/CSNet/checkpoints/csnet-L-x2/csnet-L-x2.pth.tar')
-                                         ['state_dict'])
+                                                    '/retrain/CSNet/checkpoints/csnet-L-x2/epoch_10_bone.pth'))
                 self.print_network(self.net, 'CSNet')
             elif self.config.benchmark_name == 'CSFRes2Net':
                 from retrain.CSFRes2Net.retrain import model
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() +
-                                       '/retrain/CSFRes2Net/fine_tune_init/csf_res2net50_final.pth'), strict=False)
+                                       '/retrain/CSFRes2Net/fine_tune_init/final_bone.pth'), strict=False)
                 self.print_network(self.net, 'CSFRes2Net')
             elif self.config.benchmark_name == 'RAS':
                 from retrain.RAS.retrain import model
@@ -385,10 +387,10 @@ class Solver(object):
         f = open(os.getcwd() + '/results/fps.txt', 'w')
         f.write(str(3778 / time_total))
         f.close()
-        #GFlops = flopth(self.net)
-        #f = open(os.getcwd() + '/results/GFlops.txt', 'w')
-        #f.write('GFlops:  ' + GFlops)
-        #f.close()
+        GFlops = flopth(self.net)
+        f = open(os.getcwd() + '/results/GFlops.txt', 'w')
+        f.write('GFlops:  ' + GFlops)
+        f.close()
         print('Test Done!')
 
     # if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
