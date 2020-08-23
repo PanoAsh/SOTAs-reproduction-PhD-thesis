@@ -78,7 +78,7 @@ class Solver(object):
                 from retrain.RCRNet.retrain import model
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() +
-                                                    '/retrain/RCRNet/fine_tune_init/video_best_model.pth'))
+                                                    '/retrain/RCRNet/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'RCRNet')
             elif self.config.benchmark_name == 'COSNet':
                 from retrain.COSNet.retrain import model, convert_state_dict
@@ -91,7 +91,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'EGNet':
                 from retrain.EGNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_5_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'EGNet')
             elif self.config.benchmark_name == 'BASNet':
                 from retrain.BASNet.retrain import model
@@ -106,12 +106,12 @@ class Solver(object):
             elif self.config.benchmark_name == 'F3Net':
                 from retrain.F3Net.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/model-32'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/F3Net/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'F3Net')
             elif self.config.benchmark_name == 'PoolNet':
                 from retrain.PoolNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/PoolNet/fine_tune_init/final.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/PoolNet/fine_tune_init/final_bone.pth'))
                 self.print_network(self.net, 'PoolNet')
             elif self.config.benchmark_name == 'ScribbleSOD':
                 from retrain.ScribbleSOD.retrain import model
@@ -122,17 +122,17 @@ class Solver(object):
             elif self.config.benchmark_name == 'SCRN':
                 from retrain.SCRN.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/epoch_9_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/SCRN/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'SCRN')
             elif self.config.benchmark_name == 'GCPANet':
                 from retrain.GCPANet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/GCPANet/fine_tune_init/model-100045448.pt'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/GCPANet/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'GCPANet')
             elif self.config.benchmark_name == 'MINet':
                 from retrain.MINet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MINet/fine_tune_init/MINet_Res50.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MINet/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'MINet')
             elif self.config.benchmark_name == 'Raft':
                 from benchmark.Raft.benchmark import model, convert_state_dict
@@ -158,7 +158,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'RAS':
                 from retrain.RAS.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/RAS/fine_tune_init/RAS.v2.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/RAS/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'RAS')
             elif self.config.benchmark_name == 'AADFNet':
                 from retrain.AADFNet.retrain import model, convert_state_dict
@@ -387,10 +387,10 @@ class Solver(object):
         f = open(os.getcwd() + '/results/fps.txt', 'w')
         f.write(str(3778 / time_total))
         f.close()
-        GFlops = flopth(self.net)
-        f = open(os.getcwd() + '/results/GFlops.txt', 'w')
-        f.write('GFlops:  ' + GFlops)
-        f.close()
+       # GFlops = flopth(self.net)
+       # f = open(os.getcwd() + '/results/GFlops.txt', 'w')
+        #f.write('GFlops:  ' + GFlops)
+        #f.close()
         print('Test Done!')
 
     # if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
