@@ -729,6 +729,68 @@ class ProcessingTool():
         cv2.imwrite('fig_test_imgSOD.png', fig_img)
         cv2.imwrite('fig_test_vidSOD.png', fig_vid)
 
+    def qlt_show2(self):
+        num_model_img = 11
+        num_model_vid = 1
+        sample_list = os.listdir(os.getcwd() + '/GT/')
+
+        pth_gt = '/home/yzhang1/PythonProjects/omnivsod/results_test/GTs/GT/'
+        pth_img = '/home/yzhang1/PythonProjects/omnivsod/results_test/GTs/Img/'
+        pth_sal_img = [pth_img,
+                       os.getcwd() + '/ft_basnet_e4/HSAV360/',
+                       os.getcwd() + '/ft_cpd_e7/HSAV360/',
+                       os.getcwd() + '/ft_poolnet_e8/HSAV360/',
+                       os.getcwd() + '/ft_egnet_e8/HSAV360/',
+                       os.getcwd() + '/ft_scrn_e8/HSAV360/',
+                       os.getcwd() + '/ft_ras_e6/HSAV360/',
+                       os.getcwd() + '/ft_gcpanet_e7/HSAV360/',
+                       os.getcwd() + '/ft_f3net_e2/HSAV360/',
+                       os.getcwd() + '/ft_minet_e9/HSAV360/',
+                       os.getcwd() + '/ft_csnet_e10/HSAV360/',
+                       os.getcwd() + '/ft_csf_e10/HSAV360/',
+                       pth_gt]
+        pth_sal_vid = [pth_img,
+                       os.getcwd() + '/ft_rcrnet_e7/HSAV360/',
+                       pth_gt]
+
+        fig_img = np.zeros((256 * (num_model_img + 2) + 10 * (num_model_img + 1), 512 * 8 + 70, 3))
+        fig_img.fill(255)
+        fig_vid = np.zeros((256 * (num_model_vid + 2) + 10 * (num_model_vid + 1), 512 * 8 + 70, 3))
+        fig_vid.fill(255)
+
+        count = 0
+        for item in sample_list:
+            for idx in range(num_model_img + 2):
+                pthCurr = os.path.join(pth_sal_img[idx], item)
+                imgCurr = cv2.imread(pthCurr)
+                if idx == 0 and count == 0:
+                    fig_img[:256, :512, :] = imgCurr
+                elif idx == 0 and count != 0:
+                    fig_img[:256, count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+                elif idx != 0 and count == 0:
+                    fig_img[idx * (10 + 256): idx * (10 + 256) + 256, :512, :] = imgCurr
+                else:
+                    fig_img[idx * (10 + 256): idx * (10 + 256) + 256,
+                    count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+
+            for idx in range(num_model_vid + 2):
+                pthCurr = os.path.join(pth_sal_vid[idx], item)
+                imgCurr = cv2.imread(pthCurr)
+                if idx == 0 and count == 0:
+                    fig_vid[:256, :512, :] = imgCurr
+                elif idx == 0 and count != 0:
+                    fig_vid[:256, count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+                elif idx != 0 and count == 0:
+                    fig_vid[idx * (10 + 256): idx * (10 + 256) + 256, :512, :] = imgCurr
+                else:
+                    fig_vid[idx * (10 + 256): idx * (10 + 256) + 256,
+                    count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
+
+            count += 1
+
+        cv2.imwrite('fig_ft_imgSOD.png', fig_img)
+        cv2.imwrite('fig_ft_vidSOD.png', fig_vid)
+
 
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
@@ -772,3 +834,4 @@ if __name__ == '__main__':
     #PT.figShow()
     #PT.wholeShow_2()
     PT.qlt_show()
+    PT.qlt_show2()
