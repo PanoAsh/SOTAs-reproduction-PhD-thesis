@@ -35,9 +35,9 @@ class ImageDataTrain(data.Dataset):
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
 
             if self.data_pair == True:
-                if item != self.img_num - 1:
-                    ER_img_next = load_ERImg(self.img_list[(item+1) % self.img_num], self.data_norm)
-                    ER_msk_next = load_ERMsk(self.msk_list[(item+1) % self.img_num])
+                if item <= (self.img_num - 10):
+                    ER_img_next = load_ERImg(self.img_list[(item+10) % self.img_num], self.data_norm)
+                    ER_msk_next = load_ERMsk(self.msk_list[(item+10) % self.img_num])
                 else:
                     ER_img_next = ER_img
                     ER_msk_next = ER_msk
