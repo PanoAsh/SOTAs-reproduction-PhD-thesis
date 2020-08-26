@@ -197,11 +197,10 @@ def py360convert_implement_c2e():
 
 def equirec2perspect():
     from equiPers.equir2pers import equir2pers
-    name = '_-V3zp7XOGBhs_000600.png'
+    name = '_-gTB1nfK-0Ac_000630.png'
     img_path = os.getcwd() + '/img/' + name
-    out = equir2pers(img_path, 90, 60, -20)
+    out = equir2pers(img_path, 95, 0, -68)
     cv2.imwrite(name, out)
-    print()
 
 def perspect2equirec():
     from equiPers.pers2equir import pers2equir
@@ -209,7 +208,7 @@ def perspect2equirec():
     for name in os.listdir(os.getcwd() + '/img_perspect_bbox/'):
         img_path = os.getcwd() + '/img_perspect_bbox/' + name
         name_list = name.split('_')
-        out = pers2equir(img_path, 90, int(name_list[-2]), int(name_list[-1][:-4]))
+        out = pers2equir(img_path, 45, int(name_list[-2]), int(name_list[-1][:-4]))
         cv2.imwrite(name, out)
         count += 1
         print(count)
@@ -220,25 +219,25 @@ def imgPrepro():
     for idx in img_list:
         img_path = os.getcwd() + '/img/' + idx
         img = cv2.imread(img_path)
-        img = cv2.resize(img, (4096, 2048), interpolation=cv2.INTER_LINEAR)  # for enlarging
+        img = cv2.resize(img, (600, 300), interpolation=cv2.INTER_AREA)  # linear for enlarging
         cv2.imwrite(idx, img)
         count += 1
         print(count)
 
 def jointPerspect():
-    name = '_conversation2_000462.png'
+    name = '_-J0Q4L68o3xE_1_000396.png'
     img = cv2.imread(os.getcwd() + '/img/' + name)
-    img1 = cv2.imread(os.getcwd() + '/img_perspect_bbox/' + '_conversation2_000462_-30_-15.png')
-  #  img2 = cv2.imread(os.getcwd() + '/img_perspect_bbox/' + '_-V3zp7XOGBhs_000600_-60_-15.png')
+    img1 = cv2.imread(os.getcwd() + '/img_perspect_bbox/' + '_-J0Q4L68o3xE_1_000396_15_20.png')
+    img2 = cv2.imread(os.getcwd() + '/img_perspect_bbox/' + '_-J0Q4L68o3xE_1_000396_-25_10.png')
 
-   # for i in range(2048):
-    #    for j in range(4096):
-     #       if img1[i, j, 0] == 0 and img1[i, j, 1] == 0 and img1[i, j, 2] == 0:
-      #          img1[i, j, :] = img2[i, j, :]
+    for i in range(300):
+        for j in range(600):
+            if img1[i, j, 0] == 0 and img1[i, j, 1] == 0 and img1[i, j, 2] == 0:
+               img1[i, j, :] = img2[i, j, :]
 
-    for i in range(2048):
-        for j in range(4096):
-            if img1[i,j,0]  == 0 and img1[i,j,1]  == 0 and img1[i,j,2]  == 0:
+    for i in range(300):
+        for j in range(600):
+            if img1[i,j,0] == 0 and img1[i,j,1]  == 0 and img1[i,j,2]  == 0:
                 img1[i,j,:] = img[i,j,:]
 
     cv2.imwrite(name, img1)

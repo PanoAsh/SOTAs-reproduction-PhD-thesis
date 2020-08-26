@@ -791,6 +791,30 @@ class ProcessingTool():
         cv2.imwrite('fig_ft_imgSOD.png', fig_img)
         cv2.imwrite('fig_ft_vidSOD.png', fig_vid)
 
+    def file_rename(self):
+        with open(os.getcwd() + '/test_img.lst', 'r') as f:
+            img_list = [x.strip() for x in f.readlines()]
+        asnet = []
+        dds = []
+        for item in img_list:
+            new_item = '/home/yzhang1/PythonProjects/360vSOD/code/ASNet_output/' + item[52:]
+            asnet.append(new_item)
+        for item in img_list:
+            new_item = '/home/yzhang1/PythonProjects/360vSOD/code/DDS_output/' + item[52:]
+            dds.append(new_item)
+
+       # for item in asnet:
+        #    name_list = item[55:].split('/')
+         #   frm_name = name_list[0] + '-' + name_list[1] + '-' + name_list[2]
+          #  new_item = '/home/yzhang1/PythonProjects/360vSOD/code/ASNet/' + frm_name
+           # os.rename(item, new_item)
+        for item in dds:
+            name_list = item[53:].split('/')
+            frm_name = name_list[0] + '-' + name_list[1] + '-' + name_list[2]
+            new_item = '/home/yzhang1/PythonProjects/360vSOD/code/DDS/' + frm_name
+            os.rename(item, new_item)
+
+
 
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
@@ -833,5 +857,6 @@ if __name__ == '__main__':
     #PT.instanceOverlay()
     #PT.figShow()
     #PT.wholeShow_2()
-    PT.qlt_show()
-    PT.qlt_show2()
+    #PT.qlt_show()
+    #PT.qlt_show2()
+    PT.file_rename()
