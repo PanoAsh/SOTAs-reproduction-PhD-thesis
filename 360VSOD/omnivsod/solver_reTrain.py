@@ -51,7 +51,7 @@ def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, d7, labels_v):
 
     return loss0, loss
 
-CE = nn.BCEWithLogitsLoss(reduction='sum')
+CE = nn.BCEWithLogitsLoss() #reduction='sum'
 
 fx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).astype(np.float32)
 fy = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).astype(np.float32)
@@ -324,6 +324,9 @@ class SolverReTrain(object):
                 if ER_img.size()[2:] != ER_msk.size()[2:]:
                     print("Skip this batch")
                     continue
+                if self.config.batch_size != 1 and ER_img.size()[0] == 1:
+                    print("Skip this batch")
+                    continue
                 ER_img, ER_msk = Variable(ER_img), Variable(ER_msk)
                 if self.config.needPair == True: ER_img_n, ER_msk_n = Variable(ER_img_n), Variable(ER_msk_n)
                 if self.config.cuda:
@@ -375,8 +378,39 @@ class SolverReTrain(object):
                     sal_pred = self.net(img_train)
                     loss = CE(sal_pred, msk_train)
                 elif self.config.benchmark_name == 'AADFNet':
-                    print('error in the training codes ...')
-                    break
+                    outputs4_2, outputs3_2, outputs2_2, outputs1, outputs2, outputs3, outputs4, \
+                    predict41, predict42, predict43, predict44, \
+                    predict31, predict32, predict33, predict34, \
+                    predict21, predict22, predict23, predict24, \
+                    predict11, predict12, predict13, predict14 = self.net(img_train)
+                    loss1 = CE(outputs1, msk_train)
+                    loss2 = CE(outputs2, msk_train)
+                    loss3 = CE(outputs3, msk_train)
+                    loss4 = CE(outputs4, msk_train)
+                    loss2_2 = CE(outputs2_2, msk_train)
+                    loss3_2 = CE(outputs3_2, msk_train)
+                    loss4_2 = CE(outputs4_2, msk_train)
+                    loss44 = CE(predict44, msk_train)
+                    loss43 = CE(predict43, msk_train)
+                    loss42 = CE(predict42, msk_train)
+                    loss41 = CE(predict41, msk_train)
+                    loss34 = CE(predict34, msk_train)
+                    loss33 = CE(predict33, msk_train)
+                    loss32 = CE(predict32, msk_train)
+                    loss31 = CE(predict31, msk_train)
+                    loss24 = CE(predict24, msk_train)
+                    loss23 = CE(predict23, msk_train)
+                    loss22 = CE(predict22, msk_train)
+                    loss21 = CE(predict21, msk_train)
+                    loss14 = CE(predict14, msk_train)
+                    loss13 = CE(predict13, msk_train)
+                    loss12 = CE(predict12, msk_train)
+                    loss11 = CE(predict11, msk_train)
+                    loss = loss1 + loss2 + loss3 + loss4 + loss2_2 + loss3_2 + loss4_2 \
+                                 + (loss44 + loss43 + loss42 + loss41) / 10 \
+                                 + (loss34 + loss33 + loss32 + loss31) / 10 \
+                                 + (loss24 + loss23 + loss22 + loss21) / 10 \
+                                 + (loss14 + loss13 + loss12 + loss11) / 10
                 elif self.config.benchmark_name == 'PoolNet':
                     msk_train_edge = label_edge_prediction(msk_train)
                     # edge part

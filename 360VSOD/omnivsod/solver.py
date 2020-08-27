@@ -83,10 +83,10 @@ class Solver(object):
             elif self.config.benchmark_name == 'COSNet':
                 from retrain.COSNet.retrain import model, convert_state_dict
                 self.net = model
-                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
-                self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
-              #  COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/epoch_1_bone.pth')
-               # self.net.load_state_dict(COSNet_pretrain)
+             #   COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
+              #  self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/epoch_8_bone.pth')
+                self.net.load_state_dict(COSNet_pretrain)
                 self.print_network(self.net, 'COSNet')
             elif self.config.benchmark_name == 'EGNet':
                 from retrain.EGNet.retrain import model
