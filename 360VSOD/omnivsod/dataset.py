@@ -4,7 +4,7 @@ import torch
 from torch.utils import data
 from torchvision import transforms
 import matplotlib.pyplot as plt
-from util import ER2TI
+#from util import ER2TI
 import torch.nn.functional as F
 import cv2
 import numpy as np
@@ -113,7 +113,7 @@ class ImageDataTest(data.Dataset):
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'ER_img_next': ER_img_next}
 
             if self.data_flow == True:
-                flow_pth = os.path.join(os.getcwd(), 'result_analysis', 'Sal_test_raft_kitti', frm_name)
+                flow_pth = os.path.join(os.getcwd(), 'results_test', 'Sal_test_raft_things', frm_name)
                 ER_flow = load_ERImg(flow_pth, self.data_norm)
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'ER_flow': ER_flow}
 

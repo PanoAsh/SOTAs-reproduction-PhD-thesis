@@ -10,7 +10,7 @@ import time
 from apex import amp
 opt_level = 'O1'
 from thop import profile
-from util import TI2ER
+#from util import TI2ER
 import matplotlib.pyplot as plt
 from util import normPRED
 import flow_vis
@@ -117,7 +117,7 @@ class Solver(object):
                 from retrain.ScribbleSOD.retrain import model
                 self.net = model
                 self.net.load_state_dict(
-                    torch.load(os.getcwd() + '/retrain/ScribbleSOD/fine_tune_init/scribble_30.pth'))
+                    torch.load(os.getcwd() + '/retrain/ScribbleSOD/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'ScribbleSOD')
             elif self.config.benchmark_name == 'SCRN':
                 from retrain.SCRN.retrain import model
@@ -137,7 +137,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'Raft':
                 from benchmark.Raft.benchmark import model, convert_state_dict
                 self.net = model
-                Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-kitti.pth')
+                Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-things.pth')
                 self.net.load_state_dict(convert_state_dict(Raft_pretrain))
                 self.print_network(self.net, 'Raft')
             elif self.config.benchmark_name == 'CSNet':
@@ -163,8 +163,9 @@ class Solver(object):
             elif self.config.benchmark_name == 'AADFNet':
                 from retrain.AADFNet.retrain import model, convert_state_dict
                 self.net = model
-                AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() +
-                                                                 '/retrain/AADFNet/fine_tune_init/30000.pth'))
+               # AADFNet_pretrain = convert_state_dict(torch.load(os.getcwd() +
+                #                                                 '/retrain/AADFNet/fine_tune_init/epoch_1_bone.pth'))
+                AADFNet_pretrain = torch.load(os.getcwd() + '/retrain/AADFNet/fine_tune_init/epoch_10_bone.pth')
                 self.net.load_state_dict(AADFNet_pretrain)
                 self.print_network(self.net, 'AADFNet')
             elif self.config.benchmark_name == 'MGA':

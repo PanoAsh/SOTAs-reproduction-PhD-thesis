@@ -26,7 +26,7 @@ def structure_loss(pred, mask):
 
 import retrain.BASNet.pytorch_ssim as pytorch_ssim
 import retrain.BASNet.pytorch_iou as pytorch_iou
-bce_loss = nn.BCELoss(size_average=True)
+bce_loss = nn.BCELoss(size_average=True, reduction='sum')
 ssim_loss = pytorch_ssim.SSIM(window_size=11,size_average=True)
 iou_loss = pytorch_iou.IOU(size_average=True)
 
@@ -132,6 +132,8 @@ def loss_calc2(pred, label):
     criterion = torch.nn.L1Loss()  # .cuda() #torch.nn.CrossEntropyLoss(ignore_index=args.ignore_label).cuda()
 
     return criterion(pred, label)
+
+from retrain.ScribbleSOD.smoothness import smoothness_loss
 # ----------------------------- utils above ----------------------------- #
 
 class SolverReTrain(object):
@@ -442,8 +444,14 @@ class SolverReTrain(object):
                     sal_loss = (sum(sal_loss1) + sum(sal_loss2))
                     loss = edge_loss + sal_loss
                 elif self.config.benchmark_name == 'ScribbleSOD':
-                    print('this is a weak supervised SOD mdoel ...')
-                    break
+                    edges = label_edge_prediction(msk_train)
+                    sal1, edge_map, sal2 = self.net(img_train)
+                    sal1_prob = torch.sigmoid(sal1)
+                    sal2_prob = torch.sigmoid(sal2)
+                    sal_loss1 = 0.3 * bce_loss(sal1_prob, msk_train)
+                    sal_loss2 = 0.3 * bce_loss(sal2_prob, msk_train)
+                    edge_loss = bce_loss(torch.sigmoid(edge_map), edges)
+                    loss = sal_loss1 + edge_loss + sal_loss2
                 elif self.config.benchmark_name == 'RCRNet':
                     img_train = img_train.unsqueeze(0)
                     pred = self.net(img_train)[0]

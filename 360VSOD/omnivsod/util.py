@@ -1,7 +1,7 @@
 import os
 import torch
-from spherical_distortion.util import load_torch_img, torch2numpy
-from spherical_distortion.functional import create_tangent_images, tangent_images_to_equirectangular
+#from spherical_distortion.util import load_torch_img, torch2numpy
+#from spherical_distortion.functional import create_tangent_images, tangent_images_to_equirectangular
 from torch.autograd import Variable
 import torch.nn.functional as F
 import cv2
@@ -50,19 +50,19 @@ def listTrain():
     f4.close()
     f5.close()
 
-def ER2TI(ER, base_order, sample_order):
+#def ER2TI(ER, base_order, sample_order):
     #ER = ER.cuda() # not suggested for the dataload get_item process
-    TIs = create_tangent_images(ER, base_order, sample_order)
-    TIs = TIs.permute(1, 0, 2, 3)
+ #   TIs = create_tangent_images(ER, base_order, sample_order)
+ #   TIs = TIs.permute(1, 0, 2, 3)
 
-    return TIs
+ #   return TIs
 
-def TI2ER(TIs, base_level, sample_level):
-    ER = tangent_images_to_equirectangular(TIs, [int(2048 / 2 ** (10 - sample_level)),
-                                                     int(4096 / 2 ** (10 - sample_level))],
-                                           base_level, sample_level)
+#def TI2ER(TIs, base_level, sample_level):
+ #   ER = tangent_images_to_equirectangular(TIs, [int(2048 / 2 ** (10 - sample_level)),
+    #                                                 int(4096 / 2 ** (10 - sample_level))],
+   #                                        base_level, sample_level)
 
-    return ER
+   # return ER
 
 def demo():
     img_pth = os.getcwd() + '/results_analysis/Img/'
