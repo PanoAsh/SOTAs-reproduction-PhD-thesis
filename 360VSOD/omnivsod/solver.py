@@ -137,7 +137,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'Raft':
                 from benchmark.Raft.benchmark import model, convert_state_dict
                 self.net = model
-                Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-things.pth')
+                Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-sintel.pth')
                 self.net.load_state_dict(convert_state_dict(Raft_pretrain))
                 self.print_network(self.net, 'Raft')
             elif self.config.benchmark_name == 'CSNet':
@@ -169,9 +169,9 @@ class Solver(object):
                 self.net.load_state_dict(AADFNet_pretrain)
                 self.print_network(self.net, 'AADFNet')
             elif self.config.benchmark_name == 'MGA':
-                from benchmark.MGA.benchmark import model
+                from retrain.MGA.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/benchmark/MGA/models/MGA_trained.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/MGA_trained.pth'))
                 self.print_network(self.net, 'MGA')
 
         if self.config.cuda:

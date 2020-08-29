@@ -32,6 +32,7 @@ class ImageDataTrain(data.Dataset):
         if self.data_type == 'G':
             ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
+
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk}
 
             if self.data_pair == True:
@@ -44,10 +45,20 @@ class ImageDataTrain(data.Dataset):
 
                 sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'ER_img_next': ER_img_next, 'ER_msk_next': ER_msk_next}
 
+            elif self.data_flow == True:
+                frm_name = self.img_list[item % self.img_num][53:]
+                name_list = frm_name.split('/')
+                frm_name = name_list[0] + '-' + name_list[1] + '-' + name_list[2]
+                flow_pth = os.path.join(os.getcwd(), 'data', 'flow_train_raft_sintel', frm_name)
+                ER_flow = load_ERImg(flow_pth, self.data_norm)
+
+                sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'ER_flow': ER_flow}
+
         elif self.data_type == 'L':
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             #ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level)
+
             sample = {'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
         else:
@@ -55,6 +66,7 @@ class ImageDataTrain(data.Dataset):
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level)
+
             sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
         return sample
@@ -113,7 +125,7 @@ class ImageDataTest(data.Dataset):
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'ER_img_next': ER_img_next}
 
             if self.data_flow == True:
-                flow_pth = os.path.join(os.getcwd(), 'results_test', 'Sal_test_raft_things', frm_name)
+                flow_pth = os.path.join(os.getcwd(), 'results_test', 'Sal_test_raft_sintel', frm_name)
                 ER_flow = load_ERImg(flow_pth, self.data_norm)
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'ER_flow': ER_flow}
 

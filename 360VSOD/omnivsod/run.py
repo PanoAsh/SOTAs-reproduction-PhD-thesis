@@ -82,13 +82,13 @@ if __name__ == '__main__':
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
     parser.add_argument('--epoch', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=1)  # must be 1 (2 for AADFNet)
+    parser.add_argument('--batch_size', type=int, default=2)  # must be 1 (2 for AADFNet/MGA)
     parser.add_argument('--nAveGrad', type=int, default=10)
     parser.add_argument('--lr_decay_epoch', type=int, default=100)
     # Hyper_parameters (please check before retrain)
-    parser.add_argument('--lr', type=float, default=0.000001)  # 1/10 of default Lr for benchmark models
-    parser.add_argument('--wd', type=float, default=0)
-    parser.add_argument('--optimizer_name', type=str, default='Adam')  # Adam, SGD
+    parser.add_argument('--lr', type=float, default=1e-9)  # 1/10 of default Lr for benchmark models
+    parser.add_argument('--wd', type=float, default=0.0005)
+    parser.add_argument('--optimizer_name', type=str, default='SGD')  # Adam, SGD
 
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default='')
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
     # Mode
-    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test', 're-train'])
+    parser.add_argument('--mode', type=str, default='re-train', choices=['train', 'test', 're-train'])
     parser.add_argument('--fine_tune', type=bool, default=True)  # fine tune under re-train mode
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7)  # for tangent image branch / comparison with 2D SOTAs

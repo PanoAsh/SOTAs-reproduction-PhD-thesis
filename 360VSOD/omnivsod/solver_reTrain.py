@@ -26,7 +26,7 @@ def structure_loss(pred, mask):
 
 import retrain.BASNet.pytorch_ssim as pytorch_ssim
 import retrain.BASNet.pytorch_iou as pytorch_iou
-bce_loss = nn.BCELoss(size_average=True, reduction='sum')
+bce_loss = nn.BCELoss(size_average=True, reduction='mean')
 ssim_loss = pytorch_ssim.SSIM(window_size=11,size_average=True)
 iou_loss = pytorch_iou.IOU(size_average=True)
 
@@ -270,6 +270,14 @@ class SolverReTrain(object):
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'MGA':
+            from retrain.MGA.retrain import model
+            self.net = model
+            self.print_network(self.net, 'MGA')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/MGA_trained.pth'))
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -294,7 +302,8 @@ class SolverReTrain(object):
                 self.optimizer.param_groups[0]['lr'] = self.lr * 0.1
                 self.optimizer.param_groups[1]['lr'] = self.lr
             elif self.config.benchmark_name == 'SCRN' or self.config.benchmark_name == 'MINet'\
-                    or self.config.benchmark_name == 'AADFNet' or self.config.benchmark_name == 'COSNet':
+                    or self.config.benchmark_name == 'AADFNet' or self.config.benchmark_name == 'COSNet' \
+                    or self.config.benchmark_name == 'MGA':
                 params = self.net.parameters()
                 self.optimizer = SGD(params, self.lr, momentum=0.9, weight_decay=self.wd)
 
@@ -322,7 +331,12 @@ class SolverReTrain(object):
             self.net.zero_grad()
             for i, data_batch in enumerate(self.train_loader):
                 ER_img, ER_msk = data_batch['ER_img'], data_batch['ER_msk']
-                if self.config.needPair == True: ER_img_n, ER_msk_n = data_batch['ER_img_next'], data_batch['ER_msk_next']
+                if self.config.needPair == True:
+                    ER_img_n, ER_msk_n = data_batch['ER_img_next'], data_batch['ER_msk_next']
+                if self.config.needFlow == True:
+                    ER_flow = data_batch['ER_flow']
+                    ER_flow = Variable(ER_flow)
+                    ER_flow = ER_flow.cuda()
                 if ER_img.size()[2:] != ER_msk.size()[2:]:
                     print("Skip this batch")
                     continue
@@ -460,6 +474,9 @@ class SolverReTrain(object):
                     pred1, pred2, pred3 = self.net(img_train, ER_img_n)
                     loss = loss_calc1(pred1, msk_train) + 0.8 * loss_calc2(pred1, msk_train) \
                            + loss_calc1(pred2, ER_msk_n) + 0.8 * loss_calc2(pred2, ER_msk_n)
+                elif self.config.benchmark_name == 'MGA':
+                    sal = self.net(img_train, ER_flow)
+                    loss = CE(sal[0], msk_train)
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
