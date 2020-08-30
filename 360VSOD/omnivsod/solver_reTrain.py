@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 #from pthflops import count_ops
 import torch.nn as nn
 #from flopth import flopth
+from torchvision import transforms
 
 # ---------------------------- utils ---------------------------------- #
 def structure_loss(pred, mask):
@@ -51,7 +52,7 @@ def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, d7, labels_v):
 
     return loss0, loss
 
-CE = nn.BCEWithLogitsLoss() #reduction='sum'
+CE = nn.BCEWithLogitsLoss(reduction='sum') #reduction='sum'
 
 fx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).astype(np.float32)
 fy = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).astype(np.float32)
@@ -80,6 +81,13 @@ def bce_iou_loss(pred, mask):
     iou   = 1-(inter+1)/(union-inter+1)
 
     return (bce+iou).mean()
+
+def iou_loss_ldf(pred, mask):
+    pred  = torch.sigmoid(pred)
+    inter = (pred*mask).sum(dim=(2,3))
+    union = (pred+mask).sum(dim=(2,3))
+    iou  = 1-(inter+1)/(union-inter+1)
+    return iou.mean()
 
 def bce2d(input, target, reduction=None):
     assert(input.size() == target.size())
@@ -132,8 +140,6 @@ def loss_calc2(pred, label):
     criterion = torch.nn.L1Loss()  # .cuda() #torch.nn.CrossEntropyLoss(ignore_index=args.ignore_label).cuda()
 
     return criterion(pred, label)
-
-from retrain.ScribbleSOD.smoothness import smoothness_loss
 # ----------------------------- utils above ----------------------------- #
 
 class SolverReTrain(object):
@@ -278,6 +284,14 @@ class SolverReTrain(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/MGA_trained.pth'))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'LDF':
+            from retrain.LDF.retrain import model
+            self.net = model
+            self.print_network(self.net, 'LDF')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/model-40'))
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd
@@ -288,7 +302,7 @@ class SolverReTrain(object):
                               weight_decay=self.wd)
         elif self.config.optimizer_name == 'SGD':
             if self.config.benchmark_name == 'F3Net' or self.config.benchmark_name == 'GCPANet' \
-                    or self.config.benchmark_name == 'RAS':
+                    or self.config.benchmark_name == 'RAS' or self.config.benchmark_name == 'LDF':
                 base, head = [], []
                 for name, param in self.net.named_parameters():
                     if 'bkbone.conv1' in name or 'bkbone.bn1' in name:
@@ -477,6 +491,11 @@ class SolverReTrain(object):
                 elif self.config.benchmark_name == 'MGA':
                     sal = self.net(img_train, ER_flow)
                     loss = CE(sal[0], msk_train)
+                elif self.config.benchmark_name == 'LDF':
+                    outb1, outd1, out1, outb2, outd2, out2 = self.net(img_train)
+                    loss1 = F.binary_cross_entropy_with_logits(out1, msk_train) + iou_loss_ldf(out1, msk_train)
+                    loss2 = F.binary_cross_entropy_with_logits(out2, msk_train) + iou_loss_ldf(out2, msk_train)
+                    loss = (loss1 + loss2) / 2
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

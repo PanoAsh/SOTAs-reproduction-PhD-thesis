@@ -91,7 +91,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'EGNet':
                 from retrain.EGNet.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_10_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/EGNet/fine_tune_init/epoch_resnet.pth'))
                 self.print_network(self.net, 'EGNet')
             elif self.config.benchmark_name == 'BASNet':
                 from retrain.BASNet.retrain import model
@@ -171,8 +171,19 @@ class Solver(object):
             elif self.config.benchmark_name == 'MGA':
                 from retrain.MGA.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/MGA_trained.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/epoch_7_bone.pth'))
                 self.print_network(self.net, 'MGA')
+            elif self.config.benchmark_name == 'GICD':
+                from retrain.GICD.retrain import model
+                self.net = model
+                self.net.set_mode('test')
+                self.net.ginet.load_state_dict(torch.load(os.getcwd() + '/retrain/GICD/fine_tune_init/gicd_ginet.pth'))
+                self.print_network(self.net, 'GICD')
+            elif self.config.benchmark_name == 'LDF':
+                from retrain.LDF.retrain import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/model-40'))
+                self.print_network(self.net, 'LDF')
 
         if self.config.cuda:
             self.net = self.net.cuda()
@@ -270,6 +281,8 @@ class Solver(object):
                 ER_img = ER_img.cuda()
                 img_test = ER_img
                 if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
+                    img_test = img_test.unsqueeze(0)
+                if self.config.benchmark_model == True and self.config.benchmark_name == 'GICD':
                     img_test = img_test.unsqueeze(0)
                 if self.config.benchmark_model == True and self.config.needRef == True:
                     Ref = data_batch['Ref_img']
@@ -369,6 +382,11 @@ class Solver(object):
                         salT = sal[0]
                         pred = torch.sigmoid(salT)
                         pred = (pred - torch.min(pred) + 1e-8) / (torch.max(pred) - torch.min(pred) + 1e-8)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'GICD':
+                        pred = sal[0][1]
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'LDF':
+                        salT = sal[5]
+                        pred = torch.sigmoid(salT)
 
                     if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
