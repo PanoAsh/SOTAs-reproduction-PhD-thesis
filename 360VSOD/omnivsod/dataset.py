@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import cv2
 import numpy as np
+from py360convert import e2c
 
 
 class ImageDataTrain(data.Dataset):
@@ -61,13 +62,13 @@ class ImageDataTrain(data.Dataset):
 
             sample = {'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
 
-        else:
+        elif self.data_type == 'EC':
             ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
+            CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
-            TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
-            TI_msks = load_TIMsk(self.msk_list[item % self.img_num], self.base_level, self.sample_level)
+            CM_msks = load_CMMsk(self.msk_list[item % self.img_num])
 
-            sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'TI_imgs': TI_imgs, 'TI_msks': TI_msks}
+            sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs, 'CM_msks': CM_msks}
 
         return sample
 
@@ -133,8 +134,9 @@ class ImageDataTest(data.Dataset):
             TI_imgs = load_TIImg(self.img_list[item % self.img_num], self.base_level, self.sample_level)
             sample = {'TI_imgs': TI_imgs, 'frm_name': frm_name}
 
-        else:
-            print('under built...')
+        elif self.data_type == 'EC':
+            ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
+            sample = {'ER_img': ER_img, 'frm_name': frm_name}
 
         return sample
 
@@ -178,6 +180,30 @@ def load_ERImg(pth, norm):
 
     return in_
 
+def load_CMImg(pth, norm):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    if norm == 'PIL':
+        im = cv2.imread(pth)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        cubes = e2c(im)
+        in_B = cubes[2]
+        in_B = Image.fromarray(in_B)
+        in_U = cubes[4]
+        in_U = Image.fromarray(in_U)
+        in_D = cubes[5]
+        in_D = Image.fromarray(in_D)
+        preprocess = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        in_B = preprocess(in_B)
+        in_U = preprocess(in_U)
+        in_D = preprocess(in_D)
+
+        return in_B, in_U, in_D
+
+
 def load_ERMsk(pth):
     if not os.path.exists(pth):
         print('File Not Exists')
@@ -189,6 +215,30 @@ def load_ERMsk(pth):
     msk_tensor = preprocess(msk)
 
     return msk_tensor
+
+def load_CMMsk(pth):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    msk = cv2.imread(pth)
+    msk = cv2.cvtColor(msk, cv2.COLOR_BGR2RGB)
+    cubes = e2c(msk)
+    in_B = cubes[2]
+    in_B = Image.fromarray(in_B)
+    in_B = in_B.convert(mode='L')
+    in_U = cubes[4]
+    in_U = Image.fromarray(in_U)
+    in_U = in_U.convert(mode='L')
+    in_D = cubes[5]
+    in_D = Image.fromarray(in_D)
+    in_D = in_D.convert(mode='L')
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+    in_B = preprocess(in_B)
+    in_U = preprocess(in_U)
+    in_D = preprocess(in_D)
+
+    return in_B, in_U, in_D
 
 def prep_demo(img_pth, gt_pth, name):
     img = Image.open(img_pth)

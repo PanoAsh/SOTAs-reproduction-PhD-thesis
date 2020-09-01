@@ -6,7 +6,28 @@ import os
 from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
+from retrain.RCRNet.libs.networks import VideoModel
+from collections import OrderedDict
 
+
+def convert_state_dict_omni(state_dict):
+    state_dict_new = OrderedDict()
+    for k, v in state_dict.items():
+        name = 'base.' + k
+        state_dict_new[name] = v
+
+    return state_dict_new
+
+# OmniVNet
+class OmniVNet(nn.Module):
+    def __init__(self):
+        super(OmniVNet, self).__init__()
+        self.base = VideoModel()
+
+    def forward(self, x):
+        x = self.base(x)
+
+        return x
 
 # GLOmni network
 class GTNet(nn.Module):
@@ -95,6 +116,10 @@ def build_model(backbone_config, coco_model, mode, model_type, base_level):
         base = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
 
     return GTNet(base, model_type, base_level)
+
+def build_OmniVNet():
+
+    return OmniVNet()
 
 
 if __name__ == '__main__':

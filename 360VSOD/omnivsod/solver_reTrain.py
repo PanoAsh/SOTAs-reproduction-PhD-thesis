@@ -292,6 +292,15 @@ class SolverReTrain(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/model-40'))
                 print('fine tuning ...')
 
+        elif self.config.benchmark_name == 'Raft':
+            from retrain.Raft.retrain import model, convert_state_dict
+            self.net = model
+            self.print_network(self.net, 'Raft')
+            if self.config.fine_tune == True:
+                Raft_pretrain = torch.load(os.getcwd() + '/retrain/Raft/models/raft-sintel.pth')
+                self.net.load_state_dict(convert_state_dict(Raft_pretrain))
+                print('fine tuning ...')
+
         if self.config.cuda: self.net = self.net.cuda()
         self.lr = self.config.lr
         self.wd = self.config.wd

@@ -1,7 +1,7 @@
 import torch
 from torch.optim import Adam
 from torch.autograd import Variable
-from model import build_model
+from model import build_model, build_OmniVNet
 import numpy as np
 import cv2
 import os
@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from util import normPRED
 import flow_vis
 from flopth import flopth
+from model import convert_state_dict_omni
 
 
 class Solver(object):
@@ -27,26 +28,15 @@ class Solver(object):
             if self.config.pre_trained != '' and config.mode == 'train':
                 print('Loading pretrained model from %s...' % self.config.pre_trained)
 
-                netStatic_dict = self.net.state_dict()
                 netPretrain_dict = torch.load(self.config.pre_trained)
-                netPretrain_dict = {
-                    k: v
-                    for k, v in netPretrain_dict.items()
-                    if k in netStatic_dict and v.shape == netStatic_dict[k].shape
-                }  # remove the dynamic parameters declared during TI-based training phase
-                self.net.load_state_dict(netPretrain_dict, strict=False)
+                netPretrain_dict = convert_state_dict_omni(netPretrain_dict)
+                self.net.load_state_dict(netPretrain_dict)
 
             if config.mode == 'test':
                 print('Loading testing model from %s...' % self.config.model)
 
-                netStatic_dict = self.net.state_dict()
                 netTest_dict = torch.load(self.config.model)
-                netTest_dict = {
-                    k: v
-                    for k, v in netTest_dict.items()
-                    if k in netStatic_dict and v.shape == netStatic_dict[k].shape
-                }  # remove the dynamic parameters declared during TI-based training phase
-                self.net.load_state_dict(netTest_dict, strict=False)
+                self.net.load_state_dict(convert_state_dict_omni(netTest_dict))
                 self.net.eval()
 
         else:
@@ -70,8 +60,10 @@ class Solver(object):
             elif self.config.backbone == 'deeplabv3_resnet101':
                 self.net = build_model(self.config.backbone, self.config.fcn, self.config.mode, self.config.model_type,
                                        self.config.base_level)
+            elif self.config.backbone == 'rcrnet':
+                self.net = build_OmniVNet()
 
-            self.print_network(self.net, 'GTNet')
+            self.print_network(self.net, 'OmniVNet')
 
         else:
             if self.config.benchmark_name == 'RCRNet':
@@ -135,9 +127,9 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MINet/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'MINet')
             elif self.config.benchmark_name == 'Raft':
-                from benchmark.Raft.benchmark import model, convert_state_dict
+                from retrain.Raft.retrain import model, convert_state_dict
                 self.net = model
-                Raft_pretrain = torch.load(os.getcwd() + '/benchmark/Raft/models/raft-sintel.pth')
+                Raft_pretrain = torch.load(os.getcwd() + '/retrain/Raft/models/raft-sintel.pth')
                 self.net.load_state_dict(convert_state_dict(Raft_pretrain))
                 self.print_network(self.net, 'Raft')
             elif self.config.benchmark_name == 'CSNet':
@@ -182,7 +174,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'LDF':
                 from retrain.LDF.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/model-40'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'LDF')
 
         if self.config.cuda:
@@ -225,14 +217,24 @@ class Solver(object):
 
                     img_train, msk_train = TI_imgs, TI_msks
 
-                else:
-                    ER_img, ER_msk, TI_imgs, TI_msks = data_batch['ER_img'], data_batch['ER_msk'], \
-                                                       data_batch['TI_imgs'], data_batch['TI_msks']
-                    print('under built...')
+                elif self.config.model_type == 'EC':
+                    ER_img, ER_msk, CM_imgs, CM_msks = data_batch['ER_img'], data_batch['ER_msk'], \
+                                                       data_batch['CM_imgs'], data_batch['CM_msks']
+                    if ER_img.size()[2:] != ER_msk.size()[2:]:
+                        print("Skip this batch")
+                        continue
+                    ER_img, CM_img_b, CM_img_u, CM_img_d = Variable(ER_img), Variable(CM_imgs[0]),\
+                                                            Variable(CM_imgs[1]), Variable(CM_imgs[2])
+                    ER_msk, CM_msk_b, CM_msk_u, CM_msk_d = Variable(ER_msk), Variable(CM_msks[0]),\
+                                                            Variable(CM_msks[1]), Variable(CM_msks[2])
+                    if self.config.cuda:
+                        ER_img, CM_img_b, CM_img_u, CM_img_d, \
+                        ER_msk, CM_msk_b, CM_msk_u, CM_msk_d = ER_img.cuda(), CM_img_b.cuda(), CM_img_u.cuda(), \
+                                                                CM_img_d.cuda(), ER_msk.cuda(), CM_msk_b.cuda(), \
+                                                                CM_msk_u.cuda(), CM_msk_d.cuda()
 
-                # FCN-backbone part
-                sal = self.net(img_train)
-                loss_currIter = F.binary_cross_entropy_with_logits(sal, msk_train) \
+                sal = self.net(ER_img.unsqueeze(0))
+                loss_currIter = F.binary_cross_entropy_with_logits(sal, ER_msk.unsqueeze(0)) \
                                 / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
                 #with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
@@ -303,8 +305,12 @@ class Solver(object):
                 if self.config.cuda: TI_imgs = TI_imgs.cuda()
                 img_test = TI_imgs
 
-            else:
-                print('under built...')
+            elif self.config.model_type == 'EC':
+                ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
+                ER_img = Variable(ER_img)
+                ER_img = ER_img.cuda()
+                img_test = ER_img
+                img_test = img_test.unsqueeze(0)
 
             with torch.no_grad():
                 if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
@@ -397,6 +403,11 @@ class Solver(object):
                     sal = sal.unsqueeze(0)
                     sal_ER = TI2ER(sal, self.config.base_level, self.config.sample_level)
                     pred = np.squeeze(sal_ER[-1].cpu().data.numpy())
+
+                elif self.config.model_type == 'EC':
+                    salT = sal[0]
+                    pred = torch.sigmoid(salT)
+                    pred = np.squeeze(pred.cpu().data.numpy())
 
                 if flow_output == False: pred = 255 * pred
                 cv2.imwrite(self.config.test_fold + img_name[0], pred)
