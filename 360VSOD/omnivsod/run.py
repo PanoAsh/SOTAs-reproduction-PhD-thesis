@@ -52,8 +52,6 @@ if __name__ == '__main__':
     fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
     deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
-    pretrained_path = os.getcwd() + '/..'
-
     test_model_path =os.getcwd() + '/retrain/RCRNet/fine_tune_init/video_best_model.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
@@ -64,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', type=bool, default=True)
 
     #Backbones
-    parser.add_argument('--backbone', type=str, default='rcrnet')  # or deeplabv3_resnet101 or rcrnet
+    parser.add_argument('--backbone', type=str, default='rcrnet')
     parser.add_argument('--fcn', type=str, default=fcn_resnet101_path)
     parser.add_argument('--deeplab', type=str, default=deeplabv3_resnet101_path)
 
@@ -81,7 +79,7 @@ if __name__ == '__main__':
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
-    parser.add_argument('--epoch', type=int, default=10)
+    parser.add_argument('--epoch', type=int, default=20)
     parser.add_argument('--batch_size', type=int, default=1)  # must be 1 (2 for AADFNet/MGA)
     parser.add_argument('--nAveGrad', type=int, default=10)
     parser.add_argument('--lr_decay_epoch', type=int, default=100)
@@ -110,7 +108,6 @@ if __name__ == '__main__':
     parser.add_argument('--sample_level', type=int, default=7)  # for tangent image branch / comparison with 2D SOTAs
     parser.add_argument('--model_type', type=str, default='EC')  # L for TI-based trainig/testing; EC for our model
 
-    
     config = parser.parse_args()
 
     main(config)

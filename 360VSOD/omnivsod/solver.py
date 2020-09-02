@@ -5,12 +5,10 @@ from model import build_model, build_OmniVNet
 import numpy as np
 import cv2
 import os
-from torch.nn import functional as F
 import time
 from apex import amp
 opt_level = 'O1'
 from thop import profile
-#from util import TI2ER
 import matplotlib.pyplot as plt
 from util import normPRED
 import flow_vis
@@ -30,7 +28,7 @@ class Solver(object):
 
                 netPretrain_dict = torch.load(self.config.pre_trained)
                 netPretrain_dict = convert_state_dict_omni(netPretrain_dict)
-                self.net.load_state_dict(netPretrain_dict)
+                self.net.load_state_dict(netPretrain_dict, strict=False)
 
             if config.mode == 'test':
                 print('Loading testing model from %s...' % self.config.model)
@@ -183,6 +181,7 @@ class Solver(object):
         self.wd = self.config.wd
         self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
                               weight_decay=self.wd)
+        self.loss = torch.nn.BCEWithLogitsLoss(reduction='sum')
 
         # Apex acceleration
         # self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level=opt_level)
@@ -233,9 +232,12 @@ class Solver(object):
                                                                 CM_img_d.cuda(), ER_msk.cuda(), CM_msk_b.cuda(), \
                                                                 CM_msk_u.cuda(), CM_msk_d.cuda()
 
-                sal = self.net(ER_img.unsqueeze(0))
-                loss_currIter = F.binary_cross_entropy_with_logits(sal, ER_msk.unsqueeze(0)) \
-                                / (self.config.nAveGrad * self.config.batch_size)
+                salER, salB, salU, salD = self.net(ER_img, CM_img_b, CM_img_u, CM_img_d)
+                loss_ER, loss_B, loss_U, loss_D = self.loss(salER, ER_msk), self.loss(salB, CM_msk_b), \
+                                                  self.loss(salU, CM_msk_u), self.loss(salD, CM_msk_d)
+                loss = 0.4 * loss_ER + 0.2 * loss_B + 0.2 * loss_U + 0.2 * loss_D
+
+                loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
                 #with amp.scale_loss(ER_loss, self.optimizer) as scaled_loss: scaled_loss.backward()
                 loss_currIter.backward()
