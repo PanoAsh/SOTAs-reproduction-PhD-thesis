@@ -52,7 +52,7 @@ if __name__ == '__main__':
     fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
     deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
-    test_model_path = os.getcwd() + '/results/models/epoch_1_bone.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_4_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
