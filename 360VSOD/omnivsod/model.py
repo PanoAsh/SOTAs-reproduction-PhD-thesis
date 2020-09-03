@@ -152,7 +152,8 @@ class OmniVNet(nn.Module):
         feats_backward = feats_backward[::-1]
         feats = []
         for i in range(len(clip)):
-            feat = torch.tanh(self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
+            feat = torch.tanh(
+                self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
             feats.append(feat)
         feats = torch.stack(feats, dim=2)
         feats = self.mainGUN.non_local_block2(feats)
@@ -162,10 +163,11 @@ class OmniVNet(nn.Module):
 
         # Decoder: auxiliary branches: including behind, up, down
         preds_Back = self.auxBGUN.seg_conv(feats_b[1], feats_b[2], feats_b[3], feats_b[4], [256, 256])
-        preds_Up =  self.auxUGUN.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u[4], [256, 256])
+        preds_Up = self.auxUGUN.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u[4], [256, 256])
         preds_Down = self.auxDGUN.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d[4], [256, 256])
 
         return preds_ER, preds_Back, preds_Up, preds_Down
+
 
 # GLOmni network
 class GTNet(nn.Module):
@@ -279,3 +281,47 @@ if __name__ == '__main__':
     out = net(img_tensor)[0].cpu().detach().numpy()
     plt.imshow(out[0, :, :], cmap='gray')
     plt.show()
+
+    #-------------------------------------------------------------------------------------------
+    # supplemental for the testing of OmniVNet
+    clip = ER.unsqueeze(0)
+
+    # Encoder: main stream: equirectangular
+    L0 = self.mainGUN.backbone.resnet.conv1(ER)
+    L0 = self.mainGUN.backbone.resnet.bn1(L0)
+    L0 = self.mainGUN.backbone.resnet.relu(L0)
+    L0 = self.mainGUN.backbone.resnet.maxpool(L0)
+    L1 = self.mainGUN.backbone.resnet.layer1(L0)
+    L2 = self.mainGUN.backbone.resnet.layer2(L1)
+    L3 = self.mainGUN.backbone.resnet.layer3(L2)
+    L4 = self.mainGUN.backbone.resnet.layer4(L3)
+    L4 = self.mainGUN.backbone.aspp(L4)
+
+    # main stream to NER
+    feats_time = L4.unsqueeze(2)
+    feats_time = self.mainGUN.non_local_block(feats_time)
+    # Deep Bidirectional ConvGRU
+    frame = clip[0]
+    feat = feats_time[:, :, 0, :, :]
+    feats_forward = []
+    # forward
+    for i in range(len(clip)):
+        feat = self.mainGUN.convgru_forward(feats_time[:, :, i, :, :], feat)
+        feats_forward.append(feat)
+    # backward
+    feat = feats_forward[-1]
+    feats_backward = []
+    for i in range(len(clip)):
+        feat = self.mainGUN.convgru_backward(feats_forward[len(clip) - 1 - i], feat)
+        feats_backward.append(feat)
+    feats_backward = feats_backward[::-1]
+    feats = []
+    for i in range(len(clip)):
+        feat = torch.tanh(
+            self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
+        feats.append(feat)
+    feats = torch.stack(feats, dim=2)
+    feats = self.mainGUN.non_local_block2(feats)
+
+    # Decoder: mainstream
+    preds_ER = self.mainGUN.backbone.seg_conv(L1, L2, L3, feats[:, :, 0, :, :], [256, 512])
