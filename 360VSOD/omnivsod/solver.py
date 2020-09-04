@@ -308,11 +308,16 @@ class Solver(object):
                 img_test = TI_imgs
 
             elif self.config.model_type == 'EC':
-                ER_img, img_name, CM_imgs = data_batch['ER_img'], data_batch['frm_name'], data_batch['CM_imgs']
-                ER_img, CM_b, CM_u, CM_d = Variable(ER_img), Variable(CM_imgs[0]), \
-                                           Variable(CM_imgs[1]), Variable(CM_imgs[2])
-                ER_img, CM_b, CM_u, CM_d = ER_img.cuda(), CM_b.cuda(), CM_u.cuda(), CM_d.cuda()
+                ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
+                ER_img = Variable(ER_img)
+                ER_img = ER_img.cuda()
                 img_test = ER_img
+
+                #ER_img, img_name, CM_imgs = data_batch['ER_img'], data_batch['frm_name'], data_batch['CM_imgs']
+                #ER_img, CM_b, CM_u, CM_d = Variable(ER_img), Variable(CM_imgs[0]), \
+                 #                          Variable(CM_imgs[1]), Variable(CM_imgs[2])
+                #ER_img, CM_b, CM_u, CM_d = ER_img.cuda(), CM_b.cuda(), CM_u.cuda(), CM_d.cuda()
+                #img_test = ER_img
 
             with torch.no_grad():
                 if self.config.benchmark_model == True and self.config.benchmark_name == 'COSNet':
@@ -332,7 +337,8 @@ class Solver(object):
                     sal = self.net(img_test, ER_flow)
                 elif self.config.benchmark_model == False:
                     time_start = time.time()
-                    sal = self.net(img_test, CM_b, CM_u, CM_d)
+                    sal = self.net(img_test)
+                   # sal = self.net(img_test, CM_b, CM_u, CM_d)
                 else:
                     time_start = time.time()
                     sal = self.net(img_test)
@@ -342,7 +348,6 @@ class Solver(object):
 
                 flow_output = False
                 if self.config.model_type == 'G':
-                 #   pred = np.squeeze(torch.sigmoid(sal[-1]).cpu().data.numpy())
 
                     # depending on the forward function of each of the SOD methods
                     if self.config.benchmark_model == True and self.config.benchmark_name == 'RCRNet':
@@ -410,8 +415,9 @@ class Solver(object):
                     pred = np.squeeze(sal_ER[-1].cpu().data.numpy())
 
                 elif self.config.model_type == 'EC':
-                    salT = sal[0]
-                    pred = torch.sigmoid(salT)
+                 #   salT = sal[0]
+                  #  pred = torch.sigmoid(salT)
+                    pred = torch.sigmoid(sal)
                     pred = np.squeeze(pred.cpu().data.numpy())
 
                 if flow_output == False: pred = 255 * pred

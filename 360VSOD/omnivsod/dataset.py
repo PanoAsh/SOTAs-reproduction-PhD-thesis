@@ -136,8 +136,9 @@ class ImageDataTest(data.Dataset):
 
         elif self.data_type == 'EC':
             ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
-            CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
-            sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs}
+            sample = {'ER_img': ER_img, 'frm_name': frm_name}
+          #  CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
+           # sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs}
 
         return sample
 
