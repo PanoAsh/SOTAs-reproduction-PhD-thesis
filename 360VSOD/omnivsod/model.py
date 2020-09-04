@@ -109,10 +109,10 @@ class OmniVNet(nn.Module):
 
         self.nailGUN_L0 = ECInteract(64, 64)  # the number and height of the feature map
         self.nailGUN_L1 = ECInteract(256, 64)
-        self.nailGUN_L2 = ECInteract(512, 32)
-        self.nailGUN_L3 = ECInteract(1024, 16)
-        self.nailGUN_L4 = ECInteract(128, 32)
-        self.nailGUN_L5 = ECInteract(128, 64)
+      #  self.nailGUN_L2 = ECInteract(512, 32)
+     #   self.nailGUN_L3 = ECInteract(1024, 16)
+       # self.nailGUN_L4 = ECInteract(128, 32)
+       # self.nailGUN_L5 = ECInteract(128, 64)
         self.nailGUN_L6 = ECInteract(128, 256)
 
     def forward(self, ER, CM_b='', CM_u='', CM_d=''):
@@ -135,12 +135,12 @@ class OmniVNet(nn.Module):
             L1_nailed = self.nailGUN_L1(L1, feats_b[1], feats_u[1], feats_d[1])
 
             L2 = self.mainGUN.backbone.resnet.layer2(L1_nailed)
-            L2_nailed = self.nailGUN_L2(L2, feats_b[2], feats_u[2], feats_d[2])
+         #   L2_nailed = self.nailGUN_L2(L2, feats_b[2], feats_u[2], feats_d[2])
 
-            L3 = self.mainGUN.backbone.resnet.layer3(L2_nailed)
-            L3_nailed = self.nailGUN_L3(L3, feats_b[3], feats_u[3], feats_d[3])
+            L3 = self.mainGUN.backbone.resnet.layer3(L2)
+        #    L3_nailed = self.nailGUN_L3(L3, feats_b[3], feats_u[3], feats_d[3])
 
-            L4 = self.mainGUN.backbone.resnet.layer4(L3_nailed)
+            L4 = self.mainGUN.backbone.resnet.layer4(L3)
             L4 = self.mainGUN.backbone.aspp(L4)
 
             # main stream to NER
@@ -175,15 +175,15 @@ class OmniVNet(nn.Module):
             preds_Down = self.auxDGUN.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d[4], [128, 128])
 
             # Decoder: mainstream
-            Lbu1 = self.mainGUN.backbone.refinement1(L3_nailed, feats[:, :, 0, :, :])
-            Lbu1 = F.interpolate(Lbu1, size=L2_nailed.shape[2:], mode="bilinear", align_corners=False)
-            Lbu1_nailed = self.nailGUN_L4(Lbu1, preds_Back[3], preds_Up[3], preds_Down[3])
+            Lbu1 = self.mainGUN.backbone.refinement1(L3, feats[:, :, 0, :, :])
+            Lbu1 = F.interpolate(Lbu1, size=L2.shape[2:], mode="bilinear", align_corners=False)
+         #   Lbu1_nailed = self.nailGUN_L4(Lbu1, preds_Back[3], preds_Up[3], preds_Down[3])
 
-            Lbu2 = self.mainGUN.backbone.refinement2(L2_nailed, Lbu1_nailed)
+            Lbu2 = self.mainGUN.backbone.refinement2(L2, Lbu1)
             Lbu2 = F.interpolate(Lbu2, size=L1_nailed.shape[2:], mode="bilinear", align_corners=False)
-            Lbu2_nailed = self.nailGUN_L5(Lbu2, preds_Back[2], preds_Up[2], preds_Down[2])
+          #  Lbu2_nailed = self.nailGUN_L5(Lbu2, preds_Back[2], preds_Up[2], preds_Down[2])
 
-            Lbu3 = self.mainGUN.backbone.refinement3(L1_nailed, Lbu2_nailed)
+            Lbu3 = self.mainGUN.backbone.refinement3(L1_nailed, Lbu2)
             Lbu3 = F.interpolate(Lbu3, size=[256, 512], mode="bilinear", align_corners=False)
             Lbu3_nailed = self.nailGUN_L6(Lbu3, preds_Back[1], preds_Up[1], preds_Down[1])
             preds_ER = self.mainGUN.backbone.decoder(Lbu3_nailed)
