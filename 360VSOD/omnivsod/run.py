@@ -14,7 +14,7 @@ def main(config):
                                            base_level=config.base_level, sample_level=config.sample_level,
                                            ref=config.needRef, norm=config.data_norm, pair=config.needPair,
                                            flow=config.needFlow)
-        run = "OmniVNet"
+        run = "DAVPNet"
         if not os.path.exists("%s/run-%s" % (config.save_fold, run)): 
             os.mkdir("%s/run-%s" % (config.save_fold, run))
             os.mkdir("%s/run-%s/logs" % (config.save_fold, run))
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
     deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
-    test_model_path = os.getcwd() + '/results/models/epoch_6_bone.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_1_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()

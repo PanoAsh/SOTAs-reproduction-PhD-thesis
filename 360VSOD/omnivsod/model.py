@@ -18,14 +18,9 @@ def convert_state_dict_omni(state_dict):
     state_dict_new = OrderedDict()
     for k, v in state_dict.items():
         name_1 = 'mainGUN.' + k
+        name_2 = 'branchGUN.' + k
         state_dict_new[name_1] = v
-        if 'backbone' in k:
-            name_2 = 'auxBGUN.' + k[9:]
-            name_3 = 'auxUGUN.' + k[9:]
-            name_4 = 'auxDGUN.' + k[9:]
-            state_dict_new[name_2] = v
-            state_dict_new[name_3] = v
-            state_dict_new[name_4] = v
+        state_dict_new[name_2] = v
 
     return state_dict_new
 
@@ -35,7 +30,7 @@ class CETransform(nn.Module):
         cube_h = [feat_h]
         self.c2e = dict()
         for h in cube_h:
-            a = Cube2Equirec(1, h, h*2, h*4)
+            a = Cube2Equirec(1, h, h, h*2)
             self.c2e['(%d)' % (h)] = a
 
     def C2E(self, x):
@@ -57,27 +52,29 @@ class ECInteract(nn.Module):
                                       nn.ReLU(inplace=True))
         self.conv_mask = nn.Sequential(nn.Conv2d(self.feat_num*2, 1, kernel_size=1, padding=0), nn.Sigmoid())
         self.feat_h = feat_h
-        self.ECInteract = CETransform(int(self.feat_h / 2))  # B, D, F, L, R, U
+        self.ECInteract = CETransform(self.feat_h)  # B, D, F, L, R, U
         self.register_parameter('emptyFace', param=None)
 
-    def forward(self, m, b, u, d):
+    def forward(self, m, f, r, b, l, u, d):
         AuxFeat = []
         for idx in range(self.feat_num):
+            front = f[:, idx, :, :]
+            right = r[:, idx, :, :]
             back = b[:, idx, :, :]
+            left = l[:, idx, :, :]
             up = u[:, idx, :, :]
             down = d[:, idx, :, :]
-            empty = self.GenEmptyFace(self.feat_h).cuda()
             CMMap = []
             CMMap.append(back)
             CMMap.append(down)
-            CMMap.append(empty)
-            CMMap.append(empty)
-            CMMap.append(empty)
+            CMMap.append(front)
+            CMMap.append(left)
+            CMMap.append(right)
             CMMap.append(up)
             CMMap = torch.stack(CMMap)
             ERMap = self.ECInteract(CMMap)
            # debug = np.squeeze(ERMap.cpu().data.numpy())
-            #cv2.imwrite('debug.png', debug*255)
+           # cv2.imwrite('debug.png', debug*255)
             AuxFeat.append(ERMap)
         AuxFeat = torch.stack(AuxFeat, dim=2)[0]
 
@@ -92,148 +89,145 @@ class ECInteract(nn.Module):
 
         return fuseFeat
 
-    def GenEmptyFace(self, feat_h):
-        feat_h = int(feat_h / 2)
-        self.emptyFace = nn.Parameter(torch.zeros(1, feat_h, feat_h))
-
-        return self.emptyFace
 
 # OmniVNet
 class OmniVNet(nn.Module):
     def __init__(self):
         super(OmniVNet, self).__init__()
         self.mainGUN = VideoModel()
-        self.auxBGUN = VideoModel().backbone
-        self.auxUGUN = VideoModel().backbone
-        self.auxDGUN = VideoModel().backbone
+        self.branchGUN = VideoModel()
 
-        self.nailGUN_L0 = ECInteract(64, 64)  # the number and height of the feature map
-        self.nailGUN_L1 = ECInteract(256, 64)
-      #  self.nailGUN_L2 = ECInteract(512, 32)
-     #   self.nailGUN_L3 = ECInteract(1024, 16)
-       # self.nailGUN_L4 = ECInteract(128, 32)
-       # self.nailGUN_L5 = ECInteract(128, 64)
-        self.nailGUN_L6 = ECInteract(128, 256)
+        self.nailGUN_LE = ECInteract(64, 64)  # the number and height of the feature map
+        self.nailGUN_LD = ECInteract(128, 256)
+        self.genPreds = ECInteract(1, 256)
+        self.ERFuse = nn.Conv2d(2, 1, kernel_size=1, padding=0)
 
-    def forward(self, ER, CM_b='', CM_u='', CM_d=''):
-        if self.training:
-            clip = ER.unsqueeze(0)
+    def forward(self, ER, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d):
+        clip = ER.unsqueeze(0)
 
-            # Encoder: auxiliary branches: including behind, up, down
-            feats_b = self.auxBGUN.feat_conv(CM_b)
-            feats_u = self.auxUGUN.feat_conv(CM_u)
-            feats_d = self.auxDGUN.feat_conv(CM_d)
+        # Encoder: branches
+        feats_f = self.branchGUN.backbone.feat_conv(CM_f)
+        feats_r = self.branchGUN.backbone.feat_conv(CM_r)
+        feats_b = self.branchGUN.backbone.feat_conv(CM_b)
+        feats_l = self.branchGUN.backbone.feat_conv(CM_l)
+        feats_u = self.branchGUN.backbone.feat_conv(CM_u)
+        feats_d = self.branchGUN.backbone.feat_conv(CM_d)
 
-            # Encoder: main stream: equirectangular
-            L0 = self.mainGUN.backbone.resnet.conv1(ER)
-            L0 = self.mainGUN.backbone.resnet.bn1(L0)
-            L0 = self.mainGUN.backbone.resnet.relu(L0)
-            L0 = self.mainGUN.backbone.resnet.maxpool(L0)
-            L0_nailed = self.nailGUN_L0(L0, feats_b[0], feats_u[0], feats_d[0])
+        # Encoder: main stream: equirectangular
+        L0 = self.mainGUN.backbone.resnet.conv1(ER)
+        L0 = self.mainGUN.backbone.resnet.bn1(L0)
+        L0 = self.mainGUN.backbone.resnet.relu(L0)
+        L0 = self.mainGUN.backbone.resnet.maxpool(L0)
+        L0_nailed = self.nailGUN_LE(L0, feats_f[0], feats_r[0], feats_b[0], feats_l[0], feats_u[0], feats_d[0])
 
-            L1 = self.mainGUN.backbone.resnet.layer1(L0_nailed)
-            L1_nailed = self.nailGUN_L1(L1, feats_b[1], feats_u[1], feats_d[1])
+        L1 = self.mainGUN.backbone.resnet.layer1(L0_nailed)
+        L2 = self.mainGUN.backbone.resnet.layer2(L1)
+        L3 = self.mainGUN.backbone.resnet.layer3(L2)
+        L4 = self.mainGUN.backbone.resnet.layer4(L3)
+        L4 = self.mainGUN.backbone.aspp(L4)
 
-            L2 = self.mainGUN.backbone.resnet.layer2(L1_nailed)
-         #   L2_nailed = self.nailGUN_L2(L2, feats_b[2], feats_u[2], feats_d[2])
+        # main stream to NER
+        feats_time = L4.unsqueeze(2)
+        feats_time = self.mainGUN.non_local_block(feats_time)
+        # Deep Bidirectional ConvGRU
+        frame = clip[0]
+        feat = feats_time[:, :, 0, :, :]
+        feats_forward = []
+        # forward
+        for i in range(len(clip)):
+            feat = self.mainGUN.convgru_forward(feats_time[:, :, i, :, :], feat)
+            feats_forward.append(feat)
+        # backward
+        feat = feats_forward[-1]
+        feats_backward = []
+        for i in range(len(clip)):
+            feat = self.mainGUN.convgru_backward(feats_forward[len(clip) - 1 - i], feat)
+            feats_backward.append(feat)
+        feats_backward = feats_backward[::-1]
+        feats = []
+        for i in range(len(clip)):
+            feat = torch.tanh(
+                self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
+            feats.append(feat)
+        feats = torch.stack(feats, dim=2)
+        feats = self.mainGUN.non_local_block2(feats)
 
-            L3 = self.mainGUN.backbone.resnet.layer3(L2)
-        #    L3_nailed = self.nailGUN_L3(L3, feats_b[3], feats_u[3], feats_d[3])
+        # branch to NER
+        feats_f4 = self.NERbranch(feats_f[4], CM_f.unsqueeze(0), self.branchGUN)
+        feats_r4 = self.NERbranch(feats_r[4], CM_r.unsqueeze(0), self.branchGUN)
+        feats_b4 = self.NERbranch(feats_b[4], CM_b.unsqueeze(0), self.branchGUN)
+        feats_l4 = self.NERbranch(feats_l[4], CM_l.unsqueeze(0), self.branchGUN)
+        feats_u4 = self.NERbranch(feats_u[4], CM_u.unsqueeze(0), self.branchGUN)
+        feats_d4 = self.NERbranch(feats_d[4], CM_d.unsqueeze(0), self.branchGUN)
 
-            L4 = self.mainGUN.backbone.resnet.layer4(L3)
-            L4 = self.mainGUN.backbone.aspp(L4)
+        # Decoder: branches
+        preds_F = self.branchGUN.backbone.seg_conv(feats_f[1], feats_f[2], feats_f[3], feats_f4, [256, 256])
+        preds_R = self.branchGUN.backbone.seg_conv(feats_r[1], feats_r[2], feats_r[3], feats_r4, [256, 256])
+        preds_B = self.branchGUN.backbone.seg_conv(feats_b[1], feats_b[2], feats_b[3], feats_b4, [256, 256])
+        preds_L = self.branchGUN.backbone.seg_conv(feats_l[1], feats_l[2], feats_l[3], feats_l4, [256, 256])
+        preds_U = self.branchGUN.backbone.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u4, [256, 256])
+        preds_D = self.branchGUN.backbone.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d4, [256, 256])
 
-            # main stream to NER
-            feats_time = L4.unsqueeze(2)
-            feats_time = self.mainGUN.non_local_block(feats_time)
-            # Deep Bidirectional ConvGRU
-            frame = clip[0]
-            feat = feats_time[:, :, 0, :, :]
-            feats_forward = []
-            # forward
-            for i in range(len(clip)):
-                feat = self.mainGUN.convgru_forward(feats_time[:, :, i, :, :], feat)
-                feats_forward.append(feat)
-            # backward
-            feat = feats_forward[-1]
-            feats_backward = []
-            for i in range(len(clip)):
-                feat = self.mainGUN.convgru_backward(feats_forward[len(clip) - 1 - i], feat)
-                feats_backward.append(feat)
-            feats_backward = feats_backward[::-1]
-            feats = []
-            for i in range(len(clip)):
-                feat = torch.tanh(
-                    self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
-                feats.append(feat)
-            feats = torch.stack(feats, dim=2)
-            feats = self.mainGUN.non_local_block2(feats)
+        # Decoder: mainstream
+        Lbu1 = self.mainGUN.backbone.refinement1(L3, feats[:, :, 0, :, :])
+        Lbu1 = F.interpolate(Lbu1, size=L2.shape[2:], mode="bilinear", align_corners=False)
+        Lbu2 = self.mainGUN.backbone.refinement2(L2, Lbu1)
+        Lbu2 = F.interpolate(Lbu2, size=L1.shape[2:], mode="bilinear", align_corners=False)
+        Lbu3 = self.mainGUN.backbone.refinement3(L1, Lbu2)
+        Lbu3 = F.interpolate(Lbu3, size=[256, 512], mode="bilinear", align_corners=False)
+        Lbu3_nailed = self.nailGUN_LD(Lbu3, preds_F[1], preds_R[1], preds_B[1], preds_L[1], preds_U[1], preds_D[1])
+        preds_ER = self.mainGUN.backbone.decoder(Lbu3_nailed)
 
-            # Decoder: auxiliary branches: including behind, up, down
-            preds_Back = self.auxBGUN.seg_conv(feats_b[1], feats_b[2], feats_b[3], feats_b[4], [128, 128])
-            preds_Up = self.auxUGUN.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u[4], [128, 128])
-            preds_Down = self.auxDGUN.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d[4], [128, 128])
+        # get final salmap
+        # B, D, F, L, R, U # CM_f, CM_r, CM_b, CM_l, CM_u, CM_d
+        preds_branch = []
+        preds_branch.append(preds_B[0][0])
+        preds_branch.append(preds_D[0][0])
+        preds_branch.append(preds_F[0][0])
+        preds_branch.append(preds_L[0][0])
+        preds_branch.append(preds_R[0][0])
+        preds_branch.append(preds_U[0][0])
+        preds_branch = torch.stack(preds_branch)
+        preds_branch_ER = self.genPreds.ECInteract(preds_branch)
+        predsFin = torch.cat((preds_ER, preds_branch_ER), dim=1)
+        predsFin = self.ERFuse(predsFin)
 
-            # Decoder: mainstream
-            Lbu1 = self.mainGUN.backbone.refinement1(L3, feats[:, :, 0, :, :])
-            Lbu1 = F.interpolate(Lbu1, size=L2.shape[2:], mode="bilinear", align_corners=False)
-         #   Lbu1_nailed = self.nailGUN_L4(Lbu1, preds_Back[3], preds_Up[3], preds_Down[3])
+       # debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
+        #cv2.imwrite('debug1.png', debug1 * 255)
+        #debug2 = np.squeeze(preds_ER.cpu().data.numpy())
+       # cv2.imwrite('debug2.png', debug2 * 255)
+       # debug3 = np.squeeze(predsFin.cpu().data.numpy())
+       # cv2.imwrite('debug3.png', debug3 * 255)
 
-            Lbu2 = self.mainGUN.backbone.refinement2(L2, Lbu1)
-            Lbu2 = F.interpolate(Lbu2, size=L1_nailed.shape[2:], mode="bilinear", align_corners=False)
-          #  Lbu2_nailed = self.nailGUN_L5(Lbu2, preds_Back[2], preds_Up[2], preds_Down[2])
+        return predsFin
 
-            Lbu3 = self.mainGUN.backbone.refinement3(L1_nailed, Lbu2)
-            Lbu3 = F.interpolate(Lbu3, size=[256, 512], mode="bilinear", align_corners=False)
-            Lbu3_nailed = self.nailGUN_L6(Lbu3, preds_Back[1], preds_Up[1], preds_Down[1])
-            preds_ER = self.mainGUN.backbone.decoder(Lbu3_nailed)
+    def NERbranch(self, L4, clip, BranchBone):
+        feats_time = L4.unsqueeze(2)
+        feats_time = BranchBone.non_local_block(feats_time)
+        # Deep Bidirectional ConvGRU
+        frame = clip[0]
+        feat = feats_time[:, :, 0, :, :]
+        feats_forward = []
+        # forward
+        for i in range(len(clip)):
+            feat = BranchBone.convgru_forward(feats_time[:, :, i, :, :], feat)
+            feats_forward.append(feat)
+        # backward
+        feat = feats_forward[-1]
+        feats_backward = []
+        for i in range(len(clip)):
+            feat = BranchBone.convgru_backward(feats_forward[len(clip) - 1 - i], feat)
+            feats_backward.append(feat)
+        feats_backward = feats_backward[::-1]
+        feats = []
+        for i in range(len(clip)):
+            feat = torch.tanh(
+                BranchBone.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
+            feats.append(feat)
+        feats = torch.stack(feats, dim=2)
+        feats = BranchBone.non_local_block2(feats)
 
-            return preds_ER, preds_Back[0], preds_Up[0], preds_Down[0]
-
-        else:
-            clip = ER.unsqueeze(0)
-
-            # Encoder: main stream: equirectangular
-            L0 = self.mainGUN.backbone.resnet.conv1(ER)
-            L0 = self.mainGUN.backbone.resnet.bn1(L0)
-            L0 = self.mainGUN.backbone.resnet.relu(L0)
-            L0 = self.mainGUN.backbone.resnet.maxpool(L0)
-            L1 = self.mainGUN.backbone.resnet.layer1(L0)
-            L2 = self.mainGUN.backbone.resnet.layer2(L1)
-            L3 = self.mainGUN.backbone.resnet.layer3(L2)
-            L4 = self.mainGUN.backbone.resnet.layer4(L3)
-            L4 = self.mainGUN.backbone.aspp(L4)
-
-            # main stream to NER
-            feats_time = L4.unsqueeze(2)
-            feats_time = self.mainGUN.non_local_block(feats_time)
-            # Deep Bidirectional ConvGRU
-            frame = clip[0]
-            feat = feats_time[:, :, 0, :, :]
-            feats_forward = []
-            # forward
-            for i in range(len(clip)):
-                feat = self.mainGUN.convgru_forward(feats_time[:, :, i, :, :], feat)
-                feats_forward.append(feat)
-            # backward
-            feat = feats_forward[-1]
-            feats_backward = []
-            for i in range(len(clip)):
-                feat = self.mainGUN.convgru_backward(feats_forward[len(clip) - 1 - i], feat)
-                feats_backward.append(feat)
-            feats_backward = feats_backward[::-1]
-            feats = []
-            for i in range(len(clip)):
-                feat = torch.tanh(
-                    self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
-                feats.append(feat)
-            feats = torch.stack(feats, dim=2)
-            feats = self.mainGUN.non_local_block2(feats)
-
-            # Decoder: mainstream
-            preds_ER = self.mainGUN.backbone.seg_conv(L1, L2, L3, feats[:, :, 0, :, :], [256, 512])
-
-            return preds_ER
+        return feats[:, :, 0, :, :]
 
 
 # GLOmni network
@@ -392,3 +386,115 @@ if __name__ == '__main__':
 
     # Decoder: mainstream
     preds_ER = self.mainGUN.backbone.seg_conv(L1, L2, L3, feats[:, :, 0, :, :], [256, 512])
+
+    # -------------------------------------- v2 ------------------------------------------------
+    class OmniVNet(nn.Module):
+        def __init__(self):
+            super(OmniVNet, self).__init__()
+            self.mainGUN = VideoModel()
+            # self.auxBGUN = VideoModel().backbone
+            # self.auxUGUN = VideoModel().backbone
+            # self.auxDGUN = VideoModel().backbone
+            self.branchGUN = VideoModel
+
+            self.nailGUN_L0 = ECInteract(64, 64)  # the number and height of the feature map
+            # self.nailGUN_L1 = ECInteract(256, 64)
+            #  self.nailGUN_L2 = ECInteract(512, 32)
+            #   self.nailGUN_L3 = ECInteract(1024, 16)
+            # self.nailGUN_L4 = ECInteract(128, 32)
+            # self.nailGUN_L5 = ECInteract(128, 64)
+            self.nailGUN_L6 = ECInteract(128, 256)
+            self.register_parameter('emptyFace', param=None)
+            self.genPreds = ECInteract(1, 256)
+
+        def GenEmptyFace(self, feat_h):
+            feat_h = int(feat_h / 2)
+            self.emptyFace = nn.Parameter(torch.zeros(1, feat_h, feat_h))
+
+            return self.emptyFace
+
+        def forward(self, ER, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d):
+            clip = ER.unsqueeze(0)
+
+            # Encoder: auxiliary branches: including behind, up, down
+            feats_b = self.auxBGUN.feat_conv(CM_b)
+            feats_u = self.auxUGUN.feat_conv(CM_u)
+            feats_d = self.auxDGUN.feat_conv(CM_d)
+
+            # Encoder: main stream: equirectangular
+            L0 = self.mainGUN.backbone.resnet.conv1(ER)
+            L0 = self.mainGUN.backbone.resnet.bn1(L0)
+            L0 = self.mainGUN.backbone.resnet.relu(L0)
+            L0 = self.mainGUN.backbone.resnet.maxpool(L0)
+            L0_nailed = self.nailGUN_L0(L0, feats_b[0], feats_u[0], feats_d[0])
+
+            L1 = self.mainGUN.backbone.resnet.layer1(L0_nailed)
+            L1_nailed = self.nailGUN_L1(L1, feats_b[1], feats_u[1], feats_d[1])
+
+            L2 = self.mainGUN.backbone.resnet.layer2(L1_nailed)
+            #   L2_nailed = self.nailGUN_L2(L2, feats_b[2], feats_u[2], feats_d[2])
+
+            L3 = self.mainGUN.backbone.resnet.layer3(L2)
+            #    L3_nailed = self.nailGUN_L3(L3, feats_b[3], feats_u[3], feats_d[3])
+
+            L4 = self.mainGUN.backbone.resnet.layer4(L3)
+            L4 = self.mainGUN.backbone.aspp(L4)
+
+            # main stream to NER
+            feats_time = L4.unsqueeze(2)
+            feats_time = self.mainGUN.non_local_block(feats_time)
+            # Deep Bidirectional ConvGRU
+            frame = clip[0]
+            feat = feats_time[:, :, 0, :, :]
+            feats_forward = []
+            # forward
+            for i in range(len(clip)):
+                feat = self.mainGUN.convgru_forward(feats_time[:, :, i, :, :], feat)
+                feats_forward.append(feat)
+            # backward
+            feat = feats_forward[-1]
+            feats_backward = []
+            for i in range(len(clip)):
+                feat = self.mainGUN.convgru_backward(feats_forward[len(clip) - 1 - i], feat)
+                feats_backward.append(feat)
+            feats_backward = feats_backward[::-1]
+            feats = []
+            for i in range(len(clip)):
+                feat = torch.tanh(
+                    self.mainGUN.bidirection_conv(torch.cat((feats_forward[i], feats_backward[i]), dim=1)))
+                feats.append(feat)
+            feats = torch.stack(feats, dim=2)
+            feats = self.mainGUN.non_local_block2(feats)
+
+            # Decoder: auxiliary branches: including behind, up, down
+            preds_Back = self.auxBGUN.seg_conv(feats_b[1], feats_b[2], feats_b[3], feats_b[4], [128, 128])
+            preds_Up = self.auxUGUN.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u[4], [128, 128])
+            preds_Down = self.auxDGUN.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d[4], [128, 128])
+
+            # Decoder: mainstream
+            Lbu1 = self.mainGUN.backbone.refinement1(L3, feats[:, :, 0, :, :])
+            Lbu1 = F.interpolate(Lbu1, size=L2.shape[2:], mode="bilinear", align_corners=False)
+            #   Lbu1_nailed = self.nailGUN_L4(Lbu1, preds_Back[3], preds_Up[3], preds_Down[3])
+
+            Lbu2 = self.mainGUN.backbone.refinement2(L2, Lbu1)
+            Lbu2 = F.interpolate(Lbu2, size=L1_nailed.shape[2:], mode="bilinear", align_corners=False)
+            #  Lbu2_nailed = self.nailGUN_L5(Lbu2, preds_Back[2], preds_Up[2], preds_Down[2])
+
+            Lbu3 = self.mainGUN.backbone.refinement3(L1_nailed, Lbu2)
+            Lbu3 = F.interpolate(Lbu3, size=[256, 512], mode="bilinear", align_corners=False)
+            Lbu3_nailed = self.nailGUN_L6(Lbu3, preds_Back[1], preds_Up[1], preds_Down[1])
+            preds_ER = self.mainGUN.backbone.decoder(Lbu3_nailed)
+
+            empty = self.GenEmptyFace(256).cuda()
+            preds_branch = []
+            preds_branch.append(preds_Back[0][0])
+            preds_branch.append(preds_Down[0][0])
+            preds_branch.append(empty)
+            preds_branch.append(empty)
+            preds_branch.append(empty)
+            preds_branch.append(preds_Up[0][0])
+            preds_branch = torch.stack(preds_branch)
+            preds_branch_ER = self.genPreds.ECInteract(preds_branch)
+            preds_fin = preds_ER + preds_branch_ER
+
+            return preds_fin

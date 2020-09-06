@@ -136,9 +136,9 @@ class ImageDataTest(data.Dataset):
 
         elif self.data_type == 'EC':
             ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
-            sample = {'ER_img': ER_img, 'frm_name': frm_name}
-          #  CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
-           # sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs}
+           # sample = {'ER_img': ER_img, 'frm_name': frm_name}
+            CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
+            sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs}
 
         return sample
 
@@ -188,22 +188,34 @@ def load_CMImg(pth, norm):
     if norm == 'PIL':
         im = cv2.imread(pth)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        cubes = e2c(im)
+        cubes = e2c(im)  # F R B L U D
+        in_F = cubes[0]
+        in_F = Image.fromarray(in_F)
+        in_R = cubes[1]
+        in_R = Image.fromarray(in_R)
+        in_R = in_R.transpose(Image.FLIP_LEFT_RIGHT)
         in_B = cubes[2]
         in_B = Image.fromarray(in_B)
+        in_B = in_B.transpose(Image.FLIP_LEFT_RIGHT)
+        in_L = cubes[3]
+        in_L = Image.fromarray(in_L)
         in_U = cubes[4]
         in_U = Image.fromarray(in_U)
+        in_U = in_U.transpose(Image.FLIP_TOP_BOTTOM)
         in_D = cubes[5]
         in_D = Image.fromarray(in_D)
         preprocess = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
+        in_F = preprocess(in_F)
+        in_R = preprocess(in_R)
         in_B = preprocess(in_B)
+        in_L = preprocess(in_L)
         in_U = preprocess(in_U)
         in_D = preprocess(in_D)
 
-        return in_B, in_U, in_D
+        return in_F, in_R, in_B, in_L, in_U, in_D
 
 
 def load_ERMsk(pth):
@@ -224,23 +236,39 @@ def load_CMMsk(pth):
     msk = cv2.imread(pth)
     msk = cv2.cvtColor(msk, cv2.COLOR_BGR2RGB)
     cubes = e2c(msk)
+    in_F = cubes[0]
+    in_F = Image.fromarray(in_F)
+    in_F = in_F.convert(mode='L')
+    in_R = cubes[1]
+    in_R = Image.fromarray(in_R)
+    in_R = in_R.convert(mode='L')
+    in_R = in_R.transpose(Image.FLIP_LEFT_RIGHT)
     in_B = cubes[2]
     in_B = Image.fromarray(in_B)
     in_B = in_B.convert(mode='L')
+    in_B = in_B.transpose(Image.FLIP_LEFT_RIGHT)
+    in_L = cubes[3]
+    in_L = Image.fromarray(in_L)
+    in_L = in_L.convert(mode='L')
     in_U = cubes[4]
     in_U = Image.fromarray(in_U)
     in_U = in_U.convert(mode='L')
+    in_U = in_U.transpose(Image.FLIP_TOP_BOTTOM)
     in_D = cubes[5]
     in_D = Image.fromarray(in_D)
     in_D = in_D.convert(mode='L')
+
     preprocess = transforms.Compose([
         transforms.ToTensor(),
     ])
+    in_F = preprocess(in_F)
+    in_R = preprocess(in_R)
     in_B = preprocess(in_B)
+    in_L = preprocess(in_L)
     in_U = preprocess(in_U)
     in_D = preprocess(in_D)
 
-    return in_B, in_U, in_D
+    return in_F, in_R, in_B, in_L, in_U, in_D
 
 def prep_demo(img_pth, gt_pth, name):
     img = Image.open(img_pth)
