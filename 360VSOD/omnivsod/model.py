@@ -192,14 +192,14 @@ class OmniVNet(nn.Module):
         predsFin = torch.cat((preds_ER, preds_branch_ER), dim=1)
         predsFin = self.ERFuse(predsFin)
 
-       # debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
+        #debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
         #cv2.imwrite('debug1.png', debug1 * 255)
         #debug2 = np.squeeze(preds_ER.cpu().data.numpy())
-       # cv2.imwrite('debug2.png', debug2 * 255)
-       # debug3 = np.squeeze(predsFin.cpu().data.numpy())
-       # cv2.imwrite('debug3.png', debug3 * 255)
+        #cv2.imwrite('debug2.png', debug2 * 255)
+        #debug3 = np.squeeze(predsFin.cpu().data.numpy())
+        #cv2.imwrite('debug3.png', debug3 * 255)
 
-        return predsFin
+        return predsFin, preds_F[0], preds_R[0], preds_B[0], preds_L[0], preds_U[0], preds_D[0]
 
     def NERbranch(self, L4, clip, BranchBone):
         feats_time = L4.unsqueeze(2)

@@ -66,9 +66,9 @@ class ImageDataTrain(data.Dataset):
             ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
             CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
-           # CM_msks = load_CMMsk(self.msk_list[item % self.img_num])
+            CM_msks = load_CMMsk(self.msk_list[item % self.img_num])
 
-            sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs}
+            sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs, 'CM_msks': CM_msks}
 
         return sample
 

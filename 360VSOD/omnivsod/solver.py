@@ -217,7 +217,8 @@ class Solver(object):
                     img_train, msk_train = TI_imgs, TI_msks
 
                 elif self.config.model_type == 'EC':
-                    ER_img, ER_msk, CM_imgs = data_batch['ER_img'], data_batch['ER_msk'], data_batch['CM_imgs']
+                    ER_img, ER_msk, CM_imgs, CM_msks = data_batch['ER_img'], data_batch['ER_msk'], \
+                                                       data_batch['CM_imgs'], data_batch['CM_msks']
                     if ER_img.size()[2:] != ER_msk.size()[2:]:
                         print("Skip this batch")
                         continue
@@ -225,14 +226,22 @@ class Solver(object):
                     CM_img_l, CM_img_u, CM_img_d = Variable(ER_img), Variable(CM_imgs[0]), Variable(CM_imgs[1]), \
                                                    Variable(CM_imgs[2]), Variable(CM_imgs[3]), Variable(CM_imgs[4]), \
                                                    Variable(CM_imgs[5])
-                    ER_msk = Variable(ER_msk)
+                    ER_msk, CM_msk_f, CM_msk_r, CM_msk_b, CM_msk_l, CM_msk_u, CM_msk_d = Variable(ER_msk), \
+                    Variable(CM_msks[0]), Variable(CM_msks[1]), Variable(CM_msks[2]), Variable(CM_msks[3]), \
+                                                                    Variable(CM_msks[4]), Variable(CM_msks[5])
                     if self.config.cuda:
-                        ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l, CM_img_u, CM_img_d , ER_msk = ER_img.cuda(), \
-                        CM_img_f.cuda(), CM_img_r.cuda(), CM_img_b.cuda(), CM_img_l.cuda(), \
-                        CM_img_u.cuda(), CM_img_d.cuda(), ER_msk.cuda()
+                        ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l, CM_img_u, CM_img_d , \
+                        ER_msk, CM_msk_f, CM_msk_r, CM_msk_b, CM_msk_l, CM_msk_u, CM_msk_d = \
+                        ER_img.cuda(), CM_img_f.cuda(), CM_img_r.cuda(), CM_img_b.cuda(), CM_img_l.cuda(), \
+                        CM_img_u.cuda(), CM_img_d.cuda(), \
+                        ER_msk.cuda(), CM_msk_f.cuda(), CM_msk_r.cuda(), CM_msk_b.cuda(), CM_msk_l.cuda(), \
+                        CM_msk_u.cuda(), CM_msk_d.cuda()
 
-                sal = self.net(ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l, CM_img_u, CM_img_d)
-                loss = self.loss(sal, ER_msk)
+                salER, salF, salR, salB, salL, salU, salD = self.net(ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l,
+                                                                     CM_img_u, CM_img_d)
+                loss = self.loss(salER, ER_msk) + 1 / 6 * (self.loss(salF, CM_msk_f) + self.loss(salR, CM_msk_r) +
+                                                           self.loss(salB, CM_msk_b) + self.loss(salL, CM_msk_l) +
+                                                           self.loss(salU, CM_msk_u) + self.loss(salD, CM_msk_d))
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data
@@ -305,15 +314,12 @@ class Solver(object):
                 img_test = TI_imgs
 
             elif self.config.model_type == 'EC':
-              #  ER_img, img_name = data_batch['ER_img'], data_batch['frm_name']
-               # ER_img = Variable(ER_img)
-               # ER_img = ER_img.cuda()
-                #img_test = ER_img
-
                 ER_img, img_name, CM_imgs = data_batch['ER_img'], data_batch['frm_name'], data_batch['CM_imgs']
-                ER_img, CM_b, CM_u, CM_d = Variable(ER_img), Variable(CM_imgs[0]), \
-                                           Variable(CM_imgs[1]), Variable(CM_imgs[2])
-                ER_img, CM_b, CM_u, CM_d = ER_img.cuda(), CM_b.cuda(), CM_u.cuda(), CM_d.cuda()
+                ER_img, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d = Variable(ER_img), Variable(CM_imgs[0]), \
+                Variable(CM_imgs[1]), Variable(CM_imgs[2]), Variable(CM_imgs[3]), Variable(CM_imgs[4]),\
+                                                             Variable(CM_imgs[5])
+                ER_img, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d = ER_img.cuda(), CM_f.cuda(), CM_r.cuda(), CM_b.cuda(), \
+                                                             CM_l.cuda(), CM_u.cuda(), CM_d.cuda()
                 img_test = ER_img
 
             with torch.no_grad():
@@ -334,8 +340,7 @@ class Solver(object):
                     sal = self.net(img_test, ER_flow)
                 elif self.config.benchmark_model == False:
                     time_start = time.time()
-                    #sal = self.net(img_test)
-                    sal = self.net(img_test, CM_b, CM_u, CM_d)
+                    sal = self.net(img_test, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d)
                 else:
                     time_start = time.time()
                     sal = self.net(img_test)
