@@ -53,7 +53,6 @@ class ECInteract(nn.Module):
         self.conv_mask = nn.Sequential(nn.Conv2d(self.feat_num*2, 1, kernel_size=1, padding=0), nn.Sigmoid())
         self.feat_h = feat_h
         self.ECInteract = CETransform(self.feat_h)  # B, D, F, L, R, U
-        self.register_parameter('emptyFace', param=None)
 
     def forward(self, m, f, r, b, l, u, d):
         AuxFeat = []
@@ -89,6 +88,60 @@ class ECInteract(nn.Module):
 
         return fuseFeat
 
+class RefineSalMap(nn.Module):
+    def __init__(self):
+        super(RefineSalMap, self).__init__()
+        self.refine_1 = nn.Sequential(
+                        nn.Conv2d(2, 32, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(32),
+                        nn.ReLU(inplace=True),
+                        nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1, bias=False),
+                        nn.BatchNorm2d(64),
+                        nn.ReLU(inplace=True),
+                        nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(64),
+                        nn.ReLU(inplace=True)
+                        )
+        self.refine_2 = nn.Sequential(
+                        nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
+                        nn.BatchNorm2d(128),
+                        nn.ReLU(inplace=True),
+                        nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(128),
+                        nn.ReLU(inplace=True),
+                        )
+        self.deconv_1 = nn.Sequential(
+                        nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, output_padding=0, groups=1,
+                                           bias=True, dilation=1),
+                        nn.BatchNorm2d(64),
+                        nn.LeakyReLU(inplace=True),
+                        )
+        self.deconv_2 = nn.Sequential(
+                        nn.ConvTranspose2d(192, 32, kernel_size=4, stride=2, padding=1, output_padding=0, groups=1,
+                                           bias=True, dilation=1),
+                        nn.BatchNorm2d(32),
+                        nn.LeakyReLU(inplace=True),
+                        )
+        self.refine_3 = nn.Sequential(
+                        nn.Conv2d(96, 16, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(16),
+                        nn.ReLU(inplace=True),
+                        nn.Conv2d(16, 1, kernel_size=3, stride=1, padding=1, bias=False)
+                        )
+        self.bilinear_1 = nn.UpsamplingBilinear2d(size=(128, 256))
+        self.bilinear_2 = nn.UpsamplingBilinear2d(size=(256, 512))
+
+    def forward(self, inputs):
+        x = inputs
+        out_1 = self.refine_1(x)
+        out_2 = self.refine_2(out_1)
+        deconv_out1 = self.deconv_1(out_2)
+        up_1 = self.bilinear_1(out_2)
+        deconv_out2 = self.deconv_2(torch.cat((deconv_out1, up_1), dim=1))
+        up_2 = self.bilinear_2(out_1)
+        out_3 = self.refine_3(torch.cat((deconv_out2, up_2), dim = 1))
+
+        return out_3
 
 # OmniVNet
 class OmniVNet(nn.Module):
@@ -96,11 +149,8 @@ class OmniVNet(nn.Module):
         super(OmniVNet, self).__init__()
         self.mainGUN = VideoModel()
         self.branchGUN = VideoModel()
-
-        self.nailGUN_LE = ECInteract(64, 64)  # the number and height of the feature map
-        self.nailGUN_LD = ECInteract(128, 256)
         self.genPreds = ECInteract(1, 256)
-        self.ERFuse = nn.Conv2d(2, 1, kernel_size=1, padding=0)
+        self.refineGUN = RefineSalMap()
 
     def forward(self, ER, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d):
         clip = ER.unsqueeze(0)
@@ -118,9 +168,7 @@ class OmniVNet(nn.Module):
         L0 = self.mainGUN.backbone.resnet.bn1(L0)
         L0 = self.mainGUN.backbone.resnet.relu(L0)
         L0 = self.mainGUN.backbone.resnet.maxpool(L0)
-        L0_nailed = self.nailGUN_LE(L0, feats_f[0], feats_r[0], feats_b[0], feats_l[0], feats_u[0], feats_d[0])
-
-        L1 = self.mainGUN.backbone.resnet.layer1(L0_nailed)
+        L1 = self.mainGUN.backbone.resnet.layer1(L0)
         L2 = self.mainGUN.backbone.resnet.layer2(L1)
         L3 = self.mainGUN.backbone.resnet.layer3(L2)
         L4 = self.mainGUN.backbone.resnet.layer4(L3)
@@ -161,12 +209,12 @@ class OmniVNet(nn.Module):
         feats_d4 = self.NERbranch(feats_d[4], CM_d.unsqueeze(0), self.branchGUN)
 
         # Decoder: branches
-        preds_F = self.branchGUN.backbone.seg_conv(feats_f[1], feats_f[2], feats_f[3], feats_f4, [256, 256])
-        preds_R = self.branchGUN.backbone.seg_conv(feats_r[1], feats_r[2], feats_r[3], feats_r4, [256, 256])
-        preds_B = self.branchGUN.backbone.seg_conv(feats_b[1], feats_b[2], feats_b[3], feats_b4, [256, 256])
-        preds_L = self.branchGUN.backbone.seg_conv(feats_l[1], feats_l[2], feats_l[3], feats_l4, [256, 256])
-        preds_U = self.branchGUN.backbone.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u4, [256, 256])
-        preds_D = self.branchGUN.backbone.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d4, [256, 256])
+        preds_F = self.branchGUN.backbone.seg_conv(feats_f[1], feats_f[2], feats_f[3], feats_f4, [384, 384])
+        preds_R = self.branchGUN.backbone.seg_conv(feats_r[1], feats_r[2], feats_r[3], feats_r4, [384, 384])
+        preds_B = self.branchGUN.backbone.seg_conv(feats_b[1], feats_b[2], feats_b[3], feats_b4, [384, 384])
+        preds_L = self.branchGUN.backbone.seg_conv(feats_l[1], feats_l[2], feats_l[3], feats_l4, [384, 384])
+        preds_U = self.branchGUN.backbone.seg_conv(feats_u[1], feats_u[2], feats_u[3], feats_u4, [384, 384])
+        preds_D = self.branchGUN.backbone.seg_conv(feats_d[1], feats_d[2], feats_d[3], feats_d4, [384, 384])
 
         # Decoder: mainstream
         Lbu1 = self.mainGUN.backbone.refinement1(L3, feats[:, :, 0, :, :])
@@ -175,31 +223,32 @@ class OmniVNet(nn.Module):
         Lbu2 = F.interpolate(Lbu2, size=L1.shape[2:], mode="bilinear", align_corners=False)
         Lbu3 = self.mainGUN.backbone.refinement3(L1, Lbu2)
         Lbu3 = F.interpolate(Lbu3, size=[256, 512], mode="bilinear", align_corners=False)
-        Lbu3_nailed = self.nailGUN_LD(Lbu3, preds_F[1], preds_R[1], preds_B[1], preds_L[1], preds_U[1], preds_D[1])
-        preds_ER = self.mainGUN.backbone.decoder(Lbu3_nailed)
+        preds_ER = self.mainGUN.backbone.decoder(Lbu3)
 
-        # get final salmap
         # B, D, F, L, R, U # CM_f, CM_r, CM_b, CM_l, CM_u, CM_d
         preds_branch = []
-        preds_branch.append(preds_B[0][0])
-        preds_branch.append(preds_D[0][0])
-        preds_branch.append(preds_F[0][0])
-        preds_branch.append(preds_L[0][0])
-        preds_branch.append(preds_R[0][0])
-        preds_branch.append(preds_U[0][0])
+        preds_branch.append(preds_B[0][0][:, 64:-64, 64:-64])
+        preds_branch.append(preds_D[0][0][:, 64:-64, 64:-64])
+        preds_branch.append(preds_F[0][0][:, 64:-64, 64:-64])
+        preds_branch.append(preds_L[0][0][:, 64:-64, 64:-64])
+        preds_branch.append(preds_R[0][0][:, 64:-64, 64:-64])
+        preds_branch.append(preds_U[0][0][:, 64:-64, 64:-64])
         preds_branch = torch.stack(preds_branch)
         preds_branch_ER = self.genPreds.ECInteract(preds_branch)
-        predsFin = torch.cat((preds_ER, preds_branch_ER), dim=1)
-        predsFin = self.ERFuse(predsFin)
+
+        # refine
+        predsConcatenate = torch.cat((preds_ER, preds_branch_ER), dim=1)
+        preds_fin = self.refineGUN(predsConcatenate)
 
         #debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
         #cv2.imwrite('debug1.png', debug1 * 255)
         #debug2 = np.squeeze(preds_ER.cpu().data.numpy())
         #cv2.imwrite('debug2.png', debug2 * 255)
-        #debug3 = np.squeeze(predsFin.cpu().data.numpy())
+        #debug3 = np.squeeze(preds_fin.cpu().data.numpy())
         #cv2.imwrite('debug3.png', debug3 * 255)
 
-        return predsFin, preds_F[0], preds_R[0], preds_B[0], preds_L[0], preds_U[0], preds_D[0]
+        #return preds_fin, preds_F[0], preds_R[0], preds_B[0], preds_L[0], preds_U[0], preds_D[0]
+        return preds_fin
 
     def NERbranch(self, L4, clip, BranchBone):
         feats_time = L4.unsqueeze(2)
@@ -498,3 +547,21 @@ if __name__ == '__main__':
             preds_fin = preds_ER + preds_branch_ER
 
             return preds_fin
+
+    # ------------------------------------------------ v 3/4 ------------------------------------------------
+        # get final salmap
+        # B, D, F, L, R, U # CM_f, CM_r, CM_b, CM_l, CM_u, CM_d
+        preds_branch = []
+        preds_branch.append(preds_B[0][0])
+        preds_branch.append(preds_D[0][0])
+        preds_branch.append(preds_F[0][0])
+        preds_branch.append(preds_L[0][0])
+        preds_branch.append(preds_R[0][0])
+        preds_branch.append(preds_U[0][0])
+        preds_branch = torch.stack(preds_branch)
+        preds_branch_ER = self.genPreds.ECInteract(preds_branch)
+        predsFin = torch.cat((preds_ER, preds_branch_ER), dim=1)
+        predsFin = self.ERFuse(predsFin)
+
+        self.nailGUN_LE = ECInteract(64, 64)  # the number and height of the feature map
+        self.nailGUN_LD = ECInteract(128, 256)

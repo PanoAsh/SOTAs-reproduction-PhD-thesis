@@ -34,7 +34,7 @@ class Solver(object):
                 print('Loading testing model from %s...' % self.config.model)
 
                 netTest_dict = torch.load(self.config.model)
-                self.net.load_state_dict(netTest_dict, strict=False)
+                self.net.load_state_dict(netTest_dict)
                 self.net.eval()
 
         else:
@@ -62,6 +62,22 @@ class Solver(object):
                 self.net = build_OmniVNet()
 
             self.print_network(self.net, 'DAVPNet')
+
+            if self.config.cuda: self.net = self.net.cuda()
+            self.lr = self.config.lr
+            self.wd = self.config.wd
+            self.loss = torch.nn.BCEWithLogitsLoss(reduction='sum')
+
+            base, head = [], []
+            for name, param in self.net.named_parameters():
+                if 'refineGUN' in name:
+                    print(name)
+                    head.append(param)
+                else:
+                    base.append(param)
+            self.optimizer = Adam([{'params': base}, {'params': head}], lr=self.lr, weight_decay=self.wd)
+            self.optimizer.param_groups[0]['lr'] = self.lr * 0.01
+            self.optimizer.param_groups[1]['lr'] = self.lr
 
         else:
             if self.config.benchmark_name == 'RCRNet':
@@ -175,13 +191,7 @@ class Solver(object):
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'LDF')
 
-        if self.config.cuda:
-            self.net = self.net.cuda()
-        self.lr = self.config.lr
-        self.wd = self.config.wd
-        self.optimizer = Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.lr,
-                              weight_decay=self.wd)
-        self.loss = torch.nn.BCEWithLogitsLoss(reduction='sum')
+            if self.config.cuda: self.net = self.net.cuda()
 
         # Apex acceleration
         # self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level=opt_level)
@@ -237,11 +247,12 @@ class Solver(object):
                         ER_msk.cuda(), CM_msk_f.cuda(), CM_msk_r.cuda(), CM_msk_b.cuda(), CM_msk_l.cuda(), \
                         CM_msk_u.cuda(), CM_msk_d.cuda()
 
-                salER, salF, salR, salB, salL, salU, salD = self.net(ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l,
+                salER = self.net(ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l,
                                                                      CM_img_u, CM_img_d)
-                loss = self.loss(salER, ER_msk) + 1 / 6 * (self.loss(salF, CM_msk_f) + self.loss(salR, CM_msk_r) +
-                                                           self.loss(salB, CM_msk_b) + self.loss(salL, CM_msk_l) +
-                                                           self.loss(salU, CM_msk_u) + self.loss(salD, CM_msk_d))
+                loss = self.loss(salER, ER_msk)
+                #loss = self.loss(salER, ER_msk) + 1 / 6 * (self.loss(salF, CM_msk_f) + self.loss(salR, CM_msk_r) +
+                 #                                          self.loss(salB, CM_msk_b) + self.loss(salL, CM_msk_l) +
+                  #                                         self.loss(salU, CM_msk_u) + self.loss(salD, CM_msk_d))
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

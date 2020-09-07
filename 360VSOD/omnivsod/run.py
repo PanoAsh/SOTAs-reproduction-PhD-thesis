@@ -52,7 +52,7 @@ if __name__ == '__main__':
     fcn_resnet101_path = os.getcwd() + '/pretrained/fcn_resnet101_coco-7ecb50ca.pth'
     deeplabv3_resnet101_path = os.getcwd() + '/pretrained/deeplabv3_resnet101_coco-586e9e4e.pth'
 
-    test_model_path = os.getcwd() + '/results/models/epoch_1_bone.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_5_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--nAveGrad', type=int, default=10)
     parser.add_argument('--lr_decay_epoch', type=int, default=100)
     # Hyper_parameters (please check before retrain)
-    parser.add_argument('--lr', type=float, default=0.000001)  # 1/10 of default Lr for benchmark models
+    parser.add_argument('--lr', type=float, default=0.0001)  # 1/10 of default Lr for benchmark models
     parser.add_argument('--wd', type=float, default=0.0005)
     parser.add_argument('--optimizer_name', type=str, default='Adam')  # Adam, SGD
 

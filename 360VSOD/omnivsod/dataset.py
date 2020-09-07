@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import cv2
 import numpy as np
 from py360convert import e2c
+from equiPers.equir2pers import equir2pers
 
 
 class ImageDataTrain(data.Dataset):
@@ -182,7 +183,7 @@ def load_ERImg(pth, norm):
 
     return in_
 
-def load_CMImg(pth, norm):
+def load_CMImg_1(pth, norm):
     if not os.path.exists(pth):
         print('File Not Exists')
     if norm == 'PIL':
@@ -217,6 +218,36 @@ def load_CMImg(pth, norm):
 
         return in_F, in_R, in_B, in_L, in_U, in_D
 
+def load_CMImg(pth, norm):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    if norm == 'PIL':
+        im = cv2.imread(pth)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        in_F = equir2pers(im, 112.5, 0, 0, 384, 384)  # F
+        in_F = Image.fromarray(in_F)
+        in_R = equir2pers(im, 112.5, 90, 0, 384, 384)  # R
+        in_R = Image.fromarray(in_R)
+        in_B = equir2pers(im, 112.5, 180, 0, 384, 384)  # B
+        in_B = Image.fromarray(in_B)
+        in_L = equir2pers(im, 112.5, -90, 0, 384, 384)  # L
+        in_L = Image.fromarray(in_L)
+        in_U = equir2pers(im, 112.5, 0, 90, 384, 384)  # U
+        in_U = Image.fromarray(in_U)
+        in_D = equir2pers(im, 112.5, 0, -90, 384, 384)  # D
+        in_D = Image.fromarray(in_D)
+        preprocess = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        in_F = preprocess(in_F)
+        in_R = preprocess(in_R)
+        in_B = preprocess(in_B)
+        in_L = preprocess(in_L)
+        in_U = preprocess(in_U)
+        in_D = preprocess(in_D)
+
+        return in_F, in_R, in_B, in_L, in_U, in_D
 
 def load_ERMsk(pth):
     if not os.path.exists(pth):
@@ -230,7 +261,7 @@ def load_ERMsk(pth):
 
     return msk_tensor
 
-def load_CMMsk(pth):
+def load_CMMsk_1(pth):
     if not os.path.exists(pth):
         print('File Not Exists')
     msk = cv2.imread(pth)
@@ -258,6 +289,41 @@ def load_CMMsk(pth):
     in_D = Image.fromarray(in_D)
     in_D = in_D.convert(mode='L')
 
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+    in_F = preprocess(in_F)
+    in_R = preprocess(in_R)
+    in_B = preprocess(in_B)
+    in_L = preprocess(in_L)
+    in_U = preprocess(in_U)
+    in_D = preprocess(in_D)
+
+    return in_F, in_R, in_B, in_L, in_U, in_D
+
+def load_CMMsk(pth):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    im = cv2.imread(pth)
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    in_F = equir2pers(im, 112.5, 0, 0, 384, 384)  # F
+    in_F = Image.fromarray(in_F)
+    in_F = in_F.convert(mode='L')
+    in_R = equir2pers(im, 112.5, 90, 0, 384, 384)  # R
+    in_R = Image.fromarray(in_R)
+    in_R = in_R.convert(mode='L')
+    in_B = equir2pers(im, 112.5, 180, 0, 384, 384)  # B
+    in_B = Image.fromarray(in_B)
+    in_B = in_B.convert(mode='L')
+    in_L = equir2pers(im, 112.5, -90, 0, 384, 384)  # L
+    in_L = Image.fromarray(in_L)
+    in_L = in_L.convert(mode='L')
+    in_U = equir2pers(im, 112.5, 0, 90, 384, 384)  # U
+    in_U = Image.fromarray(in_U)
+    in_U = in_U.convert(mode='L')
+    in_D = equir2pers(im, 112.5, 0, -90, 384, 384)  # D
+    in_D = Image.fromarray(in_D)
+    in_D = in_D.convert(mode='L')
     preprocess = transforms.Compose([
         transforms.ToTensor(),
     ])
