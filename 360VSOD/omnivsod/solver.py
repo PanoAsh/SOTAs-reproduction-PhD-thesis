@@ -101,7 +101,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'CPD':
                 from retrain.CPD.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/CPD-R.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/CPD/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'CPD')
             elif self.config.benchmark_name == 'F3Net':
                 from retrain.F3Net.retrain import model
@@ -171,7 +171,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'MGA':
                 from retrain.MGA.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/epoch_7_bone.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/MGA/models/epoch_5_bone.pth'))
                 self.print_network(self.net, 'MGA')
             elif self.config.benchmark_name == 'GICD':
                 from retrain.GICD.retrain import model
