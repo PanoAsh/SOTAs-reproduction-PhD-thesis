@@ -27,7 +27,7 @@ def structure_loss(pred, mask):
 
 import retrain.BASNet.pytorch_ssim as pytorch_ssim
 import retrain.BASNet.pytorch_iou as pytorch_iou
-bce_loss = nn.BCELoss(size_average=True, reduction='mean')
+bce_loss = nn.BCELoss(size_average=True, reduction='sum')
 ssim_loss = pytorch_ssim.SSIM(window_size=11,size_average=True)
 iou_loss = pytorch_iou.IOU(size_average=True)
 
@@ -140,6 +140,18 @@ def loss_calc2(pred, label):
     criterion = torch.nn.L1Loss()  # .cuda() #torch.nn.CrossEntropyLoss(ignore_index=args.ignore_label).cuda()
 
     return criterion(pred, label)
+
+def muti_bce_loss_fusion_u2(d0, d1, d2, d3, d4, d5, d6, labels_v):
+    loss0 = bce_loss(d0,labels_v)
+    loss1 = bce_loss(d1,labels_v)
+    loss2 = bce_loss(d2,labels_v)
+    loss3 = bce_loss(d3,labels_v)
+    loss4 = bce_loss(d4,labels_v)
+    loss5 = bce_loss(d5,labels_v)
+    loss6 = bce_loss(d6,labels_v)
+    loss = loss0 + loss1 + loss2 + loss3 + loss4 + loss5 + loss6
+
+    return loss0, loss
 # ----------------------------- utils above ----------------------------- #
 
 class SolverReTrain(object):
@@ -299,6 +311,14 @@ class SolverReTrain(object):
             if self.config.fine_tune == True:
                 Raft_pretrain = torch.load(os.getcwd() + '/retrain/Raft/models/raft-sintel.pth')
                 self.net.load_state_dict(convert_state_dict(Raft_pretrain))
+                print('fine tuning ...')
+
+        elif self.config.benchmark_name == 'U2':
+            from retrain.U2Net.retrain import model
+            self.net = model
+            self.print_network(self.net, 'U2Net')
+            if self.config.fine_tune == True:
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/U2Net/fine_tune_init/u2net.pth'))
                 print('fine tuning ...')
 
         if self.config.cuda: self.net = self.net.cuda()
@@ -505,6 +525,9 @@ class SolverReTrain(object):
                     loss1 = F.binary_cross_entropy_with_logits(out1, msk_train) + iou_loss_ldf(out1, msk_train)
                     loss2 = F.binary_cross_entropy_with_logits(out2, msk_train) + iou_loss_ldf(out2, msk_train)
                     loss = (loss1 + loss2) / 2
+                elif self.config.benchmark_name == 'U2':
+                    d0, d1, d2, d3, d4, d5, d6 = self.net(img_train)
+                    loss2, loss = muti_bce_loss_fusion_u2(d0, d1, d2, d3, d4, d5, d6, msk_train)
 
                 loss_currIter = loss / (self.config.nAveGrad * self.config.batch_size)
                 G_loss += loss_currIter.data

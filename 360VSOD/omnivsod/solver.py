@@ -184,6 +184,11 @@ class Solver(object):
                 self.net = model
                 self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/LDF/fine_tune_init/epoch_10_bone.pth'))
                 self.print_network(self.net, 'LDF')
+            elif self.config.benchmark_name == 'U2':
+                from retrain.U2Net.retrain import model
+                self.net = model
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/U2Net/fine_tune_init/u2net.pth'))
+                self.print_network(self.net, 'U2Net')
 
             if self.config.cuda: self.net = self.net.cuda()
 
@@ -410,6 +415,9 @@ class Solver(object):
                     elif self.config.benchmark_model == True and self.config.benchmark_name == 'LDF':
                         salT = sal[5]
                         pred = torch.sigmoid(salT)
+                    elif self.config.benchmark_model == True and self.config.benchmark_name == 'U2':
+                        salT = sal[0]
+                        pred = normPRED(salT)
 
                     if flow_output == False: pred = np.squeeze(pred.cpu().data.numpy())  # to cpu
 
