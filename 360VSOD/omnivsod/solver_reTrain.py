@@ -286,6 +286,8 @@ class SolverReTrain(object):
             if self.config.fine_tune == True:
                 COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
                 self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+                #COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/epoch_8_bone.pth')
+                #self.net.load_state_dict(COSNet_pretrain)
                 print('fine tuning ...')
 
         elif self.config.benchmark_name == 'MGA':

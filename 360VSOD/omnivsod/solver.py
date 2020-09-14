@@ -27,6 +27,7 @@ class Solver(object):
                 print('Loading pretrained model from %s...' % self.config.pre_trained)
 
                 netPretrain_dict = torch.load(self.config.pre_trained)
+             #   self.net.load_state_dict(netPretrain_dict)
                 netPretrain_dict = convert_state_dict_omni(netPretrain_dict)
                 self.net.load_state_dict(netPretrain_dict, strict=False)
 
@@ -64,7 +65,7 @@ class Solver(object):
 
             base, head = [], []
             for name, param in self.net.named_parameters():
-                if 'refineGUN' in name:
+                if 'refineGUN1' in name or 'refineGUN2' in name:
                     print(name)
                     head.append(param)
                 else:
@@ -83,10 +84,10 @@ class Solver(object):
             elif self.config.benchmark_name == 'COSNet':
                 from retrain.COSNet.retrain import model, convert_state_dict
                 self.net = model
-             #   COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
-              #  self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
-                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/epoch_8_bone.pth')
-                self.net.load_state_dict(COSNet_pretrain)
+                COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/co_attention.pth')["model"]
+                self.net.load_state_dict(convert_state_dict(COSNet_pretrain))
+                #COSNet_pretrain = torch.load(os.getcwd() + '/retrain/COSNet/fine_tune_init/epoch_10_bone.pth')
+                #self.net.load_state_dict(COSNet_pretrain)
                 self.print_network(self.net, 'COSNet')
             elif self.config.benchmark_name == 'EGNet':
                 from retrain.EGNet.retrain import model
@@ -187,7 +188,7 @@ class Solver(object):
             elif self.config.benchmark_name == 'U2':
                 from retrain.U2Net.retrain import model
                 self.net = model
-                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/U2Net/fine_tune_init/u2net.pth'))
+                self.net.load_state_dict(torch.load(os.getcwd() + '/retrain/U2Net/fine_tune_init/epoch_9_bone.pth'))
                 self.print_network(self.net, 'U2Net')
 
             if self.config.cuda: self.net = self.net.cuda()
@@ -228,6 +229,7 @@ class Solver(object):
                 elif self.config.model_type == 'EC':
                     ER_img, ER_msk, CM_imgs, CM_msks = data_batch['ER_img'], data_batch['ER_msk'], \
                                                        data_batch['CM_imgs'], data_batch['CM_msks']
+                    Sound_map = data_batch['Sound_map']
                     if ER_img.size()[2:] != ER_msk.size()[2:]:
                         print("Skip this batch")
                         continue
@@ -238,6 +240,7 @@ class Solver(object):
                     ER_msk, CM_msk_f, CM_msk_r, CM_msk_b, CM_msk_l, CM_msk_u, CM_msk_d = Variable(ER_msk), \
                     Variable(CM_msks[0]), Variable(CM_msks[1]), Variable(CM_msks[2]), Variable(CM_msks[3]), \
                                                                     Variable(CM_msks[4]), Variable(CM_msks[5])
+                    Sound_map = Variable(Sound_map)
                     if self.config.cuda:
                         ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l, CM_img_u, CM_img_d , \
                         ER_msk, CM_msk_f, CM_msk_r, CM_msk_b, CM_msk_l, CM_msk_u, CM_msk_d = \
@@ -245,9 +248,10 @@ class Solver(object):
                         CM_img_u.cuda(), CM_img_d.cuda(), \
                         ER_msk.cuda(), CM_msk_f.cuda(), CM_msk_r.cuda(), CM_msk_b.cuda(), CM_msk_l.cuda(), \
                         CM_msk_u.cuda(), CM_msk_d.cuda()
+                        Sound_map = Sound_map.cuda()
 
                 salER = self.net(ER_img, CM_img_f, CM_img_r, CM_img_b, CM_img_l,
-                                                                     CM_img_u, CM_img_d)
+                                                                     CM_img_u, CM_img_d, Sound_map)
                 loss = self.loss(salER, ER_msk)
                 #loss = self.loss(salER, ER_msk) + 1 / 6 * (self.loss(salF, CM_msk_f) + self.loss(salR, CM_msk_r) +
                  #                                          self.loss(salB, CM_msk_b) + self.loss(salL, CM_msk_l) +

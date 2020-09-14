@@ -13,15 +13,18 @@ from equiPers.equir2pers import equir2pers
 
 
 class ImageDataTrain(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, data_norm, data_pair, data_flow):
+    def __init__(self, data_type, base_level, sample_level, data_norm, data_pair, data_flow, data_sound):
         self.img_source = os.getcwd() + '/data/train_img.lst'
         self.msk_source = os.getcwd() + '/data/train_msk.lst'
+       # self.img_source = os.getcwd() + '/data/train_img_FS.lst'
+        #self.msk_source = os.getcwd() + '/data/train_msk_FS.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
         self.data_norm = data_norm
         self.data_pair = data_pair
         self.data_flow = data_flow
+        self.data_sound = data_sound
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
@@ -69,7 +72,24 @@ class ImageDataTrain(data.Dataset):
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             CM_msks = load_CMMsk(self.msk_list[item % self.img_num])
 
-            sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs, 'CM_msks': CM_msks}
+
+            if self.data_sound == True:
+                # match the sound maps
+                frm_name = self.img_list[item % self.img_num][53:]
+                category_name = frm_name.split('/')[2][:-11]
+                FS_list = ['_-69Aw5PC1h4Y', '_-Di3FaSDxSRA_2', '_-eGGFGota5_A', '_-FAeSKakzkGk', '_-Oak26yVbibQ',
+                              '_-SdGCX2H-_Uk']
+                if category_name in FS_list:
+                    Sound_map = load_SoundMap(os.getcwd() + '/data/train_sound/' + category_name + '.png')
+                   # print('the current image with focused sound attribute.')
+                else:
+                    Sound_map = load_SoundMap(os.getcwd() + '/data/train_sound/mean_map.png')
+
+                sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs, 'CM_msks': CM_msks,
+                          'Sound_map': Sound_map}
+
+            else:
+                sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs, 'CM_msks': CM_msks}
 
         return sample
 
@@ -77,7 +97,7 @@ class ImageDataTrain(data.Dataset):
         return self.img_num
 
 class ImageDataTest(data.Dataset):
-    def __init__(self, data_type, base_level, sample_level, need_ref, data_norm, data_pair, data_flow):
+    def __init__(self, data_type, base_level, sample_level, need_ref, data_norm, data_pair, data_flow, data_sound):
         self.img_source = os.getcwd() + '/data/test_img.lst'
         self.data_type = data_type
         self.base_level = base_level
@@ -86,13 +106,14 @@ class ImageDataTest(data.Dataset):
         self.data_norm = data_norm
         self.data_pair = data_pair
         self.data_flow = data_flow
+        self.data_sound = data_sound
         #self.ins_source = os.getcwd() + '/data/test_ins.lst'
-        #self.gt_source = os.getcwd() + '/data/test_msk.lst'
+      #  self.gt_source = os.getcwd() + '/data/train_msk.lst'
 
         with open(self.img_source, 'r') as f:
             self.img_list = [x.strip() for x in f.readlines()]
         #with open(self.gt_source, 'r') as f:
-         #   self.gt_list = [x.strip() for x in f.readlines()]
+        #    self.gt_list = [x.strip() for x in f.readlines()]
 
         self.img_num = len(self.img_list)
 
@@ -117,6 +138,8 @@ class ImageDataTest(data.Dataset):
                # [Ref_img.append(load_ERImg(pth, self.data_norm)) for pth in refFrm_pth]
 
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'Ref_img': Ref_img}
+
+                #prep_demo(self.img_list[item % self.img_num], self.gt_list[item % self.img_num], frm_name)
 
             if self.data_pair == True:
                 if item != self.img_num - 1:
@@ -148,19 +171,31 @@ class ImageDataTest(data.Dataset):
 
 # get the dataloader (Note: without data augmentation, except saliency with random flip)
 def get_loader(batch_size, mode='train', num_thread=1, data_type='G', base_level = 1, sample_level=10, ref=False,
-               norm='cv2', pair=False, flow=False):
+               norm='cv2', pair=False, flow=False, sound=False):
     shuffle = False
     if mode == 'train':
         shuffle = True
         dataset = ImageDataTrain(data_type=data_type, base_level=base_level, sample_level=sample_level,
-                                 data_norm=norm, data_pair=pair, data_flow=flow)
+                                 data_norm=norm, data_pair=pair, data_flow=flow, data_sound=sound)
     else:
         dataset = ImageDataTest(data_type=data_type, base_level=base_level, sample_level=sample_level,
-                                need_ref=ref, data_norm=norm, data_pair=pair, data_flow=flow)
+                                need_ref=ref, data_norm=norm, data_pair=pair, data_flow=flow, data_sound=sound)
 
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
 
     return data_loader, dataset
+
+def load_SoundMap(pth):
+    if not os.path.exists(pth):
+        print('File Not Exists')
+    map = Image.open(pth)
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.449], std=[0.226]),
+    ])
+    map_tensor = preprocess(map)
+
+    return map_tensor
 
 def load_ERImg(pth, norm):
     if not os.path.exists(pth):
