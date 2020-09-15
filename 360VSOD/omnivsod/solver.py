@@ -63,21 +63,17 @@ class Solver(object):
             self.wd = self.config.wd
             self.loss = torch.nn.BCEWithLogitsLoss(reduction='sum')
 
-            base, head_1, head_2 = [], [], []
+            base, head = [], []
             for name, param in self.net.named_parameters():
-                if 'refineGUN1' in name:
+                if 'refineGUN' in name:
                     print(name)
-                    head_1.append(param)
-                elif 'refineGUN2' in name:
-                    print(name)
-                    head_2.append(param)
+                    head.append(param)
                 else:
                     base.append(param)
-            self.optimizer = Adam([{'params': base}, {'params': head_1}, {'params': head_2}],
+            self.optimizer = Adam([{'params': base}, {'params': head}],
                                   lr=self.lr, weight_decay=self.wd)
             self.optimizer.param_groups[0]['lr'] = self.lr * 0.01
             self.optimizer.param_groups[1]['lr'] = self.lr
-            self.optimizer.param_groups[2]['lr'] = self.lr * 2
 
         else:
             if self.config.benchmark_name == 'RCRNet':

@@ -150,8 +150,7 @@ class OmniVNet(nn.Module):
         self.mainGUN = VideoModel()
         self.branchGUN = VideoModel()
         self.genPreds = ECInteract(1, 256)
-        self.refineGUN1 = RefineSalMap()
-        self.refineGUN2 = RefineSalMap()
+        self.refineGUN = RefineSalMap()
 
     def forward(self, ER, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d, Sound_map):
         clip = ER.unsqueeze(0)
@@ -239,12 +238,8 @@ class OmniVNet(nn.Module):
 
         # refine
         predsConcatenate = torch.cat((preds_ER, preds_branch_ER), dim=1)
-        preds_fin = self.refineGUN1(predsConcatenate)
-
-        # sound-based enhancement
-        predsConcatenate2 = torch.cat((preds_fin, Sound_map), dim=1)
-        preds_se_fin = self.refineGUN2(predsConcatenate2)
-
+        predsConcatenate = predsConcatenate + Sound_map * predsConcatenate
+        preds_fin = self.refineGUN(predsConcatenate)
 
         #debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
         #cv2.imwrite('debug1.png', debug1 * 255)
@@ -252,11 +247,11 @@ class OmniVNet(nn.Module):
         #cv2.imwrite('debug2.png', debug2 * 255)
         #debug3 = np.squeeze(preds_fin.cpu().data.numpy())
         #cv2.imwrite('debug3.png', debug3 * 255)
-        #debug4 = np.squeeze(preds_se_fin.cpu().data.numpy())
+        #debug4 = np.squeeze(Sound_map.cpu().data.numpy())
         #cv2.imwrite('debug4.png', debug4 * 255)
 
         # return preds_fin, preds_F[0], preds_R[0], preds_B[0], preds_L[0], preds_U[0], preds_D[0]
-        return preds_se_fin
+        return preds_fin
 
     def NERbranch(self, L4, clip, BranchBone):
         feats_time = L4.unsqueeze(2)

@@ -72,7 +72,6 @@ class ImageDataTrain(data.Dataset):
             ER_msk = load_ERMsk(self.msk_list[item % self.img_num])
             CM_msks = load_CMMsk(self.msk_list[item % self.img_num])
 
-
             if self.data_sound == True:
                 # match the sound maps
                 frm_name = self.img_list[item % self.img_num][53:]
@@ -165,14 +164,14 @@ class ImageDataTest(data.Dataset):
 
             if self.data_sound == True:
                 # match the sound maps
-                category_name = self.img_list[item % self.img_num][52:]
-                category_name = category_name.split('/')[2][:-11]
-                FS_list = ['_-bO43msZTfwA', '_-kZB3KMhqqyI', '_-MYmMZxmSc1U', '_-RbgxpagCY_c']
-                if category_name in FS_list:
-                    Sound_map = load_SoundMap(os.getcwd() + '/data/sound/' + category_name + '.png')
-                # print('the current image with focused sound attribute.')
+                category_name_ = self.img_list[item % self.img_num][52:]
+                category_name = category_name_.split('/')[2][:-11]
+                sound_list = os.listdir(os.getcwd() + '/data/sound_map/')
+                if category_name in sound_list:
+                    Sound_map = load_SoundMap(os.path.join(os.getcwd() + '/data/sound_map/', category_name,
+                                                               'frame_' + category_name_.split('/')[2][-10:]))
                 else:
-                    Sound_map = load_SoundMap(os.getcwd() + '/data/sound/mean_map.png')
+                    Sound_map = load_SoundMap(os.getcwd() + '/data/sound_map/Zero/frame_000000.png')
 
                 sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs, 'Sound_map': Sound_map}
 
@@ -207,7 +206,6 @@ def load_SoundMap(pth):
     map = map.convert(mode='L')
     preprocess = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.449], std=[0.226]),
     ])
     map_tensor = preprocess(map)
 
