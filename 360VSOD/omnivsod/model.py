@@ -241,9 +241,10 @@ class OmniVNet(nn.Module):
         predsConcatenate = torch.cat((preds_ER, preds_branch_ER), dim=1)
         preds_fin = self.refineGUN1(predsConcatenate)
 
-        # sound based enhancement
+        # sound-based enhancement
         predsConcatenate2 = torch.cat((preds_fin, Sound_map), dim=1)
         preds_se_fin = self.refineGUN2(predsConcatenate2)
+
 
         #debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
         #cv2.imwrite('debug1.png', debug1 * 255)

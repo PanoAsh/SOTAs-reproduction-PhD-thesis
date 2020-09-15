@@ -14,10 +14,10 @@ from equiPers.equir2pers import equir2pers
 
 class ImageDataTrain(data.Dataset):
     def __init__(self, data_type, base_level, sample_level, data_norm, data_pair, data_flow, data_sound):
-        #self.img_source = os.getcwd() + '/data/train_img.lst'
-        #self.msk_source = os.getcwd() + '/data/train_msk.lst'
-        self.img_source = os.getcwd() + '/data/train_img_FS.lst'
-        self.msk_source = os.getcwd() + '/data/train_msk_FS.lst'
+        self.img_source = os.getcwd() + '/data/train_img.lst'
+        self.msk_source = os.getcwd() + '/data/train_msk.lst'
+       # self.img_source = os.getcwd() + '/data/train_img_FS.lst'
+       # self.msk_source = os.getcwd() + '/data/train_msk_FS.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
@@ -77,13 +77,12 @@ class ImageDataTrain(data.Dataset):
                 # match the sound maps
                 frm_name = self.img_list[item % self.img_num][53:]
                 category_name = frm_name.split('/')[2][:-11]
-                FS_list = ['_-69Aw5PC1h4Y', '_-Di3FaSDxSRA_2', '_-eGGFGota5_A', '_-FAeSKakzkGk', '_-Oak26yVbibQ',
-                              '_-SdGCX2H-_Uk']
-                if category_name in FS_list:
-                    Sound_map = load_SoundMap(os.getcwd() + '/data/train_sound/' + category_name + '.png')
-                   # print('the current image with focused sound attribute.')
+                sound_list = os.listdir(os.getcwd() + '/data/sound_map/')
+                if category_name in sound_list:
+                    Sound_map = load_SoundMap(os.path.join(os.getcwd() + '/data/sound_map/', category_name,
+                                                           'frame_' + frm_name.split('/')[2][-10:]))
                 else:
-                    Sound_map = load_SoundMap(os.getcwd() + '/data/train_sound/mean_map.png')
+                    Sound_map = load_SoundMap(os.getcwd() + '/data/sound_map/Zero/frame_000000.png')
 
                 sample = {'ER_img': ER_img, 'ER_msk': ER_msk, 'CM_imgs': CM_imgs, 'CM_msks': CM_msks,
                           'Sound_map': Sound_map}
@@ -99,6 +98,7 @@ class ImageDataTrain(data.Dataset):
 class ImageDataTest(data.Dataset):
     def __init__(self, data_type, base_level, sample_level, need_ref, data_norm, data_pair, data_flow, data_sound):
         self.img_source = os.getcwd() + '/data/test_img.lst'
+        #self.img_source = os.getcwd() + '/data/test_img_FS.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
@@ -162,7 +162,22 @@ class ImageDataTest(data.Dataset):
             ER_img = load_ERImg(self.img_list[item % self.img_num], self.data_norm)
            # sample = {'ER_img': ER_img, 'frm_name': frm_name}
             CM_imgs = load_CMImg(self.img_list[item % self.img_num], self.data_norm)
-            sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs}
+
+            if self.data_sound == True:
+                # match the sound maps
+                category_name = self.img_list[item % self.img_num][52:]
+                category_name = category_name.split('/')[2][:-11]
+                FS_list = ['_-bO43msZTfwA', '_-kZB3KMhqqyI', '_-MYmMZxmSc1U', '_-RbgxpagCY_c']
+                if category_name in FS_list:
+                    Sound_map = load_SoundMap(os.getcwd() + '/data/sound/' + category_name + '.png')
+                # print('the current image with focused sound attribute.')
+                else:
+                    Sound_map = load_SoundMap(os.getcwd() + '/data/sound/mean_map.png')
+
+                sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs, 'Sound_map': Sound_map}
+
+            else:
+                sample = {'ER_img': ER_img, 'frm_name': frm_name, 'CM_imgs': CM_imgs}
 
         return sample
 
@@ -189,6 +204,7 @@ def load_SoundMap(pth):
     if not os.path.exists(pth):
         print('File Not Exists')
     map = Image.open(pth)
+    map = map.convert(mode='L')
     preprocess = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.449], std=[0.226]),

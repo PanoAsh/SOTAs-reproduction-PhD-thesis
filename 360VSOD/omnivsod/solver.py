@@ -77,7 +77,7 @@ class Solver(object):
                                   lr=self.lr, weight_decay=self.wd)
             self.optimizer.param_groups[0]['lr'] = self.lr * 0.01
             self.optimizer.param_groups[1]['lr'] = self.lr
-            self.optimizer.param_groups[2]['lr'] = self.lr * 10
+            self.optimizer.param_groups[2]['lr'] = self.lr * 2
 
         else:
             if self.config.benchmark_name == 'RCRNet':
@@ -334,11 +334,15 @@ class Solver(object):
 
             elif self.config.model_type == 'EC':
                 ER_img, img_name, CM_imgs = data_batch['ER_img'], data_batch['frm_name'], data_batch['CM_imgs']
+                Sound_map = data_batch['Sound_map']
+
                 ER_img, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d = Variable(ER_img), Variable(CM_imgs[0]), \
                 Variable(CM_imgs[1]), Variable(CM_imgs[2]), Variable(CM_imgs[3]), Variable(CM_imgs[4]),\
                                                              Variable(CM_imgs[5])
+                Sound_map = Variable(Sound_map)
                 ER_img, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d = ER_img.cuda(), CM_f.cuda(), CM_r.cuda(), CM_b.cuda(), \
                                                              CM_l.cuda(), CM_u.cuda(), CM_d.cuda()
+                Sound_map = Sound_map.cuda()
                 img_test = ER_img
 
             with torch.no_grad():
@@ -359,7 +363,7 @@ class Solver(object):
                     sal = self.net(img_test, ER_flow)
                 elif self.config.benchmark_model == False:
                     time_start = time.time()
-                    sal = self.net(img_test, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d)
+                    sal = self.net(img_test, CM_f, CM_r, CM_b, CM_l, CM_u, CM_d, Sound_map)
                 else:
                     time_start = time.time()
                     sal = self.net(img_test)
