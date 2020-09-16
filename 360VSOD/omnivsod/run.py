@@ -49,7 +49,7 @@ def main(config):
 
 if __name__ == '__main__':
 
-    test_model_path = os.getcwd() + '/results/models/epoch_1_bone.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_7_bone_SEM.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()

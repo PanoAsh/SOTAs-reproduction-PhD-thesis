@@ -238,7 +238,7 @@ class OmniVNet(nn.Module):
 
         # refine
         predsConcatenate = torch.cat((preds_ER, preds_branch_ER), dim=1)
-        predsConcatenate = predsConcatenate + Sound_map * predsConcatenate
+        predsConcatenate = predsConcatenate * Sound_map
         preds_fin = self.refineGUN(predsConcatenate)
 
         #debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
