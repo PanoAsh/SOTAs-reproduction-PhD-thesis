@@ -27,7 +27,7 @@ class Solver(object):
                 print('Loading pretrained model from %s...' % self.config.pre_trained)
 
                 netPretrain_dict = torch.load(self.config.pre_trained)
-             #   self.net.load_state_dict(netPretrain_dict)
+                #self.net.load_state_dict(netPretrain_dict)
                 netPretrain_dict = convert_state_dict_omni(netPretrain_dict)
                 self.net.load_state_dict(netPretrain_dict, strict=False)
 

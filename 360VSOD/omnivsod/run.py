@@ -49,7 +49,7 @@ def main(config):
 
 if __name__ == '__main__':
 
-    test_model_path = os.getcwd() + '/results/models/epoch_7_bone_SEM.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_1_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # Recording & Visualization
     parser.add_argument('--pre_trained', type=str, default=os.getcwd() +
                                                            '/retrain/RCRNet/fine_tune_init/video_best_model.pth')
-    #parser.add_argument('--pre_trained', type=str, default=os.getcwd() + '/results/models/epoch_5_bone.pth')
+    #parser.add_argument('--pre_trained', type=str, default=os.getcwd() + '/results/models/epoch_6_bone_SEM.pth')
     parser.add_argument('--save_fold', type=str, default='./results')
     parser.add_argument('--showEvery', type=int, default=100)
     parser.add_argument('--epoch_save', type=int, default=1)

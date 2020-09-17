@@ -14,10 +14,10 @@ from equiPers.equir2pers import equir2pers
 
 class ImageDataTrain(data.Dataset):
     def __init__(self, data_type, base_level, sample_level, data_norm, data_pair, data_flow, data_sound):
-        self.img_source = os.getcwd() + '/data/train_img.lst'
-        self.msk_source = os.getcwd() + '/data/train_msk.lst'
-        #self.img_source = os.getcwd() + '/data/train_img_FS.lst'
-        #self.msk_source = os.getcwd() + '/data/train_msk_FS.lst'
+       # self.img_source = os.getcwd() + '/data/train_img.lst'
+        #self.msk_source = os.getcwd() + '/data/train_msk.lst'
+        self.img_source = os.getcwd() + '/data/train_img_FS.lst'
+        self.msk_source = os.getcwd() + '/data/train_msk_FS.lst'
         self.data_type = data_type
         self.base_level = base_level
         self.sample_level = sample_level
