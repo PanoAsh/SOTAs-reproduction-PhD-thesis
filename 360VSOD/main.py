@@ -555,14 +555,14 @@ class ProcessingTool():
             img = cv2.imread(os.path.join(img_path, idx))
             img = cv2.resize(img, (600, 300))
 
-            fix_w_s = cv2.imread(os.path.join(fix_w_sound_path, idx[:-10] + idx[-9:]))
+            fix_w_s = cv2.imread(os.path.join(fix_w_sound_path, idx[-9:]))
             fix_w_s = cv2.GaussianBlur(fix_w_s, (45, 45), 10)
             fix_w_s = cv2.normalize(fix_w_s, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                         dtype=cv2.CV_8UC1)
             fix_w_s[:, :, 0] = 0
             #fix_w_s = cv2.applyColorMap(fix_w_s, cv2.COLORMAP_HOT)
 
-            fix_wo_s = cv2.imread(os.path.join(fix_wo_sound_path, idx[:-10] + idx[-9:]))
+            fix_wo_s = cv2.imread(os.path.join(fix_wo_sound_path, idx[-9:]))
             fix_wo_s = cv2.GaussianBlur(fix_wo_s, (45, 45), 10)
             fix_wo_s = cv2.normalize(fix_wo_s, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX,
                                         dtype=cv2.CV_8UC1)
@@ -570,7 +570,7 @@ class ProcessingTool():
             #fix_wo_s = cv2.applyColorMap(fix_wo_s, cv2.COLORMAP_HOT)
 
             heatmap = cv2.addWeighted(fix_w_s, 1, fix_wo_s, 1, 0)
-            overlay = cv2.addWeighted(img, 0.4, heatmap, 1.6, 0)
+            overlay = cv2.addWeighted(img, 0.6, heatmap, 1.2, 0)
             cv2.imwrite(os.getcwd() + '/overlay/' + idx, overlay)
 
             count += 1
@@ -664,41 +664,43 @@ class ProcessingTool():
         cv2.imwrite('sub_3.png', fig)
 
     def qlt_show(self):
-        num_model_img = 13
-        num_model_vid = 3
-        sample_list = os.listdir(os.getcwd() + '/GT/')
+        num_model = 21
+        sample_list = os.listdir(os.getcwd() + '/GT_fig_quantity/')
 
-        pth_gt = '/home/yzhang1/PythonProjects/omnivsod/results_test/GTs/GT/'
-        pth_img = '/home/yzhang1/PythonProjects/omnivsod/results_test/GTs/Img/'
+        pth_gt = '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/GTs/test/GT'
+        pth_img = '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/GTs/test' \
+                  '/HSAV360_test/Img_test'
         pth_sal_img = [pth_img,
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_basnet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_cpd-r/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_poolnet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_egnet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_scrn/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_AADFNet_wo_crf/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_RAS/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_gcpanet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_f3net/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_minet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_scribblesod/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_CSNet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_CSFRes2Net/',
-                       pth_gt]
-        pth_sal_vid = [pth_img,
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_rcrnet/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_MGA_raftkitti/',
-                       '/home/yzhang1/PythonProjects/omnivsod/results_test/Sal_test_cosnet/',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_ASNet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_AADFNet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_poolnet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_cpd-r',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_basnet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_egnet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_scrn',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_u2net',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_RAS',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_f3net',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_gcpanet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_scribblesod',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_minet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_ldf',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_CSNet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_CSFRes2Net',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_MGA_raft_sintel',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_rcrnet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_cosnet',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_SSAV',
+                       '/home/yzhang1/PythonProjects/360vSOD/experiments/weights_results/results_test/Sal_test_DDS',
                        pth_gt]
 
-        fig_img = np.zeros((256 * (num_model_img + 2) + 10 * (num_model_img + 1), 512 * 8 + 70, 3))
+        fig_img = np.zeros((256 * (num_model + 2) + 10 * (num_model + 1), 512 * 8 + 70, 3)) # eight samples
         fig_img.fill(255)
-        fig_vid = np.zeros((256 * (num_model_vid + 2) + 10 * (num_model_vid + 1), 512 * 8 + 70, 3))
-        fig_vid.fill(255)
 
         count = 0
         for item in sample_list:
-            for idx in range(num_model_img + 2):
+            for idx in range(num_model + 2):
+                print(idx)
                 pthCurr = os.path.join(pth_sal_img[idx], item)
                 imgCurr = cv2.imread(pthCurr)
                 if idx == 0 and count == 0:
@@ -711,23 +713,9 @@ class ProcessingTool():
                     fig_img[idx * (10 + 256): idx * (10 + 256) + 256,
                     count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
 
-            for idx in range(num_model_vid + 2):
-                pthCurr = os.path.join(pth_sal_vid[idx], item)
-                imgCurr = cv2.imread(pthCurr)
-                if idx == 0 and count == 0:
-                    fig_vid[:256, :512, :] = imgCurr
-                elif idx == 0 and count != 0:
-                    fig_vid[:256, count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
-                elif idx != 0 and count == 0:
-                    fig_vid[idx * (10 + 256): idx * (10 + 256) + 256, :512, :] = imgCurr
-                else:
-                    fig_vid[idx * (10 + 256): idx * (10 + 256) + 256,
-                    count * (10 + 512): count * (10 + 512) + 512, :] = imgCurr
-
             count += 1
 
         cv2.imwrite('fig_test_imgSOD.png', fig_img)
-        cv2.imwrite('fig_test_vidSOD.png', fig_vid)
 
     def qlt_show2(self):
         num_model_img = 11
@@ -814,6 +802,78 @@ class ProcessingTool():
             new_item = '/home/yzhang1/PythonProjects/360vSOD/code/DDS/' + frm_name
             os.rename(item, new_item)
 
+    def omniCAP_show(self):
+        fig_img = np.zeros((256 * 2 + 10, 512 * 7 + 60, 3))
+        fig_img.fill(255)
+
+        line1_list = os.listdir(os.getcwd() + '/overlay_p3/')
+        line1_list.sort(key=lambda x: x[:-4])
+        line2_list = os.listdir(os.getcwd() + '/objs/')
+        line2_list.sort(key=lambda x: x[:-4])
+        for idx in range(7):
+            oly = cv2.imread(os.path.join(os.getcwd() + '/overlay_p3', line1_list[idx]))
+            oly = cv2.resize(oly, (512, 256), interpolation=cv2.INTER_AREA)
+            obj = cv2.imread(os.path.join(os.getcwd() + '/objs/', line2_list[idx]))
+            obj = cv2.resize(obj, (512, 256), interpolation=cv2.INTER_AREA)
+            if idx == 0:
+                fig_img[:256, :512, :] = oly
+                fig_img[266:, :512, :] = obj
+            else:
+                fig_img[:256, (idx * (512 + 10)):(idx * (512 + 10) + 512), :] = oly
+                fig_img[266:, (idx * (512 + 10)):(idx * (512 + 10) + 512), :] = obj
+
+        cv2.imwrite('fig_360cap_3.png', fig_img)
+
+    def sound_map_overlay(self):
+        img_pth = os.getcwd() + '/_-SdGCX2H-_Uk_000000.png'
+        sound_pth = os.getcwd() + '/sound_source.png'
+
+        img = cv2.imread(img_pth, cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+
+        sound = cv2.imread(sound_pth, cv2.IMREAD_GRAYSCALE)
+        sound = cv2.resize(sound, (512, 256), interpolation=cv2.INTER_AREA)
+
+        # threshold
+       # mean_sound = np.mean(sound)
+        #for i in range(256):
+        #    for j in range(512):
+        #        if sound[i, j] < 4 * mean_sound: sound[i,j] = 0
+
+        # shift
+        sound = np.roll(sound, -20, axis=1)
+        #sound = np.roll(sound, -10, axis=0)
+
+        mean_value = np.mean(sound)
+        mean_map = np.empty((256, 512), dtype=np.float)
+        mean_map[:] = mean_value
+
+        overlay = cv2.addWeighted(img, 1, sound, 1, 0)
+        cv2.imwrite('1.png', overlay)
+        cv2.imwrite('_-SdGCX2H-_Uk.png', sound)
+       # cv2.imwrite('mean_map.png', mean_map)
+        print()
+
+    def sound_map_prepro(self):
+        maps_ori_pth = os.getcwd() + '/sound_map_ori/'
+        maps_ori_list = os.listdir(maps_ori_pth)
+        maps_fin_pth = os.getcwd() + '/sound_map/'
+
+        count = 0
+        for item in maps_ori_list:
+            if not os.path.exists(maps_fin_pth + item): os.mkdir(maps_fin_pth + item)
+            frms_pth = os.path.join(maps_ori_pth, item)
+            frms_list = os.listdir(frms_pth)
+            frms_list.sort(key=lambda x: x[:-4])
+            for idx in range(len(frms_list)):
+                if idx % 6 == 0:
+                    img_pth = os.path.join(frms_pth, frms_list[idx])
+                    img = cv2.imread(img_pth)
+                    img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+                    img_save_pth = os.path.join(maps_fin_pth, item, 'frame_' + format(str(idx), '0>6s') + '.png')
+                    cv2.imwrite(img_save_pth, img)
+            count += 1
+            print(str(count) + ' videos processed.')
 
 
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
@@ -857,6 +917,9 @@ if __name__ == '__main__':
     #PT.instanceOverlay()
     #PT.figShow()
     #PT.wholeShow_2()
-    #PT.qlt_show()
+    PT.qlt_show()
     #PT.qlt_show2()
-    PT.file_rename()
+    #PT.file_rename()
+    #PT.omniCAP_show()
+    #PT.sound_map_overlay()
+    #PT.sound_map_prepro()
