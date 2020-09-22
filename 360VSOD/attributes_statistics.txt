@@ -1,0 +1,84 @@
+attr.                      MP    OC    SO    OV    MB    GD    FS    Num.Attr
+ 
+Debate                     1     1     0     0     0     0     0     2
+Football                   0     0     1     1     1     0     0     3
+FrenchConv-1               0     0     1     0     1     1     0     3 
+FrenchConv-2               0     1     1     0     0     0     0     2
+FrenchConv-3               0     0     1     0     1     0     0     2
+Grove-1                    0     1     1     1     1     0     0     4
+Grove-2                    1     1     1     1     1     1     0     6
+Hupotang                   1     0     0     0     0     1     0     2
+Interview-1                0     1     0     0     0     0     0     1
+Pianoteach-1               0     1     0     0     0     1     0     2
+Pianoteach-2               0     0     0     0     1     1     0     2
+RacingCar                  0     0     0     0     0     1     0     1
+VoiceComic                 1     0     0     0     0     1     0     2
+WaitInterview              0     1     1     0     1     0     0     3
+
+BadmintonRack              0     1     1     1     0     1     0     4
+Exhibition                 0     0     1     0     0     0     1     2
+GameOverMan                0     1     0     0     1     1     0     3
+Interview-2                0     1     0     0     0     0     0     1
+ItalianConv.               0     1     1     0     1     0     1     4
+Lawn                       0     0     0     0     0     1     0     1
+Skiing                     1     0     1     1     1     1     0     5
+SpanishConv.               0     1     0     0     1     1     0     3
+SuperPower                 0     0     1     0     1     1     0     3
+
+
+VoilinSolo                 0     0     1     1     0     0     1     3
+Trumpet                    0     0     1     0     0     0     1     2
+Prelude                    1     0     0     0     0     0     0     1
+Drums                      0     1     1     0     1     0     1     4
+Audition                   0     0     0     1     0     0     0     1
+
+Bluesaholic                0     1     0     0     0     0     0     1
+Cannon                     0     0     0     0     0     0     0     0
+CF                         0     1     0     0     0     1     0     2
+pianoSaxo                  0     1     0     1     1     1     0     4
+
+
+Carriage                   0     0     0     1     1     1     0     3
+Dogs-1                     0     0     0     0     0     1     0     1
+Dogs-2                     0     0     1     0     1     0     0     2
+Engine                     0     1     1     0     0     0     0     2
+Road                       0     1     1     0     1     0     0     3
+Sliding                    0     0     1     1     1     0     0     3
+Train                      0     1     1     0     0     0     0     2
+
+Badminton                  1     0     1     0     1     0     0     3
+Beach                      0     0     1     0     1     0     0     2
+Bicycling                  0     1     0     1     1     0     0     3
+Tennis                     1     1     1     1     1     1     0     6
+
+
+AudiIntro-1                0     0     0     0     0     0     0     0
+AudiIntro-2                0     1     1     0     1     0     0     3
+AudiIntro-3                0     0     0     0     0     1     0     1
+AudiIntro-4                0     1     1     0     0     0     0     2
+Breakfast                  0     1     0     0     1     1     0     3
+EllenShow                  0     0     0     0     0     0     0     0
+FrenchSpeak                0     1     0     1     1     0     0     3
+Military                   0     0     1     0     0     0     1     2
+TelephoneTech              0     0     0     0     1     1     0     2
+Waterfall                  0     0     0     1     0     1     0     2
+
+Advertising                0     1     0     1     1     0     0     3
+ChineseSpeak               0     0     0     0     1     1     0     2
+Coaching                   0     1     1     0     1     0     1     4
+Greeting                   0     0     0     1     0     1     0     2
+Guiding                    1     1     0     0     0     0     0     2
+Soliloquizing              0     0     0     0     1     0     0     1
+Surfing                    0     0     0     0     0     0     0     0
+
+
+Improvising                1     1     0     0     1     0     0     3
+JM                         0     1     0     0     0     0     1     2
+MrChildren                 0     1     0     0     0     1     0     2
+Soprano                    1     1     0     0     0     0     1     3
+UseSB                      1     1     0     0     0     0     0     2
+
+CNSTF-choir                1     1     1     0     1     0     0     4
+CNSTF-solo                 1     1     0     0     1     0     0     3
+Crazy                      0     1     0     0     1     0     1     3
+Riptide                    1     0     1     0     1     0     0     3
