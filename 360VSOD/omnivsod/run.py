@@ -49,7 +49,7 @@ def main(config):
 
 if __name__ == '__main__':
 
-    test_model_path = os.getcwd() + '/results/models/epoch_10_bone_SEM.pth'
+    test_model_path = os.getcwd() + '/results/models/epoch_1_bone.pth'
     test_save_path = os.getcwd() + '/results/sal_predicted/'
 
     parser = argparse.ArgumentParser()
@@ -75,19 +75,19 @@ if __name__ == '__main__':
 
     # Hyper_parameters
     parser.add_argument('--n_color', type=int, default=3)
-    parser.add_argument('--epoch', type=int, default=6)
+    parser.add_argument('--epoch', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=1)  # must be 1 (2 for AADFNet/MGA/COSNet)
     parser.add_argument('--nAveGrad', type=int, default=10)
     parser.add_argument('--lr_decay_epoch', type=int, default=100)
     # Hyper_parameters (please check before retrain)
-    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--wd', type=float, default=0.0005)
     parser.add_argument('--optimizer_name', type=str, default='Adam')  # Adam, SGD
 
     # Recording & Visualization
-    parser.add_argument('--pre_trained', type=str, default=os.getcwd() +
-                                                           '/retrain/RCRNet/fine_tune_init/video_best_model.pth')
-    #parser.add_argument('--pre_trained', type=str, default=os.getcwd() + '/results/models/epoch_6_bone_SEM_ER.pth')
+    #parser.add_argument('--pre_trained', type=str, default=os.getcwd() +
+    #                                                       '/retrain/RCRNet/fine_tune_init/video_best_model.pth')
+    parser.add_argument('--pre_trained', type=str, default=os.getcwd() + '/results/models/epoch_6_bone_fuse_half.pth')
     parser.add_argument('--save_fold', type=str, default='./results')
     parser.add_argument('--showEvery', type=int, default=100)
     parser.add_argument('--epoch_save', type=int, default=1)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_fold', type=str, default=test_save_path)
 
     # Mode
-    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test', 're-train'])
+    parser.add_argument('--mode', type=str, default='test', choices=['train', 'test', 're-train'])
     parser.add_argument('--fine_tune', type=bool, default=True)  # fine tune under re-train mode
     parser.add_argument('--base_level', type=int, default=0)  # for tangent image branch
     parser.add_argument('--sample_level', type=int, default=7)  # for tangent image branch / comparison with 2D SOTAs

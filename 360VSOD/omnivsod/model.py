@@ -241,14 +241,14 @@ class OmniVNet(nn.Module):
         predsConcatenate = torch.cat((preds_ER, preds_branch_ER), dim=1)
         preds_fin = self.refineGUN(predsConcatenate)
 
-        #debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
-        #cv2.imwrite('debug1.png', debug1 * 255)
-        #debug2 = np.squeeze(preds_ER.cpu().data.numpy())
-        #cv2.imwrite('debug2.png', debug2 * 255)
-        #debug3 = np.squeeze(preds_fin.cpu().data.numpy())
-        #cv2.imwrite('debug3.png', debug3 * 255)
-        #debug4 = np.squeeze(Sound_map.cpu().data.numpy())
-        #cv2.imwrite('debug4.png', debug4 * 255)
+        # debug1 = np.squeeze(preds_branch_ER.cpu().data.numpy())
+        # cv2.imwrite('debug1.png', debug1 * 255)
+        # debug2 = np.squeeze(preds_ER.cpu().data.numpy())
+        # cv2.imwrite('debug2.png', debug2 * 255)
+        # debug3 = np.squeeze(preds_fin.cpu().data.numpy())
+        # cv2.imwrite('debug3.png', debug3 * 255)
+        # debug4 = np.squeeze(Sound_map.cpu().data.numpy())
+        # cv2.imwrite('debug4.png', debug4 * 255)
 
         # return preds_fin, preds_F[0], preds_R[0], preds_B[0], preds_L[0], preds_U[0], preds_D[0]
         return preds_fin
