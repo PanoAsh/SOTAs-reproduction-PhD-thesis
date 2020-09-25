@@ -355,8 +355,8 @@ def attr():
 def qlt_show():
     num_model = 20
     sample_list = os.listdir(os.getcwd() + '/GT_fig/')
-    sample_list_ordered = [sample_list[2], sample_list[3], sample_list[6], sample_list[1],
-                         sample_list[4], sample_list[7], sample_list[5], sample_list[0]]
+    sample_list_ordered = [sample_list[4], sample_list[6], sample_list[3], sample_list[7],
+                         sample_list[1], sample_list[5], sample_list[8], sample_list[0]]
 
     pth_gt = os.getcwd() + '/GT'
     pth_img = os.getcwd() + '/Img_test'
@@ -379,8 +379,8 @@ def qlt_show():
                    os.getcwd() + '/fine_tune/ft_rcrnet_e7',
                    os.getcwd() + '/fine_tune/ft_cosnet_e4',
                    os.getcwd() + '/fine_tune/ft_ssav_e2',
-                   os.getcwd() + '/fine_tune/',
-                   os.getcwd() + '/fine_tune/',
+                   os.getcwd() + '/fine_tune/ft_dds_e1',
+                   os.getcwd() + '/fine_tune/davpnet_e7',
                    pth_gt]
 
     fig_img = np.zeros((256 * (num_model + 2) + 10 * (num_model + 1), 512 * 8 + 70, 3)) # eight samples
@@ -407,7 +407,9 @@ def qlt_show():
     cv2.imwrite('fig_ft.png', fig_img)
 
 
+
 if __name__ == "__main__":
+    #curve_show()
     #attr()
     qlt_show()
     #fig_2_step_2()
