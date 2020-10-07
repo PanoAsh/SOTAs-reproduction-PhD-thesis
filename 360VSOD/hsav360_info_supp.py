@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 import os
+from equiPers.equir2pers import equir2pers
+from equiPers.pers2equir import pers2equir
 
 video_length = [
 27.8,
@@ -94,6 +96,9 @@ def fig_1():
     fixs_wo_list = os.listdir(fixs_wo_sound_pth)
     fixs_wo_list.sort(key=lambda x: x[:-4])
     for name in imgs_list:
+        if name == '.DS_Store':
+            continue
+        print(name)
         img = cv2.imread(os.path.join(imgs_pth, name))
         img = cv2.resize(img, (600, 300))
 
@@ -111,9 +116,10 @@ def fig_1():
         fix_wo_s = cv2.applyColorMap(fix_wo_s, cv2.COLORMAP_OCEAN)
        # fix_wo_s[:, :, 1:] = 0
 
-        heat = cv2.addWeighted(fix_wo_s, 1.2, fix_w_s, 1.2, 0)
+        #heat = cv2.addWeighted(fix_wo_s, 1.2, fix_w_s, 1.2, 0)
+        heat = fix_w_s
 
-        overlay = cv2.addWeighted(img, 0.4, heat, 0.6, 0)
+        overlay = cv2.addWeighted(img, 0.5, heat, 0.5, 0)
         cv2.imwrite(os.getcwd() + '/overlay_fix/' + name, overlay)
 
         sound = cv2.imread(os.path.join(sound_pth, name))
@@ -406,12 +412,37 @@ def qlt_show():
 
     cv2.imwrite('fig_ft.png', fig_img)
 
+def er2psp():
+    img = os.getcwd() + '/debug.png'
+    psp = equir2pers(img, 110, 8, -20, 960, 960)  # F
+    cv2.imwrite('debug-1.png', psp)
+
+def psp2er():
+    img = os.getcwd() + '/planar-bbox.png'
+    er = pers2equir(img, 110, 8, -20, 3840, 1920)
+    cv2.imwrite('debug-2.png', er)
+
+def fusion():
+    background = cv2.imread(os.getcwd() + '/debug.png')
+    person = cv2.imread(os.getcwd() + '/planar-ER.png')
+
+    for i in range(1920):
+        for j in range(3840):
+            if person[i,j,0] == 0 and person[i,j,1] == 0 and person[i,j,2] == 0:
+                person[i, j, 0] = background[i, j, 0]
+                person[i, j, 1] = background[i, j, 1]
+                person[i, j, 2] = background[i, j, 2]
+
+    cv2.imwrite('debug-3.png', person)
 
 
 if __name__ == "__main__":
+    fusion()
+    #psp2er()
+    #er2psp()
     #curve_show()
     #attr()
-    qlt_show()
+    #qlt_show()
     #fig_2_step_2()
     #fig_2_step_1()
     #fig_1()
