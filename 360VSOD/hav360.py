@@ -2,6 +2,20 @@ import numpy as np
 import cv2
 import os
 
+# palette (cv2: BGR)
+RGB_background = tuple([0, 0, 0])
+RGB_ins1 = [0, 0, 128]
+RGB_ins2 = [0, 128, 0]
+RGB_ins3 = [0, 128, 128]
+RGB_ins4 = [128, 0, 0]
+RGB_ins5 = [128, 0, 128]
+RGB_ins6 = [128, 128, 0]
+RGB_ins7 = [128, 128, 128]
+RGB_ins8 = [0, 0, 64]
+RGB_ins9 = [0, 0, 192]
+Palette_list = [RGB_ins1, RGB_ins2, RGB_ins3, RGB_ins4, RGB_ins5, RGB_ins6, RGB_ins7,
+                RGB_ins8, RGB_ins9]
+
 def KeySelect():
     videos_pth = os.getcwd() + '/saliency_re_order/'
     video_list = os.listdir(videos_pth)
@@ -130,9 +144,86 @@ def AnnotationPrep():
         count_frm_total += count_frm
         print(" {} total frames have been processed.".format(count_frm_total))
 
+def AnnotationPrep2():
+    msks_pth = os.getcwd() + '/mask_instance/'
+    fixs_pth = os.getcwd() + '/saliency_key_frame/'
+    vids_list = os.listdir(fixs_pth)
+    vids_list.sort(key=lambda x: x[:-4])
+    count = 0
+    count_frm_total = 0
+    for vid in vids_list:
+        if vid == '.DS_Store': continue
+        vid_pth = os.path.join(fixs_pth, vid)
+        fix_list = os.listdir(vid_pth)
+        fix_list.sort(key=lambda x: x[:-4])
+        count_frm = 0
+        for fix in fix_list:
+            if fix == '.DS_Store': continue
+
+            fix_pth = os.path.join(vid_pth, fix)
+            fix_map = cv2.imread(fix_pth)
+            msk_idx = 'frame_' + format(str(int(fix[:-4])), '0>6s') + '.png'
+            msk_pth = os.path.join(msks_pth, vid, msk_idx)
+            msk = cv2.imread(msk_pth)
+            obj = cv2.cvtColor(msk, cv2.COLOR_RGB2GRAY)
+            ret, obj = cv2.threshold(obj, 0, 255, cv2.THRESH_BINARY)
+
+            # producing thresholding fixation map and save it to new dir
+            ret, trs_fix_map = cv2.threshold(fix_map, 127, 255, cv2.THRESH_BINARY)
+            trs_fix_map_mark = np.copy(trs_fix_map)
+            trs_fix_map_mark[:, :, :-1] = 0
+            fix_new_dir = os.path.join(os.getcwd() + '/saliency_threshold/', vid)
+            if not os.path.exists(fix_new_dir): os.makedirs(fix_new_dir)
+            fix_new_pth = os.path.join(fix_new_dir, fix)
+            cv2.imwrite(fix_new_pth, trs_fix_map)
+
+            # producing edge map and overlay it to fixation and save it to new dir
+            msk_edge = cv2.Canny(obj, 0, 255)
+            msk_edge = cv2.cvtColor(msk_edge, cv2.COLOR_GRAY2RGB)
+            trs_fix_map_mark = cv2.resize(trs_fix_map_mark, (np.shape(msk)[1], np.shape(msk)[0]))
+            oly_edge = cv2.addWeighted(trs_fix_map_mark, 1, msk_edge, 1, 0)
+            oly_new_dir = os.path.join(os.getcwd() + '/overlay_edge/', vid)
+            if not os.path.exists(oly_new_dir): os.makedirs(oly_new_dir)
+            oly_new_pth = os.path.join(oly_new_dir, fix)
+            cv2.imwrite(oly_new_pth, oly_edge)
+
+            # producing new instance map and save it to new dir
+            sal_pix = np.where(trs_fix_map_mark[:, :, 2] != 0)
+            msk_sal_RGB = msk[sal_pix[0], sal_pix[1], :]
+            msk_sal_RGB = np.unique(msk_sal_RGB, axis=0)
+            num_RGB = np.shape(msk_sal_RGB)[0]
+            keep_pix = []  # keep the pixels in salient instance regions
+            for idx in range(num_RGB):
+                curr_RGB = tuple(msk_sal_RGB[idx])
+                if curr_RGB == RGB_background: continue
+                keep_pix.append(np.where((msk[:, :, 0] == msk_sal_RGB[idx][0]) &
+                                         (msk[:, :, 1] == msk_sal_RGB[idx][1]) &
+                                         (msk[:, :, 2] == msk_sal_RGB[idx][2])))
+
+            new_msk = np.zeros((np.shape(msk)[0], np.shape(msk)[1], 3))
+            if keep_pix != []:
+                num_ins = len(keep_pix)
+                for idx in range(num_ins):
+                    curr_pix = keep_pix[idx]
+                    new_msk[curr_pix[0], curr_pix[1], :] = msk[curr_pix[0], curr_pix[1], :]
+
+            ins_new_dir = os.path.join(os.getcwd() + '/new_mask_instance/', vid)
+            if not os.path.exists(ins_new_dir): os.makedirs(ins_new_dir)
+            ins_new_pth = os.path.join(ins_new_dir, fix)
+            cv2.imwrite(ins_new_pth, new_msk)
+
+            count_frm += 1
+            print(" {} frames have been processed.".format(count_frm))
+
+        count += 1
+        print(" {} videos have been processed.".format(count))
+        count_frm_total += count_frm
+        print(" {} total frames have been processed.".format(count_frm_total))
+
 
 if __name__ == '__main__':
-    AnnotationPrep()
+    AnnotationPrep2()
+    #AnnotationPrep()
     #KeySelect()
     #ReOrder()
 
