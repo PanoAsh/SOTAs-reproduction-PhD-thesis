@@ -372,20 +372,20 @@ class ProcessingTool():
         rgb_8 = (64, 0, 0)
         rgb_9 = (192, 0, 0)
 
-        f = open(os.getcwd() + '/360VSOD_obj_stt.txt', 'w')
+        f = open(os.getcwd() + '/hcs360_obj_stt.txt', 'w')
 
-        seq_list = os.listdir('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/')
+        seq_list = os.listdir('/home/yzhang1/PythonProjects/hcs360/mask_instance/')
         seq_count = 0
         num_obj_sum = 0
         for seq in seq_list:
-            msk_list = os.listdir(os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq))
+            msk_list = os.listdir(os.path.join('/home/yzhang1/PythonProjects/hcs360/mask_instance/', seq))
             msk_list.sort(key=lambda x: x[:-4])
             msk_count = 0
             num_obj = 0
             size_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             num_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             for msk_idx in msk_list:
-                msk_path = os.path.join('/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/', seq, msk_idx)
+                msk_path = os.path.join('/home/yzhang1/PythonProjects/hcs360/mask_instance/', seq, msk_idx)
                 msk = Image.open(msk_path)
                 obj_count = 0
                 obj_bool = [0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -825,8 +825,8 @@ class ProcessingTool():
         cv2.imwrite('fig_360cap_3.png', fig_img)
 
     def sound_map_overlay(self):
-        img_pth = os.getcwd() + '/_-SdGCX2H-_Uk_000000.png'
-        sound_pth = os.getcwd() + '/sound_source.png'
+        img_pth = os.getcwd() + '/davpnet_img.png'
+        sound_pth = os.getcwd() + '/0015.jpg'
 
         img = cv2.imread(img_pth, cv2.IMREAD_GRAYSCALE)
         img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
@@ -841,8 +841,8 @@ class ProcessingTool():
         #        if sound[i, j] < 4 * mean_sound: sound[i,j] = 0
 
         # shift
-        sound = np.roll(sound, -20, axis=1)
-        #sound = np.roll(sound, -10, axis=0)
+        sound = np.roll(sound, 0, axis=1)
+        sound = np.roll(sound, 20, axis=0)
 
         mean_value = np.mean(sound)
         mean_map = np.empty((256, 512), dtype=np.float)
@@ -850,7 +850,7 @@ class ProcessingTool():
 
         overlay = cv2.addWeighted(img, 1, sound, 1, 0)
         cv2.imwrite('1.png', overlay)
-        cv2.imwrite('_-SdGCX2H-_Uk.png', sound)
+        cv2.imwrite('sound.png', sound)
        # cv2.imwrite('mean_map.png', mean_map)
         print()
 
@@ -875,6 +875,24 @@ class ProcessingTool():
             count += 1
             print(str(count) + ' videos processed.')
 
+    def rgb_exchange(self):
+        img_pth = os.getcwd() + '/_-SdGCX2H-_Uk_000084.png'
+        img = cv2.imread(img_pth)  # BGR
+        for i in range(1920):
+            for j in range(3840):
+                c1 = img[i,j,0]
+                c2 = img[i, j, 1]
+                c3 = img[i, j, 2]
+                if c1 == 0 and c2 == 128 and c3 == 0:
+                    img[i, j, 0] = 0
+                    img[i, j, 1] = 0
+                    img[i, j, 2] = 128
+                elif c1 == 0 and c2 == 0 and c3 == 128:
+                    img[i, j, 0] = 0
+                    img[i, j, 1] = 128
+                    img[i, j, 2] = 0
+        cv2.imwrite('_-SdGCX2H-_Uk_000084_rgb.png', img)
+
 
 def regShow(obj_list, bbox_list, ori_path, save_path, txt):
     count = 0
@@ -891,9 +909,29 @@ def regShow(obj_list, bbox_list, ori_path, save_path, txt):
         count += 1
         print(" {} sounding objects counted.".format(count))
 
+def rgbd_test_prepar():
+    ori_pth = os.getcwd() + '/SalMaps/'
+    fin_pth = os.getcwd() + '/RGBD_test_BBSNet/'
+    set_list = os.listdir(ori_pth)
+    count = 0
+    for set in set_list:
+      #  set_pth = os.path.join(ori_pth, set, 'GT')
+        set_pth = os.path.join(ori_pth, set)
+        img_list = os.listdir(set_pth)
+        img_list.sort(key=lambda x: x[:-4])
+        for img_idx in img_list:
+            img_pth = os.path.join(set_pth, img_idx)
+            new_img_idx = set + '_' + img_idx
+            new_img_pth = os.path.join(fin_pth, new_img_idx)
+            os.rename(img_pth, new_img_pth)
+        count += 1
+        print(" {} datasets processed.".format(count))
+
 
 if __name__ == '__main__':
     PT = ProcessingTool()
+    rgbd_test_prepar()
+    #PT.rgb_exchange()
     #bar_show(PT.numFrm())
     #PT.bbox2reg()
     #PT.sobjCount()
@@ -917,7 +955,7 @@ if __name__ == '__main__':
     #PT.instanceOverlay()
     #PT.figShow()
     #PT.wholeShow_2()
-    PT.qlt_show()
+    #PT.qlt_show()
     #PT.qlt_show2()
     #PT.file_rename()
     #PT.omniCAP_show()
