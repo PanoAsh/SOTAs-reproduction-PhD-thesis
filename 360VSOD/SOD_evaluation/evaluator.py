@@ -6,6 +6,7 @@ import torch
 from torchvision import transforms
 import scipy
 import scipy.ndimage
+threshold_sal, upper_sal, lower_sal = 0.5, 1, 0
 
 
 class Eval_thread():
@@ -20,16 +21,22 @@ class Eval_thread():
         start_time = time.time()
         mae = self.Eval_MAE()
         max_f = self.Eval_Fmeasure()
-        mean_e = self.Eval_Emeasure()
-        s = self.Eval_Smeasure()
+        max_e = self.Eval_Emeasure()
+        s_alpha05 = self.Eval_Smeasure(alpha=0.5)
+        #s_alpha07 = self.Eval_Smeasure(alpha=0.7)
         fbw = self.Eval_Fbw_measure()
-        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure, {:.4f} S-measure, '
-                 '{:.4f} Fbw-measure.\n'
-                 .format(self.dataset, self.method, mae, max_f, mean_e, s, fbw))
+        self.LOG('{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure, '
+                '{:.4f} S-measure_alpha05, {:.4f} Fbw-measure.\n'
+               .format(self.dataset, self.method, mae, max_f, max_e, s_alpha05, fbw))
 
         return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} mae, {:.4f} max-fmeasure, {:.4f} max-Emeasure,' \
-               ' {:.4f} S-measure, {:.4f} Fbw-measure'\
-            .format(time.time()-start_time, self.dataset, self.method, mae, max_f, mean_e, s, fbw)
+               ' {:.4f} S-measure_alpha05, {:.4f} Fbw-measure'\
+               .format(time.time()-start_time, self.dataset, self.method, mae, max_f, max_e, s_alpha05, fbw)
+
+        #self.LOG(
+        #    '{} dataset with {} method get {:.4f} Fbw-measure\n'.format(self.dataset, self.method, fbw))
+        #return '[cost:{:.4f}s]{} dataset with {} method get {:.4f} Fbw-measure'\
+        #    .format(time.time()-start_time, self.dataset, self.method, fbw)
 
     def Eval_MAE(self):
         fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_MAE' + '.txt', 'w')
@@ -46,7 +53,7 @@ class Eval_thread():
                     pred = trans(pred)
                     gt = trans(gt)
                 mea = torch.abs(pred - gt).mean()
-                if mea == mea: # for Nan
+                if mea == mea:  # for Nan
                     #mae_list.append(mea)
                     avg_mae += mea
                     img_num += 1
@@ -117,7 +124,9 @@ class Eval_thread():
                     fLog.write(img_id + '  ' + str(1 - np.mean(pred)) + '\n')
                 else:
                     if not np.all(np.isclose(gt, 0) | np.isclose(gt, 1)):
-                        raise ValueError("'gt' must be a 0/1 or boolean array")
+                        gt[gt > threshold_sal] = upper_sal
+                        gt[gt <= threshold_sal] = lower_sal
+                        #raise ValueError("'gt' must be a 0/1 or boolean array")
                     gt_mask = np.isclose(gt, 1)
                     not_gt_mask = np.logical_not(gt_mask)
 
@@ -183,10 +192,10 @@ class Eval_thread():
 
             return scores.max().item()
 
-    def Eval_Smeasure(self):
-        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_SMeasure' + '.txt', 'w')
+    def Eval_Smeasure(self, alpha):
+        fLog = open(os.getcwd() + '/' + self.dataset + '_' + self.method + '_SMeasure_' + str(alpha) + '.txt', 'w')
         print('eval[SMeasure]:{} dataset with {} method.'.format(self.dataset, self.method))
-        alpha, avg_q, img_num = 0.7, 0.0, 0 # alpha = 0.7; cited from the F-360iSOD
+        avg_q, img_num = 0.0, 0  # alpha = 0.7; cited from the F-360iSOD
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
             for pred, gt, img_id in self.loader:
