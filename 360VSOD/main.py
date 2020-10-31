@@ -910,13 +910,13 @@ def regShow(obj_list, bbox_list, ori_path, save_path, txt):
         print(" {} sounding objects counted.".format(count))
 
 def rgbd_test_prepar():
-    ori_pth = os.getcwd() + '/SalMaps/'
-    fin_pth = os.getcwd() + '/RGBD_test_BBSNet/'
+    ori_pth = os.getcwd() + '/RGBD_for_test/'
+    fin_pth = os.getcwd() + '/FS/'
     set_list = os.listdir(ori_pth)
     count = 0
     for set in set_list:
-      #  set_pth = os.path.join(ori_pth, set, 'GT')
-        set_pth = os.path.join(ori_pth, set)
+        set_pth = os.path.join(ori_pth, set, 'FS')
+       # set_pth = os.path.join(ori_pth, set)
         img_list = os.listdir(set_pth)
         img_list.sort(key=lambda x: x[:-4])
         for img_idx in img_list:
@@ -927,9 +927,93 @@ def rgbd_test_prepar():
         count += 1
         print(" {} datasets processed.".format(count))
 
+def LFSOD_split():
+    txt_file = open(os.getcwd() + '/DUT-LF_test.txt')
+    items = txt_file.readlines()
+    count = 1
+    for item in items:
+        depth_o = os.getcwd() + '/DUT/depth/' + item[:4] + '.png'
+        depth_f = os.getcwd() + '/DUT-LF_test/depth/' + item[:4] + '.png'
+        os.rename(depth_o, depth_f)
+        gt_o = os.getcwd() + '/DUT/gt/' + item[:4] + '.png'
+        gt_f = os.getcwd() + '/DUT-LF_test/gt/' + item[:4] + '.png'
+        os.rename(gt_o, gt_f)
+        rgb_o = os.getcwd() + '/DUT/rgb/' + item[:4] + '.jpg'
+        rgb_f = os.getcwd() + '/DUT-LF_test/rgb/' + item[:4] + '.jpg'
+        os.rename(rgb_o, rgb_f)
+        print(count)
+        count += 1
+
+def FileRename():
+    dep_pth = os.getcwd() + '/HFUT/depth/'
+    gt_pth = os.getcwd() + '/HFUT/GT/'
+    rgb_pth = os.getcwd() + '/HFUT/RGB/'
+
+    ori_pth = rgb_pth
+    list_ori = os.listdir(ori_pth)
+    list_ori.sort(key=lambda x: (float(x[:-4]), len(x[:-4])))
+
+    count = 1
+    for item in list_ori:
+        item_ori_pth = os.path.join(ori_pth, item)
+        item_new = format(str(count), '0>5s') + item[-4:]
+        item_fin_pth = os.path.join(ori_pth, item_new)
+        os.rename(item_ori_pth, item_fin_pth)
+        print(count)
+        count += 1
+
+def HFUT_FS_rename():
+    ori_pth = os.getcwd() + '/HFUT/'
+    fin_pth = os.getcwd() + '/rename/'
+    list_ori = os.listdir(ori_pth)
+    list_ori.sort(key=lambda x: (float(x[:-16]), len(x[:-16])))
+    count = 1
+    curr_idx = '2'
+    for item in list_ori:
+        if item == '2__refocus_03.jpg': new_item = '00001__refocus_03.jpg'
+        else:
+            item_list = item.split('_')
+            if item_list[0] != curr_idx:
+                curr_idx = item_list[0]
+                count += 1
+            new_item = format(str(count), '0>5s') + item[-16:]
+        os.rename(ori_pth + item, fin_pth + new_item)
+
+
+def LFSOD_FS_Split():
+    fs_pth = os.getcwd() +'/HFUT/'
+    test_pth = os.getcwd() + '/test/'
+    list_fs = os.listdir(fs_pth)
+    list_fs.sort(key=lambda x: x[:-4])
+    txt_file = open(os.getcwd() + '/HFUT_test.txt')
+    text_idxs = txt_file.readlines()
+    for i in range(len(text_idxs)):
+        text_idxs[i] = text_idxs[i][:-1]
+    count = 1
+    for item in list_fs:
+        item_ori_pth = os.path.join(fs_pth, item)
+        item_list = item.split('_')
+        if item_list[0] in text_idxs:
+            os.rename(item_ori_pth, test_pth + item)
+        print(count)
+        count += 1
+
+def Lytro_FS_rename():
+    ori_pth = os.getcwd() + '/Lytro/'
+    new_pth = os.getcwd()  + '/new/'
+    list_ori = os.listdir(ori_pth)
+    for item in list_ori:
+        new_item = item[4:]
+        os.rename(ori_pth + item, new_pth + new_item)
+
 
 if __name__ == '__main__':
-    PT = ProcessingTool()
+    #Lytro_FS_rename()
+    #HFUT_FS_rename()
+    #LFSOD_FS_Split()
+   # PT = ProcessingTool()
+    #LFSOD_split()
+    #FileRename()
     rgbd_test_prepar()
     #PT.rgb_exchange()
     #bar_show(PT.numFrm())
