@@ -15,7 +15,7 @@ def cv_random_flip(img, label,depth, fss):
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
         label = label.transpose(Image.FLIP_LEFT_RIGHT)
         depth = depth.transpose(Image.FLIP_LEFT_RIGHT)
-        for i in range(4):
+        for i in range(12):
             fss[i] = fss[i].transpose(Image.FLIP_LEFT_RIGHT)
     #top bottom flip
     # if flip_flag2==1:
@@ -32,7 +32,7 @@ def randomCrop(image, label,depth, fss):
     random_region = (
         (image_width - crop_win_width) >> 1, (image_height - crop_win_height) >> 1, (image_width + crop_win_width) >> 1,
         (image_height + crop_win_height) >> 1)
-    for i in range(4):
+    for i in range(12):
         fss[i] = fss[i].crop(random_region)
     return image.crop(random_region), label.crop(random_region), depth.crop(random_region), fss
 def randomRotation(image, label, depth, fss):
@@ -42,7 +42,7 @@ def randomRotation(image, label, depth, fss):
         image = image.rotate(random_angle, mode)
         label = label.rotate(random_angle, mode)
         depth = depth.rotate(random_angle, mode)
-        for i in range(4):
+        for i in range(12):
             fss[i] = fss[i].rotate(random_angle, mode)
     return image, label, depth, fss
 def colorEnhance(image):
@@ -131,7 +131,7 @@ class SalObjDataset(data.Dataset):
         image = self.img_transform(image)
         gt = self.gt_transform(gt)
         depth = self.depths_transform(depth)
-        for i in range(4):
+        for i in range(12):
             fss[i] = self.fs_transform(fss[i])
         
         return image, gt, depth, fss
@@ -168,11 +168,11 @@ class SalObjDataset(data.Dataset):
         trg_fs_list = []
         for idx in range(len(idxs)):
             trg_fs_list.append(fs_list[idxs[idx]])
-        temp_count_1 = int(4 / len(trg_fs_list))
-        temp_count_2 = 4 % len(trg_fs_list)
+        temp_count_1 = int(12 / len(trg_fs_list))
+        temp_count_2 = 12 % len(trg_fs_list)
         new_trg_fs_list = temp_count_1 * trg_fs_list + trg_fs_list[:temp_count_2]
         imgs = []
-        for idx in range(4):
+        for idx in range(12):
             img_pth = fs_pth + new_trg_fs_list[idx]
             with open(img_pth, 'rb') as f:
                 img = Image.open(f)
@@ -248,7 +248,7 @@ class test_dataset:
         image_for_post=self.rgb_loader(self.images[self.index])
         image_for_post=image_for_post.resize(gt.size)
         fss = self.fs_loader(self.images[self.index][:69], self.images[self.index][74:], self.fss)
-        for i in range(4):
+        for i in range(12):
             fss[i] = self.transform(fss[i]).unsqueeze(0)
         if name.endswith('.jpg'):
             name = name.split('.jpg')[0] + '.png'
@@ -276,11 +276,11 @@ class test_dataset:
         trg_fs_list = []
         for idx in range(len(idxs)):
             trg_fs_list.append(fs_list[idxs[idx]])
-        temp_count_1 = int(4 / len(trg_fs_list))
-        temp_count_2 = 4 % len(trg_fs_list)
+        temp_count_1 = int(12 / len(trg_fs_list))
+        temp_count_2 = 12 % len(trg_fs_list)
         new_trg_fs_list = temp_count_1 * trg_fs_list + trg_fs_list[:temp_count_2]
         imgs = []
-        for idx in range(4):
+        for idx in range(12):
             img_pth = fs_pth + new_trg_fs_list[idx]
             with open(img_pth, 'rb') as f:
                 img = Image.open(f)

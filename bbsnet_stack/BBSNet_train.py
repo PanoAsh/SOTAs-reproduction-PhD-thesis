@@ -79,7 +79,7 @@ def train(train_loader, model, optimizer, epoch,save_path):
             images = images.cuda()
             gts = gts.cuda()
             depths = depths.cuda()
-            for idx in range(4):
+            for idx in range(12):
                 fss[idx] = fss[idx].cuda()
             fss = torch.cat(fss, dim=0)
 
@@ -138,7 +138,7 @@ def test(test_loader,model,epoch,save_path):
             gt /= (gt.max() + 1e-8)
             image = image.cuda()
             depth = depth.cuda()
-            for idx in range(4):
+            for idx in range(12):
                 fss[idx] = fss[idx].cuda()
             fss = torch.cat(fss, dim=0)
             _, res = model(image, depth, fss)
