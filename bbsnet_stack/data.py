@@ -123,7 +123,7 @@ class SalObjDataset(data.Dataset):
         depth= self.binary_loader(self.depths[index])
         fss = self.fs_loader(self.images[index][:70], self.images[index][75:], self.fss)
         image, gt, depth, fss = cv_random_flip(image,gt,depth, fss)
-        image, gt, depth, fss = randomCrop(image, gt, depth, fss)
+       # image, gt, depth, fss = randomCrop(image, gt, depth, fss)
         image, gt, depth, fss = randomRotation(image, gt, depth, fss)
         image = colorEnhance(image)
         # gt=randomGaussian(gt)

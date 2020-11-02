@@ -83,18 +83,19 @@ def train(train_loader, model, optimizer, epoch,save_path):
                 fss[idx] = fss[idx].cuda()
             fss = torch.cat(fss, dim=0)
 
-            s1, s2 = model(images, depths, fss)
+            s1, s2, s3 = model(images, depths, fss)
             loss1 = CE(s1, gts)
-            loss2 =CE(s2,gts)
-            loss = loss1+loss2
+            loss2 = CE(s2, gts)
+            loss3 = CE(s3, gts)
+            loss = loss1 + loss2 + loss3
             loss.backward()
 
             clip_gradient(optimizer, opt.clip)
             optimizer.step()
-            step+=1
-            epoch_step+=1
-            loss_all+=loss.data
-            if i % 100 == 0 or i == total_step or i==1:
+            step += 1
+            epoch_step += 1
+            loss_all += loss.data
+            if i % 100 == 0 or i == total_step or i == 1:
                 print('{} Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], Loss1: {:.4f} Loss2: {:0.4f}'.
                     format(datetime.now(), epoch, opt.epoch, i, total_step, loss1.data, loss2.data))
                 logging.info('#TRAIN#:Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], Loss1: {:.4f} Loss2: {:0.4f}'.
@@ -141,7 +142,7 @@ def test(test_loader,model,epoch,save_path):
             for idx in range(12):
                 fss[idx] = fss[idx].cuda()
             fss = torch.cat(fss, dim=0)
-            _, res = model(image, depth, fss)
+            _, res, _ = model(image, depth, fss)
             res = F.upsample(res, size=gt.shape, mode='bilinear', align_corners=False)
             res = res.sigmoid().data.cpu().numpy().squeeze()
             res = (res - res.min()) / (res.max() - res.min() + 1e-8)
@@ -150,7 +151,7 @@ def test(test_loader,model,epoch,save_path):
         writer.add_scalar('MAE', torch.tensor(mae), global_step=epoch)
         print('Epoch: {} MAE: {} ####  bestMAE: {} bestEpoch: {}'.format(epoch,mae,best_mae,best_epoch))
         if epoch == 1:
-            best_mae=mae
+            best_mae = mae
         else:
             if mae < best_mae:
                 best_mae = mae

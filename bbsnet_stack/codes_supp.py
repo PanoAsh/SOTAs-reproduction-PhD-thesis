@@ -118,4 +118,12 @@ return self.upsample(attention_map), y
         #self.TDConv_3 = nn.Conv3d(512, 512, (12, 1, 1))
         #self.TDConv_4 = nn.Conv3d(1024, 1024, (12, 1, 1))
         #self.TDConv_5 = nn.Conv3d(2048, 2048, (12, 1, 1))
+
+self.convLSTM = ConvLSTM(input_channels=64, hidden_channels=[64, 32, 64],
+                 kernel_size=5, step=4, effective_step=[2, 4, 8])
+
+for i in range(12):
+            cv2.imwrite(str(i) + '.png', x_fss[i].permute(1, 2, 0).cpu().data.numpy() * 255)
+        cv2.imwrite('img.png', x.squeeze(0).permute(1, 2, 0).cpu().data.numpy() * 255)
+        cv2.imwrite('depth.png', x_depth.squeeze(0).permute(1, 2, 0).cpu().data.numpy() * 255)
 """
