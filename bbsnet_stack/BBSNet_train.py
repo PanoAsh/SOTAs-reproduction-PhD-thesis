@@ -81,12 +81,13 @@ def train(train_loader, model, optimizer, epoch,save_path):
             depths = depths.cuda()
             for idx in range(12):
                 fss[idx] = fss[idx].cuda()
-            fss = torch.cat(fss, dim=1)
+            fss = torch.cat(fss, dim=0)
 
-            s1, s2 = model(images, depths, fss)
+            s1, s2, s3 = model(images, depths, fss)
             loss1 = CE(s1, gts)
             loss2 = CE(s2, gts)
-            loss = loss1 + loss2
+            loss3 = CE(s3, gts)
+            loss = loss1 + loss2 + loss3
             loss.backward()
 
             clip_gradient(optimizer, opt.clip)
@@ -95,10 +96,10 @@ def train(train_loader, model, optimizer, epoch,save_path):
             epoch_step += 1
             loss_all += loss.data
             if i % 100 == 0 or i == total_step or i == 1:
-                print('{} Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], Loss1: {:.4f} Loss2: {:0.4f}'.
-                    format(datetime.now(), epoch, opt.epoch, i, total_step, loss1.data, loss2.data))
-                logging.info('#TRAIN#:Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], Loss1: {:.4f} Loss2: {:0.4f}'.
-                    format( epoch, opt.epoch, i, total_step, loss1.data, loss2.data))
+                print('{} Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], Loss1: {:.4f} Loss2: {:0.4f} Loss3: {:0.4f}'.
+                    format(datetime.now(), epoch, opt.epoch, i, total_step, loss1.data, loss2.data, loss3.data))
+                logging.info('#TRAIN#:Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], Loss1: {:.4f} Loss2: {:0.4f} Loss3: {:0.4f}'.
+                    format( epoch, opt.epoch, i, total_step, loss1.data, loss2.data, loss3.data))
                 writer.add_scalar('Loss', loss.data, global_step=step)
                 grid_image = make_grid(images[0].clone().cpu().data, 1, normalize=True)
                 writer.add_image('RGB', grid_image, step)
@@ -140,8 +141,8 @@ def test(test_loader,model,epoch,save_path):
             depth = depth.cuda()
             for idx in range(12):
                 fss[idx] = fss[idx].cuda()
-            fss = torch.cat(fss, dim=1)
-            _, res = model(image, depth, fss)
+            fss = torch.cat(fss, dim=0)
+            _, res, _ = model(image, depth, fss)
             res = F.upsample(res, size=gt.shape, mode='bilinear', align_corners=False)
             res = res.sigmoid().data.cpu().numpy().squeeze()
             res = (res - res.min()) / (res.max() - res.min() + 1e-8)
@@ -165,4 +166,5 @@ if __name__ == '__main__':
         cur_lr = adjust_lr(optimizer, opt.lr, epoch, opt.decay_rate, opt.decay_epoch)
         writer.add_scalar('learning_rate', cur_lr, global_step=epoch)
         train(train_loader, model, optimizer, epoch, save_path)
-        test(test_loader, model, epoch, save_path)
+        if epoch % 5 == 0:
+            test(test_loader, model, epoch, save_path)
