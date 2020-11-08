@@ -1,8 +1,8 @@
 import cv2
 import os
 
-seqs_pth = os.getcwd() + '/source_video/'
-frms_pth = os.getcwd() + '/frame/'
+seqs_pth = os.getcwd() + '/source/'
+frms_pth = os.getcwd() + '/frm/'
 
 def VideoToImg():
     seq_list = os.listdir(seqs_pth)
@@ -20,8 +20,9 @@ def VideoToImg():
             for i in range(frames_num):
                 ret, frame = cap.read()
                 if frame is None: continue
-                frame = cv2.resize(frame, (512, 256))
-                cv2.imwrite(os.path.join(frm_path, format(str(countF), '0>5s') + '.png'), frame)
+                #frame = cv2.resize(frame, (512, 256))
+                if countF % 6 == 0:
+                    cv2.imwrite(os.path.join(frm_path, format(str(countF), '0>5s') + '.png'), frame)
                 countF += 1
                 print(" {} frames processed".format(countF))
             print(" {} videos processed".format(count))
@@ -82,8 +83,8 @@ def frm_rename():
         os.rename(frm_ori_pth, frm_fin_pth)
 
 def av_new_mask():
-    msk_1_pth = os.getcwd() + '/mask_av_1/_-0cfJOmUaNNI_1'
-    msk_2_pth = os.getcwd() + '/mask_av_2/_-0cfJOmUaNNI_1'
+    msk_1_pth = os.getcwd() + '/mask_av_1/_-0suxwissusc'
+    msk_2_pth = os.getcwd() + '/mask_av_2/_-0suxwissusc'
     new_pth = os.getcwd() + '/new/'
     msk_list = os.listdir(msk_2_pth)
     msk_list.sort(key=lambda x: x[:-4])
@@ -106,9 +107,35 @@ def av_new_mask():
         print(count)
         count += 1
 
+def oly_three():
+    frames_pth = os.getcwd() + '/frame_key/_-4fxKBGthpaw'
+    sals_pth = os.getcwd() + '/saliency/_-4fxKBGthpaw'
+    inss_pth = os.getcwd() + '/mask_av_1/_-4fxKBGthpaw'
+    fin_pth = os.getcwd() + '/new/'
+    frm_list = os.listdir(frames_pth)
+    frm_list.sort(key=lambda x: x[:-4])
+    count = 0
+    for frm in frm_list:
+        frm_pth = os.path.join(frames_pth, frm)
+        img = cv2.imread(frm_pth)
+        H = img.shape[0]
+        W = img.shape[1]
+        sal_pth = os.path.join(sals_pth, frm)
+        sal = cv2.imread(sal_pth)
+        ret, sal = cv2.threshold(sal, 127, 255, cv2.THRESH_BINARY)
+        sal = cv2.resize(sal, (W, H))
+        ins_pth = os.path.join(inss_pth, frm)
+        ins = cv2.imread(ins_pth)
+        oly = cv2.addWeighted(img, 1, sal, 0.5, 0)
+        oly = cv2.addWeighted(oly, 1, ins, 0.8, 0)
+        cv2.imwrite(os.path.join(fin_pth, frm), oly)
+        count += 1
+        print(count)
+
 
 if __name__ == '__main__':
-    av_new_mask()
+    oly_three()
+    #av_new_mask()
     #frm_rename()
     #av_overlaid()
     #re_order()
