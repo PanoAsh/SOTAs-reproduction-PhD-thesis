@@ -2,19 +2,7 @@ import numpy as np
 import cv2
 import os
 
-# palette (cv2: BGR)
 RGB_background = tuple([0, 0, 0])
-RGB_ins1 = [0, 0, 128]
-RGB_ins2 = [0, 128, 0]
-RGB_ins3 = [0, 128, 128]
-RGB_ins4 = [128, 0, 0]
-RGB_ins5 = [128, 0, 128]
-RGB_ins6 = [128, 128, 0]
-RGB_ins7 = [128, 128, 128]
-RGB_ins8 = [0, 0, 64]
-RGB_ins9 = [0, 0, 192]
-Palette_list = [RGB_ins1, RGB_ins2, RGB_ins3, RGB_ins4, RGB_ins5, RGB_ins6, RGB_ins7,
-                RGB_ins8, RGB_ins9]
 
 def KeySelect():
     videos_pth = os.getcwd() + '/saliency_re_order/'
@@ -159,6 +147,7 @@ def AnnotationPrep2():
         count_frm = 0
         for fix in fix_list:
             if fix == '.DS_Store': continue
+            if int(fix[:-4]) % 6 != 0: continue
 
             fix_pth = os.path.join(vid_pth, fix)
             fix_map = cv2.imread(fix_pth)
@@ -220,9 +209,39 @@ def AnnotationPrep2():
         count_frm_total += count_frm
         print(" {} total frames have been processed.".format(count_frm_total))
 
+def demo():
+    vid_name = 'demo'
+    vid_H = 300
+    vid_W = 1210
+    vid_fps = 1
+    frm_list = os.listdir(os.getcwd() + '/' + 'demo_edge' + '/')
+    frm_list.sort(key=lambda x: x[:-4])
+    fourcc = cv2.VideoWriter_fourcc(*'MP42')
+    vid = cv2.VideoWriter(os.getcwd() + '/' + vid_name + '.avi', fourcc, vid_fps, (vid_W, vid_H))
+
+    count = 0
+    for frm in frm_list:
+        frm_path = os.getcwd() + '/' + 'demo_edge' + '/' + frm
+        frm_path2 = os.getcwd() + '/' + 'demo_instance' + '/' + frm
+        frm_edge = cv2.imread(frm_path)
+        frm_edge = cv2.resize(frm_edge, (600, 300))
+        frm_instance = cv2.imread(frm_path2)
+        frm_instance = cv2.resize(frm_instance, (600, 300))
+        frm_show = np.zeros((vid_H, vid_W, 3))
+        frm_show[:, :600, :] = frm_edge
+        frm_show[:, 610:, :] = frm_instance
+       # cv2.imwrite(frm, frm_show)
+        vid.write(frm_show)
+        count += 1
+        print(" {} frames added.".format(count))
+    vid.release()
+    print(' Done !')
+
+
 
 if __name__ == '__main__':
-    AnnotationPrep2()
+    #demo()
+    AnnotationPrep2()  # get new instance map
     #AnnotationPrep()
     #KeySelect()
     #ReOrder()
@@ -238,3 +257,16 @@ if __name__ == '__main__':
     #cv2.imwrite('debug_edge.png', msk_edge)
     #cv2.imwrite('fix.png', trs_fix_map)
     #cv2.imwrite('fix_mark.png', trs_fix_map_mark)
+
+# palette (cv2: BGR)
+# RGB_ins1 = [0, 0, 128]
+# RGB_ins2 = [0, 128, 0]
+# RGB_ins3 = [0, 128, 128]
+# RGB_ins4 = [128, 0, 0]
+# RGB_ins5 = [128, 0, 128]
+# RGB_ins6 = [128, 128, 0]
+# RGB_ins7 = [128, 128, 128]
+# RGB_ins8 = [0, 0, 64]
+# RGB_ins9 = [0, 0, 192]
+# Palette_list = [RGB_ins1, RGB_ins2, RGB_ins3, RGB_ins4, RGB_ins5, RGB_ins6, RGB_ins7,
+#                RGB_ins8, RGB_ins9]

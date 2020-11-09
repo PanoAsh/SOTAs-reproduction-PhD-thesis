@@ -83,8 +83,8 @@ def frm_rename():
         os.rename(frm_ori_pth, frm_fin_pth)
 
 def av_new_mask():
-    msk_1_pth = os.getcwd() + '/mask_av_1/_-0suxwissusc'
-    msk_2_pth = os.getcwd() + '/mask_av_2/_-0suxwissusc'
+    msk_1_pth = os.getcwd() + '/mask_av_1/_-5h95uTtPeck'
+    msk_2_pth = os.getcwd() + '/mask_av_2/_-5h95uTtPeck'
     new_pth = os.getcwd() + '/new/'
     msk_list = os.listdir(msk_2_pth)
     msk_list.sort(key=lambda x: x[:-4])
@@ -134,8 +134,8 @@ def oly_three():
 
 
 if __name__ == '__main__':
-    oly_three()
-    #av_new_mask()
+    #oly_three()
+    av_new_mask()
     #frm_rename()
     #av_overlaid()
     #re_order()
