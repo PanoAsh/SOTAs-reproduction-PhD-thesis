@@ -378,12 +378,14 @@ class ProcessingTool():
         rgb_14 = (192, 192, 192)
 
         f = open(os.getcwd() + '/av360.txt', 'w')
+        f2 = open(os.getcwd() + '/av360_obj_size.txt', 'w')
 
         seq_list = os.listdir(os.getcwd() + '/mask_new/')
         seq_count = 0
         num_obj_sum = 0
         num_frm_sum = 0
         for seq in seq_list:
+            if seq == '.DS_Store': continue
             msk_list = os.listdir(os.path.join(os.getcwd() + '/mask_new/', seq))
             msk_list.sort(key=lambda x: x[:-4])
             msk_count = 0
@@ -391,6 +393,7 @@ class ProcessingTool():
             size_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             num_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             for msk_idx in msk_list:
+                if msk_idx == '.DS_Store': continue
                 msk_path = os.path.join(os.getcwd() + '/mask_new/', seq, msk_idx)
                 msk = Image.open(msk_path)
                 obj_count = 0
@@ -503,8 +506,10 @@ class ProcessingTool():
                     if rgb_ratio[idx] != 0:
                         num_ins[idx] += 1
                         size_ins[idx] += rgb_ratio[idx]
-                f_line = seq + '    ' + msk_idx + '    ' + str(obj_count) + ' objs' + '  ' + str(rgb_count) + '\n'
+                f_line = seq + '    ' + msk_idx + '    ' + str(obj_count) + ' objs' + '\n'
                 f.write(f_line)
+                f_line = seq + '    ' + msk_idx + '    ' + str(rgb_ratio) + '\n'
+                f2.write(f_line)
                 num_obj = num_obj + obj_count
                 msk_count += 1
                 print(" {} key frames processed.".format(msk_count))
@@ -522,6 +527,7 @@ class ProcessingTool():
         f_line3 = str(num_obj_sum) + ' objects in total;' + '     ' + str(num_frm_sum) + ' key frames in total.'
         f.write(f_line3)
         f.close()
+        f2.close()
         print('All done !')
 
     def listPrint(self):
