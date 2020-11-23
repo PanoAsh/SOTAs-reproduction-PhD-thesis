@@ -371,25 +371,31 @@ class ProcessingTool():
         rgb_7 = (128, 128, 128)
         rgb_8 = (64, 0, 0)
         rgb_9 = (192, 0, 0)
+        rgb_10 = (0, 64, 64)
+        rgb_11 = (0, 192, 0)
+        rgb_12 = (192, 192, 0)
+        rgb_13 = (0, 0, 192)
+        rgb_14 = (192, 192, 192)
 
-        f = open(os.getcwd() + '/hcs360_obj_stt.txt', 'w')
+        f = open(os.getcwd() + '/av360.txt', 'w')
 
-        seq_list = os.listdir('/home/yzhang1/PythonProjects/hcs360/mask_instance/')
+        seq_list = os.listdir(os.getcwd() + '/mask_new/')
         seq_count = 0
         num_obj_sum = 0
+        num_frm_sum = 0
         for seq in seq_list:
-            msk_list = os.listdir(os.path.join('/home/yzhang1/PythonProjects/hcs360/mask_instance/', seq))
+            msk_list = os.listdir(os.path.join(os.getcwd() + '/mask_new/', seq))
             msk_list.sort(key=lambda x: x[:-4])
             msk_count = 0
             num_obj = 0
-            size_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            num_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            size_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            num_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             for msk_idx in msk_list:
-                msk_path = os.path.join('/home/yzhang1/PythonProjects/hcs360/mask_instance/', seq, msk_idx)
+                msk_path = os.path.join(os.getcwd() + '/mask_new/', seq, msk_idx)
                 msk = Image.open(msk_path)
                 obj_count = 0
-                obj_bool = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-                rgb_count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                obj_bool = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                rgb_count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 for pix in msk.getdata():
                     if pix == rgb_0:
                         rgb_count[0] += 1
@@ -457,8 +463,43 @@ class ProcessingTool():
                         else:
                             obj_count += 1
                             obj_bool[8] = 1
+                    elif pix == rgb_10:
+                        rgb_count[10] += 1
+                        if obj_bool[9] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[9] = 1
+                    elif pix == rgb_11:
+                        rgb_count[11] += 1
+                        if obj_bool[10] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[10] = 1
+                    elif pix == rgb_12:
+                        rgb_count[12] += 1
+                        if obj_bool[11] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[11] = 1
+                    elif pix == rgb_13:
+                        rgb_count[13] += 1
+                        if obj_bool[12] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[12] = 1
+                    elif pix == rgb_14:
+                        rgb_count[14] += 1
+                        if obj_bool[13] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[13] = 1
                 rgb_ratio = rgb_count / np.sum(rgb_count)
-                for idx in range(10):
+                for idx in range(15):
                     if rgb_ratio[idx] != 0:
                         num_ins[idx] += 1
                         size_ins[idx] += rgb_ratio[idx]
@@ -467,17 +508,18 @@ class ProcessingTool():
                 num_obj = num_obj + obj_count
                 msk_count += 1
                 print(" {} key frames processed.".format(msk_count))
-            f_line2 = str(num_obj) + ' objects in ' + seq + '\n'
+            f_line2 = str(num_obj) + ' objects in ' + seq + '    ' + str(msk_count) + ' key frames in ' + seq + '\n'
             f.write(f_line2)
-            for idx in range(10):
+            for idx in range(15):
                 if num_ins[idx] != 0:
                     size_ins[idx] = size_ins[idx] / num_ins[idx]
             f_line2_1 = 'object size infomation: ' + str(size_ins) + '\n'
             f.write(f_line2_1)
             num_obj_sum = num_obj_sum + num_obj
+            num_frm_sum = num_frm_sum + msk_count
             seq_count += 1
             print(" {} videos processed.".format(seq_count))
-        f_line3 = str(num_obj_sum) + ' objects in total.'
+        f_line3 = str(num_obj_sum) + ' objects in total;' + '     ' + str(num_frm_sum) + ' key frames in total.'
         f.write(f_line3)
         f.close()
         print('All done !')
@@ -1006,15 +1048,32 @@ def Lytro_FS_rename():
         new_item = item[4:]
         os.rename(ori_pth + item, new_pth + new_item)
 
+def fs_for_test():
+    ori_pth = os.getcwd() + '/FS/'
+    fss_list = os.listdir(ori_pth)
+    count = 0
+    for fs in fss_list:
+        fs_list = fs.split('_')
+        fs_dir = os.path.join(os.getcwd(), fs_list[0])
+        if not os.path.exists(fs_dir): os.makedirs(fs_dir)
+        fs_name = fs[len(fs_list[0]) + 1:]
+        new_pth = os.path.join(fs_dir, fs_name)
+        old_pth = os.path.join(ori_pth, fs)
+        os.rename(old_pth, new_pth)
+        count += 1
+        print(count)
+
+
 
 if __name__ == '__main__':
+   # fs_for_test()
     #Lytro_FS_rename()
     #HFUT_FS_rename()
     #LFSOD_FS_Split()
-   # PT = ProcessingTool()
+    PT = ProcessingTool()
     #LFSOD_split()
     #FileRename()
-    rgbd_test_prepar()
+    #rgbd_test_prepar()
     #PT.rgb_exchange()
     #bar_show(PT.numFrm())
     #PT.bbox2reg()
@@ -1033,7 +1092,7 @@ if __name__ == '__main__':
     #PT.seq2frm()
     #PT.mskRGB()
     #PT.mskEdit()
-    #PT.objStt()
+    PT.objStt()
     #PT.listPrint()
     #PT.fixation_match()
     #PT.instanceOverlay()
