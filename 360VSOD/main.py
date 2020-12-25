@@ -82,11 +82,12 @@ class ProcessingTool():
         print(' Done !')
 
     def ist2obj(self):
-        oriPath = '/home/yzhang1/PythonProjects/360vSOD/data/mask_instance/'
-        trgPath = '/home/yzhang1/PythonProjects/360vSOD/data/mask_object/'
+        oriPath = os.getcwd() + '/mask_new/'
+        trgPath = os.getcwd() + '/obj_new/'
         orilist = os.listdir(oriPath)
         count_video = 1
         for item in orilist:
+            if item == '.DS_Store': continue
             ists_path = os.path.join(oriPath, item)
             objs_path = os.path.join(trgPath, item)
             if not os.path.exists(objs_path):
@@ -94,6 +95,7 @@ class ProcessingTool():
 
             count = 1
             for item in os.listdir(ists_path):
+                if item == '.DS_Store': continue
                 ist_path = os.path.join(os.path.abspath(ists_path), item)
                 obj_path = os.path.join(os.path.abspath(objs_path), item)
                 ist = cv2.imread(ist_path)
@@ -1069,14 +1071,77 @@ def fs_for_test():
         count += 1
         print(count)
 
+def listTest():
+    img_pth = os.getcwd() + '/test/'
+    img_list = os.listdir(img_pth)
+    img_list.sort(key=lambda x: x[:-4])
+    f = open(os.getcwd() + '/test.txt', 'w')
 
+    for item in img_list:
+        f.write(item[:-4]  + '\n')
+    f.close()
+
+def ToTestLFSOD():
+    print()
+    total_list = os.listdir(os.getcwd() + '/Results/')
+    total_list.sort(key=lambda x: x[:-4])
+    for item in total_list:
+        item_list = item.split('_')
+        new_dir = os.path.join(os.getcwd(), item_list[0])
+        new_name = item_list[1]
+        if not os.path.exists(new_dir):  os.makedirs(new_dir)
+        old_pth = os.path.join(os.getcwd() + '/Results/', item)
+        new_pth = os.path.join(new_dir, new_name)
+        os.rename(old_pth, new_pth)
+
+
+def dataList():
+    MSK_pth = '/home/yzhang1/PythonProjects/AV360/DATA/test/'
+    Img_pth = '/home/yzhang1/PythonProjects/AV360/frame_key/'
+    MSK_list = os.listdir(MSK_pth)
+    f1 = open(os.getcwd() + '/test_img.txt', 'w')
+    f2 = open(os.getcwd() + '/test_msk.txt', 'w')
+
+    for Seq in MSK_list:
+        Seq_pth = os.path.join(MSK_pth, Seq)
+        Seq_list = os.listdir(Seq_pth)
+        Seq_list.sort(key=lambda x: x[:-4])
+        for frm in Seq_list:
+            msk_pth = os.path.join(Seq_pth, frm)
+            img_pth = os.path.join(Img_pth, Seq, frm)
+            f1.write(img_pth + '\n')
+            f2.write(msk_pth + '\n')
+
+    f1.close()
+    f2.close()
+
+def dataList_2():
+    ORI_pth = '/home/yzhang1/PythonProjects/AV360/obj_new/test/'
+    ORI_list = os.listdir(ORI_pth)
+    ORI_list.sort(key=lambda x: x[-1:])
+    f = open(os.getcwd() + '/test_img_ca.txt', 'w')
+    for CA in ORI_list:
+        CA_pth = os.path.join(ORI_pth, CA)
+        CA_list = os.listdir(CA_pth)
+        for Seq in CA_list:
+            Seq_pth = os.path.join(CA_pth, Seq)
+            Seq_list = os.listdir(Seq_pth)
+            Seq_list.sort(key=lambda x: x[:-4])
+            for frm in Seq_list:
+                msk_pth = os.path.join(Seq_pth, frm)
+                f.write(msk_pth + '\n')
+    f.close()
 
 if __name__ == '__main__':
-   # fs_for_test()
+    dataList_2()
+    #dataList()
+    #ToTestLFSOD()
+    #listTest()
+    #fs_for_test()
     #Lytro_FS_rename()
     #HFUT_FS_rename()
     #LFSOD_FS_Split()
-    PT = ProcessingTool()
+    #PT = ProcessingTool()
     #LFSOD_split()
     #FileRename()
     #rgbd_test_prepar()
@@ -1098,7 +1163,7 @@ if __name__ == '__main__':
     #PT.seq2frm()
     #PT.mskRGB()
     #PT.mskEdit()
-    PT.objStt()
+    #PT.objStt()
     #PT.listPrint()
     #PT.fixation_match()
     #PT.instanceOverlay()
