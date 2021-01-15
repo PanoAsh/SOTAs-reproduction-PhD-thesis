@@ -995,11 +995,12 @@ def LFSOD_split():
         count += 1
 
 def FileRename():
-    dep_pth = os.getcwd() + '/HFUT/depth/'
-    gt_pth = os.getcwd() + '/HFUT/GT/'
-    rgb_pth = os.getcwd() + '/HFUT/RGB/'
+    #dep_pth = os.getcwd() + '/HFUT/depth/'
+    #gt_pth = os.getcwd() + '/HFUT/GT/'
+    #rgb_pth = os.getcwd() + '/HFUT/RGB/'
+    sal_pth = os.getcwd() + '/HFUT/'
 
-    ori_pth = rgb_pth
+    ori_pth = sal_pth
     list_ori = os.listdir(ori_pth)
     list_ori.sort(key=lambda x: (float(x[:-4]), len(x[:-4])))
 
@@ -1042,8 +1043,8 @@ def LFSOD_FS_Split():
     count = 1
     for item in list_fs:
         item_ori_pth = os.path.join(fs_pth, item)
-        item_list = item.split('_')
-        if item_list[0] in text_idxs:
+        item_name = item[:-4]
+        if item_name in text_idxs:
             os.rename(item_ori_pth, test_pth + item)
         print(count)
         count += 1
@@ -1115,6 +1116,46 @@ def dataList():
     f1.close()
     f2.close()
 
+def dataList_duts():
+    MSK_pth = '/home/yzhang1/PythonProjects/AV360/DUTS/DUTS-TE-Mask/'
+    Img_pth = '/home/yzhang1/PythonProjects/AV360/DUTS/DUTS-TE-Image/'
+    MSK_list = os.listdir(MSK_pth)
+    MSK_list.sort(key=lambda x: x[:-4])
+    f1 = open(os.getcwd() + '/test_img_duts.txt', 'w')
+    f2 = open(os.getcwd() + '/test_msk_duts.txt', 'w')
+
+    for frm in MSK_list:
+        msk_pth = os.path.join(MSK_pth, frm)
+        img_pth = os.path.join(Img_pth, frm[:-4] + '.jpg')
+        f1.write(img_pth + '\n')
+        f2.write(msk_pth + '\n')
+
+    f1.close()
+    f2.close()
+
+def dataList_msra():
+    MSK_pth = '/home/yzhang1/PythonProjects/AV_benchmark/COSNet/data/images/MSRA10K/'
+    MSK_list = os.listdir(MSK_pth)
+    img_list, msk_list = [], []
+    for item in MSK_list:
+        if item[-4:] == '.jpg':
+            img_list.append(item)
+        else:
+            msk_list.append(item)
+    img_list.sort(key=lambda x: x[:-4])
+    msk_list.sort(key=lambda x: x[:-4])
+    f1 = open(os.getcwd() + '/img_msra.txt', 'w')
+    f2 = open(os.getcwd() + '/msk_msra.txt', 'w')
+
+    for idx in range(len(img_list)):
+        img_pth = os.path.join(MSK_pth, img_list[idx])
+        msk_pth = os.path.join(MSK_pth, msk_list[idx])
+        f1.write(img_pth + '\n')
+        f2.write(msk_pth + '\n')
+
+    f1.close()
+    f2.close()
+
 def dataList_2():
     ORI_pth = '/home/yzhang1/PythonProjects/AV360/obj_new/test/'
     ORI_list = os.listdir(ORI_pth)
@@ -1132,18 +1173,54 @@ def dataList_2():
                 f.write(msk_pth + '\n')
     f.close()
 
+def av_seq_list():
+    train_pth = '/home/yzhang1/PythonProjects/AV360/DATA/train/'
+    test_pth = '/home/yzhang1/PythonProjects/AV360/DATA/test/'
+    train_list = os.listdir(train_pth)
+    test_list = os.listdir(test_pth)
+    f1 = open(os.getcwd() + '/AV360_train.txt', 'w')
+    f2 = open(os.getcwd() + '/AV360_test.txt', 'w')
+    for item in train_list:
+        f1.write(item + '\n')
+    for item in test_list:
+        f2.write(item + '\n')
+    f1.close()
+    f2.close()
+
+def rename_davis():
+    test_pth = os.getcwd() +  '/Results/'
+    ref_pth = '/home/yzhang1/PythonProjects/AV360/DATA/test/'
+    seq_list = os.listdir(test_pth)
+    save_pth = os.getcwd() + '/NewResults/'
+
+    for seq in seq_list:
+        seq_pth = os.path.join(test_pth, seq)
+        frm_list = os.listdir(seq_pth)
+        frm_list.sort(key=lambda x: x[:-4])
+        seq_ref_pth = os.path.join(ref_pth, seq)
+        frm_ref_list = os.listdir(seq_ref_pth)
+        frm_ref_list.sort(key=lambda x: x[:-4])
+        for idx in range(len(frm_list)):
+            ori_pth = os.path.join(seq_pth, frm_list[idx])
+            new_dir = os.path.join(save_pth, seq)
+            if not os.path.exists(new_dir):  os.makedirs(new_dir)
+            new_pth = os.path.join(new_dir, frm_ref_list[idx])
+            os.rename(ori_pth, new_pth)
+
 if __name__ == '__main__':
-    dataList_2()
-    #dataList()
+    rename_davis()
+    #av_seq_list()
+    #dataList_2()
+    #dataList_msra()
     #ToTestLFSOD()
     #listTest()
-    #fs_for_test()
+   # fs_for_test()
     #Lytro_FS_rename()
     #HFUT_FS_rename()
-    #LFSOD_FS_Split()
-    #PT = ProcessingTool()
+   # LFSOD_FS_Split()
+   # PT = ProcessingTool()
     #LFSOD_split()
-    #FileRename()
+   #FileRename()
     #rgbd_test_prepar()
     #PT.rgb_exchange()
     #bar_show(PT.numFrm())
