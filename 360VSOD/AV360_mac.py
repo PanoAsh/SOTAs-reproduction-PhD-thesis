@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+from PIL import  Image
 
 RGB_background = tuple([0, 0, 0])
 
@@ -133,8 +134,8 @@ def AnnotationPrep():
         print(" {} total frames have been processed.".format(count_frm_total))
 
 def AnnotationPrep2():
-    msks_pth = os.getcwd() + '/mask_instance/'
-    fixs_pth = os.getcwd() + '/saliency_key_frame_visual/'
+    msks_pth = os.getcwd() + '/mask_ori/'
+    fixs_pth = os.getcwd() + '/saliency/'
     vids_list = os.listdir(fixs_pth)
     vids_list.sort(key=lambda x: x[:-4])
     count = 0
@@ -147,6 +148,7 @@ def AnnotationPrep2():
         count_frm = 0
         for fix in fix_list:
             if fix == '.DS_Store': continue
+            if int(fix[:-4]) % 6 != 0: continue
 
             fix_pth = os.path.join(vid_pth, fix)
             fix_map = cv2.imread(fix_pth)
@@ -285,30 +287,37 @@ def key_frame_extraction():
         print(count)
 
 def av_new_mask():
-    msk_1_pth = os.getcwd() + '/mask_av_1/_-4SilhsTuDU0'
-    msk_2_pth = os.getcwd() + '/mask_av_2/_-4SilhsTuDU0'
-    new_pth = os.getcwd() + '/new/'
-    msk_list = os.listdir(msk_2_pth)
-    msk_list.sort(key=lambda x: x[:-4])
-    ori_list = os.listdir(msk_1_pth)
-    ori_list.sort(key=lambda x: x[:-4])
-    count = 1
-    for item in ori_list:
-        if item == '.DS_Store': continue
-        ori_pth = os.path.join(msk_1_pth, item)
-        ori = cv2.imread(ori_pth)
-        if item in msk_list:
-            add_pth = os.path.join(msk_2_pth, item)
-            add = cv2.imread(add_pth)
-            for i in range(add.shape[0]):
-                for j in range(add.shape[1]):
-                    if add[i, j, 0] != 0 or add[i, j, 1] != 0 or add[i, j, 2] != 0:
-                        if ori[i, j, 0] != 0 or ori[i, j, 1] != 0 or ori[i, j, 2] != 0:
-                            ori[i, j, :] = 0
-            ori = ori + add
-        cv2.imwrite(os.path.join(new_pth, item), ori)
-        print(count)
-        count += 1
+    ori_pth = os.getcwd() + '/mask_new/'
+    sup_pth = os.getcwd() + '/mask_1217/'
+    list_dir = os.listdir(sup_pth)
+    for new_item in list_dir:
+        if new_item == '.DS_Store': continue
+        msk_1_pth = os.path.join(ori_pth, new_item)
+        msk_2_pth = os.path.join(sup_pth, new_item)
+        new_pth = os.path.join(os.getcwd() + '/new/', new_item)
+        if not os.path.exists(new_pth): os.makedirs(new_pth)
+        msk_list = os.listdir(msk_2_pth)
+        msk_list.sort(key=lambda x: x[:-4])
+        ori_list = os.listdir(msk_1_pth)
+        ori_list.sort(key=lambda x: x[:-4])
+        count = 1
+        for item in ori_list:
+            if item == '.DS_Store': continue
+            base_pth = os.path.join(msk_1_pth, item)
+            ori = cv2.imread(base_pth)
+            if item in msk_list:
+                add_pth = os.path.join(msk_2_pth, item)
+                add = cv2.imread(add_pth)
+                for i in range(add.shape[0]):
+                    for j in range(add.shape[1]):
+                        if add[i, j, 0] != 0 or add[i, j, 1] != 0 or add[i, j, 2] != 0:
+                            if ori[i, j, 0] != 0 or ori[i, j, 1] != 0 or ori[i, j, 2] != 0:
+                                ori[i, j, :] = 0
+                ori = ori + add
+            cv2.imwrite(os.path.join(new_pth, item), ori)
+            print(count)
+            count += 1
+
 
 def frm_rename():
     ori_pth = os.getcwd() + '/ori_frm/'
@@ -334,19 +343,436 @@ def check_new_av():
             item_pth = os.path.join(msks_new_pth, msks, item)
             sal_pth = os.path.join(os.getcwd() + '/saliency_overlaid/', msks, item)
             sal = cv2.imread(sal_pth)
+            sal = cv2.resize(sal, (1000, 500))
             msk = cv2.imread(item_pth)
-            msk = cv2.resize(msk, (600, 300))
-            oly = cv2.addWeighted(msk, 0.5, sal, 0.5, 0)
+            msk = cv2.resize(msk, (1000, 500))
+            oly = cv2.addWeighted(msk, 0.8, sal, 0.5, 0)
+            SAL_pth = os.path.join(os.getcwd() + '/saliency/', msks, item)
+            SAL = cv2.imread(SAL_pth)
+            ret, SAL = cv2.threshold(SAL, 127, 255, cv2.THRESH_BINARY)
+            SAL = cv2.resize(SAL, (1000, 500))
+            oly_2 = cv2.addWeighted(oly, 0.8, SAL, 0.5, 0)
             oly_dir = os.path.join(check_new_pth, msks)
             if not os.path.exists(oly_dir): os.makedirs(oly_dir)
             oly_pth = os.path.join(oly_dir, item)
-            cv2.imwrite(oly_pth, oly)
+            cv2.imwrite(oly_pth, oly_2)
+        count += 1
+        print(count)
+
+def demoMsk():
+        seq_list = os.listdir(os.getcwd() + '/check_new_AV360/')
+        demo_w = 600
+        demo_h = 300
+        frmShow = 10
+        vid_oly = cv2.VideoWriter(os.getcwd() + '/demo_instance_overlay.avi', 0, 3, (demo_w, demo_h))
+
+        count = 1
+        for seq in seq_list:
+            if seq == '.DS_Store': continue
+            msk_list = os.listdir(os.getcwd() + '/check_new_AV360/' + seq)
+            msk_list.sort(key=lambda x: x[:-4])
+            demo_itv = int(len(msk_list) / frmShow)
+
+            for idx in range(frmShow):
+                if idx == '.DS_Store': continue
+                msk_path = os.path.join(os.getcwd() + '/check_new_AV360/', seq,
+                                        msk_list[idx * demo_itv])
+                msk = cv2.imread(msk_path)
+                vid_oly.write(msk)
+            print("{} videos processed.".format(count))
+            count += 1
+
+        vid_oly.release()
+
+seqs_pth = os.getcwd() + '/source/'
+frms_pth = os.getcwd() + '/frm/'
+
+def VideoToImg():
+    seq_list = os.listdir(seqs_pth)
+
+    count = 1
+    for seq in seq_list:
+        if seq.endswith('.mp4'):
+            seq_path = os.path.join(seqs_pth, seq)
+            frm_path = os.path.join(frms_pth, seq)
+            frm_path = frm_path[:-4]
+            if not os.path.exists(frm_path): os.makedirs(frm_path)
+            cap = cv2.VideoCapture(seq_path)
+            frames_num = int(cap.get(7))
+            countF = 0
+            for i in range(frames_num):
+                ret, frame = cap.read()
+                if frame is None: continue
+                #frame = cv2.resize(frame, (512, 256))
+                if countF % 6 == 0:
+                    cv2.imwrite(os.path.join(frm_path, format(str(countF), '0>5s') + '.png'), frame)
+                countF += 1
+                print(" {} frames processed".format(countF))
+            print(" {} videos processed".format(count))
+            count += 1
+
+def delete_mask():
+    msk_redundant_pth = os.getcwd() + '/msk_redundant/'
+    msk_new_pth = os.getcwd() + '/msk_new/'
+    msk_list = os.listdir(msk_redundant_pth)
+    count = 0
+    for name in msk_list:
+        if name == '.DS_Store': continue
+        msk_pth = os.path.join(msk_redundant_pth, name)
+        msk = cv2.imread(msk_pth)
+        for i in range(msk.shape[0]):
+            for j in range(msk.shape[1]):
+                if msk[i, j, 0] == 0 and msk[i, j, 1] == 0 and msk[i, j, 2] == 64:
+                    msk[i, j, 0] = 0
+                    msk[i, j, 1] = 0
+                    msk[i, j, 2] = 0
+                #elif msk[i, j, 0] == 0 and msk[i, j, 1] == 0 and msk[i, j, 2] == 64:
+                 #   msk[i, j, 0] = 0
+                  #  msk[i, j, 1] = 0
+                   # msk[i, j, 2] = 0
+        cv2.imwrite(os.path.join(msk_new_pth, name), msk)
         count += 1
         print(count)
 
 
+def objStt():
+        rgb_0 = (0, 0, 0)
+        rgb_1 = (128, 0, 0)
+        rgb_2 = (0, 128, 0)
+        rgb_3 = (128, 128, 0)
+        rgb_4 = (0, 0, 128)
+        rgb_5 = (128, 0, 128)
+        rgb_6 = (0, 128, 128)
+        rgb_7 = (128, 128, 128)
+        rgb_8 = (64, 0, 0)
+        rgb_9 = (192, 0, 0)
+        rgb_10 = (0, 64, 64)
+        rgb_11 = (0, 192, 0)
+        rgb_12 = (192, 192, 0)
+        rgb_13 = (0, 0, 192)
+        rgb_14 = (192, 192, 192)
+
+        f = open(os.getcwd() + '/av360.txt', 'w')
+        f2 = open(os.getcwd() + '/av360_obj_size.txt', 'w')
+
+        seq_list = os.listdir(os.getcwd() + '/mask_new/')
+        seq_count = 0
+        num_obj_sum = 0
+        num_frm_sum = 0
+        for seq in seq_list:
+            if seq == '.DS_Store': continue
+            msk_list = os.listdir(os.path.join(os.getcwd() + '/mask_new/', seq))
+            msk_list.sort(key=lambda x: x[:-4])
+            msk_count = 0
+            num_obj = 0
+            size_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            num_ins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            for msk_idx in msk_list:
+                if msk_idx == '.DS_Store': continue
+                msk_path = os.path.join(os.getcwd() + '/mask_new/', seq, msk_idx)
+                msk = Image.open(msk_path)
+                obj_count = 0
+                obj_bool = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                rgb_count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                for pix in msk.getdata():
+                    if pix == rgb_0:
+                        rgb_count[0] += 1
+                        continue
+                    elif pix == rgb_1:
+                        rgb_count[1] += 1
+                        if obj_bool[0] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[0] = 1
+                    elif pix == rgb_2:
+                        rgb_count[2] += 1
+                        if obj_bool[1] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[1] = 1
+                    elif pix == rgb_3:
+                        rgb_count[3] += 1
+                        if obj_bool[2] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[2] = 1
+                    elif pix == rgb_4:
+                        rgb_count[4] += 1
+                        if obj_bool[3] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[3] = 1
+                    elif pix == rgb_5:
+                        rgb_count[5] += 1
+                        if obj_bool[4] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[4] = 1
+                    elif pix == rgb_6:
+                        rgb_count[6] += 1
+                        if obj_bool[5] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[5] = 1
+                    elif pix == rgb_7:
+                        rgb_count[7] += 1
+                        if obj_bool[6] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[6] = 1
+                    elif pix == rgb_8:
+                        rgb_count[8] += 1
+                        if obj_bool[7] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[7] = 1
+                    elif pix == rgb_9:
+                        rgb_count[9] += 1
+                        if obj_bool[8] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[8] = 1
+                    elif pix == rgb_10:
+                        rgb_count[10] += 1
+                        if obj_bool[9] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[9] = 1
+                    elif pix == rgb_11:
+                        rgb_count[11] += 1
+                        if obj_bool[10] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[10] = 1
+                    elif pix == rgb_12:
+                        rgb_count[12] += 1
+                        if obj_bool[11] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[11] = 1
+                    elif pix == rgb_13:
+                        rgb_count[13] += 1
+                        if obj_bool[12] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[12] = 1
+                    elif pix == rgb_14:
+                        rgb_count[14] += 1
+                        if obj_bool[13] == 1:
+                            continue
+                        else:
+                            obj_count += 1
+                            obj_bool[13] = 1
+                rgb_ratio = rgb_count / np.sum(rgb_count)
+                for idx in range(15):
+                    if rgb_ratio[idx] != 0:
+                        num_ins[idx] += 1
+                        size_ins[idx] += rgb_ratio[idx]
+                f_line = seq + '    ' + msk_idx + '    ' + str(obj_count) + ' objs' + '\n'
+                f.write(f_line)
+                f_line = seq + '    ' + msk_idx + '    ' + str(rgb_ratio) + '\n'
+                f2.write(f_line)
+                num_obj = num_obj + obj_count
+                msk_count += 1
+                print(" {} key frames processed.".format(msk_count))
+            f_line2 = str(num_obj) + ' objects in ' + seq + '    ' + str(msk_count) + ' key frames in ' + seq + '\n'
+            f.write(f_line2)
+            for idx in range(15):
+                if num_ins[idx] != 0:
+                    size_ins[idx] = size_ins[idx] / num_ins[idx]
+            f_line2_1 = 'object size infomation: ' + str(size_ins) + '\n'
+            f.write(f_line2_1)
+            num_obj_sum = num_obj_sum + num_obj
+            num_frm_sum = num_frm_sum + msk_count
+            seq_count += 1
+            print(" {} videos processed.".format(seq_count))
+        f_line3 = str(num_obj_sum) + ' objects in total;' + '     ' + str(num_frm_sum) + ' key frames in total.'
+        f.write(f_line3)
+        f.close()
+        f2.close()
+        print('All done !')
+
+
+def ToTestLFSOD():
+    total_list = os.listdir(os.getcwd() + '/Results/')
+    total_list.sort(key=lambda x: x[:-4])
+    for item in total_list:
+        if item == '.DS_Store': continue
+        item_list = item.split('_')
+        new_dir = os.path.join(os.getcwd(), item_list[0])
+        new_name = item_list[1]
+        if not os.path.exists(new_dir):  os.makedirs(new_dir)
+        old_pth = os.path.join(os.getcwd() + '/Results/', item)
+        new_pth = os.path.join(new_dir, new_name)
+        os.rename(old_pth, new_pth)
+
+def LFSOD_fig_supp():
+    num_model = 7
+    sample_list = os.listdir(os.getcwd() + '/LFSOD_sample/LFSD/')
+
+    pth_gt = os.getcwd() + '/fig_supp/GT/LFSD/'
+    pth_img = os.getcwd() + '/fig_supp/RGB/LFSD/'
+    pth_sal_img = [pth_img,
+                   pth_gt,
+                   os.getcwd() + '/fig_supp/ours/LFSD/',
+                   os.getcwd() + '/fig_supp/ERNetT/LFSD/',
+                   os.getcwd() + '/fig_supp/ERNetS/LFSD/',
+                   os.getcwd() + '/fig_supp/S2MA/LFSD/',
+                   os.getcwd() + '/fig_supp/D3Net/LFSD',
+                   os.getcwd() + '/fig_supp/LFS/LFSD/',
+                   os.getcwd() + '/fig_supp/DILF/LFSD/'
+                   ]
+
+    fig_img = np.zeros((300 * (num_model + 2) + 10 * (num_model + 1), 300 * 8 + 70, 3))  # eight samples
+    fig_img.fill(255)
+
+    count = 0
+    for item in sample_list:
+        if item == '.DS_Store': continue
+        for idx in range(num_model + 2):
+            if idx == '.DS_Store': continue
+            print(idx)
+            pthCurr = os.path.join(pth_sal_img[idx], item)
+            if idx == 0: pthCurr = pthCurr[:-4] + '.jpg'
+            imgCurr = cv2.imread(pthCurr)
+            imgCurr = cv2.resize(imgCurr, (300, 300), interpolation=cv2.INTER_AREA)
+            if idx == 0 and count == 0:
+                fig_img[:300, :300, :] = imgCurr
+            elif idx == 0 and count != 0:
+                fig_img[:300, count * (10 + 300): count * (10 + 300) + 300, :] = imgCurr
+            elif idx != 0 and count == 0:
+                fig_img[idx * (10 + 300): idx * (10 + 300) + 300, :300, :] = imgCurr
+            else:
+                fig_img[idx * (10 + 300): idx * (10 + 300) + 300,
+                count * (10 + 300): count * (10 + 300) + 300, :] = imgCurr
+
+        count += 1
+        print('count' + '  ' + str(count))
+
+    cv2.imwrite('fig_supp.png', fig_img)
+
+def LFSOD_fig_qua():
+    num_sample = 4
+    num_model = 7
+    sample_list = os.listdir(os.getcwd() + '/LFSOD_sample/DUT-LF/')
+    sample_list.sort(key=lambda x: x[:-4])
+
+    pth_gt = os.getcwd() + '/fig_qua/GT/DUT-LF/'
+    pth_img = os.getcwd() + '/fig_qua/RGB/DUT-LF/'
+    pth_sal_img = [pth_img,
+                   pth_gt,
+                   os.getcwd() + '/fig_qua/ours/DUT-LF/',
+                   os.getcwd() + '/fig_qua/ERNetT/DUT-LF/',
+                   os.getcwd() + '/fig_qua/ERNetS/DUT-LF/',
+                   os.getcwd() + '/fig_qua/S2MA/DUT-LF/',
+                   os.getcwd() + '/fig_qua/D3Net/DUT-LF/',
+                   os.getcwd() + '/fig_qua/LFS/DUT-LF/',
+                   os.getcwd() + '/fig_qua/DILF/DUT-LF/'
+                   ]
+
+    fig_img = np.zeros((300 * num_sample + 10 * (num_sample - 1), 450 * (num_model + 2) + 10 * (num_model + 1), 3))
+    fig_img.fill(255)
+
+    count = 0
+    for item in sample_list:
+        if item == '.DS_Store': continue
+        for idx in range(num_model + 2):
+            if idx == '.DS_Store': continue
+            print(idx)
+            pthCurr = os.path.join(pth_sal_img[idx], item)
+            if idx == 0: pthCurr = pthCurr[:-4] + '.jpg'
+            imgCurr = cv2.imread(pthCurr)
+            imgCurr = cv2.resize(imgCurr, (450, 300), interpolation=cv2.INTER_AREA)
+            if idx == 0 and count == 0:
+                fig_img[:300, :450, :] = imgCurr
+            elif idx == 0 and count != 0:
+                fig_img[count * (10 + 300): count * (10 + 300) + 300, :450, :] = imgCurr
+            elif idx != 0 and count == 0:
+                fig_img[:300, idx * (10 + 450): idx * (10 + 450) + 450, :] = imgCurr
+            else:
+                fig_img[count * (10 + 300): count * (10 + 300) + 300,
+                idx * (10 + 450): idx * (10 + 450) + 450,
+                :] = imgCurr
+
+        count += 1
+        print('count' + '  ' + str(count))
+
+    cv2.imwrite('fig_qua.png', fig_img)
+
+def LFSOD_fig_ab():
+    SIZE = 300
+    num_sample = 3
+    num_model = 4
+    sample_list = os.listdir(os.getcwd() + '/LFSOD_sample/DUT-LF/')
+    sample_list.sort(key=lambda x: x[:-4])
+
+    sample_list = ['1564.png', '0119.png', '0155.png']
+
+    pth_gt = os.getcwd() + '/fig_ab/GT/DUT-LF/'
+    pth_img = os.getcwd() + '/fig_ab/RGB/DUT-LF/'
+    pth_sal_img = [pth_img,
+                   pth_gt,
+                   os.getcwd() + '/fig_ab/no0/DUT-LF/',
+                   os.getcwd() + '/fig_ab/no1/DUT-LF/',
+                  # os.getcwd() + '/fig_ab/no2/DUT-LF/',
+                   os.getcwd() + '/fig_ab/no3/DUT-LF/',
+                  # os.getcwd() + '/fig_ab/no4/DUT-LF/',
+                  # os.getcwd() + '/fig_ab/no5/DUT-LF/',
+                   os.getcwd() + '/fig_ab/ours/DUT-LF/'
+                   ]
+
+    fig_img = np.zeros((300 * num_sample + 10 * (num_sample - 1), SIZE * (num_model + 2) + 10 * (num_model + 1), 3))
+    fig_img.fill(255)
+
+    count = 0
+    for item in sample_list:
+        if item == '.DS_Store': continue
+        for idx in range(num_model + 2):
+            if idx == '.DS_Store': continue
+            print(idx)
+            pthCurr = os.path.join(pth_sal_img[idx], item)
+            if idx == 0: pthCurr = pthCurr[:-4] + '.jpg'
+            imgCurr = cv2.imread(pthCurr)
+            imgCurr = cv2.resize(imgCurr, (SIZE, 300), interpolation=cv2.INTER_AREA)
+            if idx == 0 and count == 0:
+                fig_img[:300, :SIZE, :] = imgCurr
+            elif idx == 0 and count != 0:
+                fig_img[count * (10 + 300): count * (10 + 300) + 300, :SIZE, :] = imgCurr
+            elif idx != 0 and count == 0:
+                fig_img[:300, idx * (10 + SIZE): idx * (10 + SIZE) + SIZE, :] = imgCurr
+            else:
+                fig_img[count * (10 + 300): count * (10 + 300) + 300,
+                idx * (10 + SIZE): idx * (10 + SIZE) + SIZE,
+                :] = imgCurr
+
+        count += 1
+        print('count' + '  ' + str(count))
+
+    cv2.imwrite('fig_qua.png', fig_img)
+
+
 if __name__ == '__main__':
-    check_new_av()
+    LFSOD_fig_ab()
+    #LFSOD_fig_qua()
+    #LFSOD_fig_supp()
+    #objStt()
+    #delete_mask()
+    #VideoToImg()
+    #demoMsk()
+    #check_new_av()
     #frm_rename()
     #av_new_mask()
     #key_frame_extraction()
