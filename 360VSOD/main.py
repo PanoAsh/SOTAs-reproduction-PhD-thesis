@@ -1173,43 +1173,64 @@ def dataList_2():
                 f.write(msk_pth + '\n')
     f.close()
 
-def av_seq_list():
-    train_pth = '/home/yzhang1/PythonProjects/AV360/DATA/train/'
-    test_pth = '/home/yzhang1/PythonProjects/AV360/DATA/test/'
-    train_list = os.listdir(train_pth)
-    test_list = os.listdir(test_pth)
-    f1 = open(os.getcwd() + '/AV360_train.txt', 'w')
-    f2 = open(os.getcwd() + '/AV360_test.txt', 'w')
-    for item in train_list:
-        f1.write(item + '\n')
-    for item in test_list:
-        f2.write(item + '\n')
-    f1.close()
-    f2.close()
+def AVResize():
+    ORI_pth = '/home/yzhang1/PythonProjects/AV360/frame_key/'
+    FIN_pth = os.getcwd() + '/Resize/'
+    seqs = os.listdir(ORI_pth)
 
-def rename_davis():
-    test_pth = os.getcwd() +  '/Results/'
-    ref_pth = '/home/yzhang1/PythonProjects/AV360/DATA/test/'
-    seq_list = os.listdir(test_pth)
-    save_pth = os.getcwd() + '/NewResults/'
-
-    for seq in seq_list:
-        seq_pth = os.path.join(test_pth, seq)
+    count = 1
+    for seq in seqs:
+        seq_pth = os.path.join(ORI_pth, seq)
         frm_list = os.listdir(seq_pth)
         frm_list.sort(key=lambda x: x[:-4])
-        seq_ref_pth = os.path.join(ref_pth, seq)
-        frm_ref_list = os.listdir(seq_ref_pth)
-        frm_ref_list.sort(key=lambda x: x[:-4])
-        for idx in range(len(frm_list)):
-            ori_pth = os.path.join(seq_pth, frm_list[idx])
-            new_dir = os.path.join(save_pth, seq)
+        for frm in frm_list:
+            img_pth = os.path.join(seq_pth, frm)
+            img = cv2.imread(img_pth)
+            img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+
+            new_dir = os.path.join(FIN_pth, seq)
             if not os.path.exists(new_dir):  os.makedirs(new_dir)
-            new_pth = os.path.join(new_dir, frm_ref_list[idx])
-            os.rename(ori_pth, new_pth)
+            cv2.imwrite(os.path.join(new_dir, frm), img)
+        print(count)
+        count += 1
+
+def ReOrder():
+    ori_pth = os.getcwd() + '/_-eqmjLZGZ36k/'
+    frm_list = os.listdir(ori_pth)
+    frm_list.sort(key=lambda x: x[:-4])
+    save_pth = os.getcwd() + '/results/'
+    for frm in frm_list:
+        idx = int(frm[:-4])
+        idx = idx - 24
+        name = format(str(idx), '0>5s') + '.png'
+        old_pth = os.path.join(ori_pth, frm)
+        new_pth = os.path.join(save_pth, name)
+        img = cv2.imread(old_pth)
+        img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+        cv2.imwrite(new_pth, img)
+
+def KeyFrmAV360():
+    save_pth = os.getcwd() + '/AEM_key/'
+    seq_list = os.listdir(os.getcwd() + '/AEM/')
+    for seq in seq_list:
+        seq_pth = os.path.join(os.getcwd() + '/AEM/', seq)
+        frm_list = os.listdir(seq_pth)
+        frm_list.sort(key=lambda x: x[:-4])
+        for frm in frm_list:
+            if int(frm[:-4]) % 6 == 0:
+                frm_pth = os.path.join(seq_pth, frm)
+                img = cv2.imread(frm_pth)
+                img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+                img_name = format(str(int(frm[:-4])), '0>5s') + '.png'
+                new_dir = os.path.join(save_pth, seq)
+                if not os.path.exists(new_dir):  os.makedirs(new_dir)
+                cv2.imwrite(os.path.join(new_dir,img_name ), img)
+
 
 if __name__ == '__main__':
-    rename_davis()
-    #av_seq_list()
+    KeyFrmAV360()
+    #ReOrder()
+    #AVResize()
     #dataList_2()
     #dataList_msra()
     #ToTestLFSOD()
@@ -1220,7 +1241,7 @@ if __name__ == '__main__':
    # LFSOD_FS_Split()
    # PT = ProcessingTool()
     #LFSOD_split()
-   #FileRename()
+    #FileRename()
     #rgbd_test_prepar()
     #PT.rgb_exchange()
     #bar_show(PT.numFrm())
@@ -1231,7 +1252,7 @@ if __name__ == '__main__':
     #PT.frm2vid()
     #PT.ist2obj()
     #PT.ist_merge()
-    #PT.getKeyFrm()
+   # PT.getKeyFrm()
     #print('There are: ' + str(PT.numFrm()) + ' key frames.')
     #PT.frmStt()
     #PT.demoMsk()
