@@ -1216,19 +1216,57 @@ def KeyFrmAV360():
         seq_pth = os.path.join(os.getcwd() + '/AEM/', seq)
         frm_list = os.listdir(seq_pth)
         frm_list.sort(key=lambda x: x[:-4])
+
+        #count = 0
         for frm in frm_list:
             if int(frm[:-4]) % 6 == 0:
                 frm_pth = os.path.join(seq_pth, frm)
                 img = cv2.imread(frm_pth)
                 img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+                #img = np.roll(img, 180, axis=1)
+                #count += 1
+                #img = cv2.GaussianBlur(img, (45, 45), 30)
                 img_name = format(str(int(frm[:-4])), '0>5s') + '.png'
                 new_dir = os.path.join(save_pth, seq)
                 if not os.path.exists(new_dir):  os.makedirs(new_dir)
-                cv2.imwrite(os.path.join(new_dir,img_name ), img)
+                cv2.imwrite(os.path.join(new_dir, img_name), img)
 
+
+def AVOverlay():
+    save_pth = os.getcwd() + '/AEM_overlay/'
+    AEM_pth = os.getcwd() + '/AEM_key/'
+    Img_pth = '/home/yzhang1/PythonProjects/AV360/frame_key/'
+    seq_list = os.listdir(AEM_pth)
+    for seq in seq_list:
+        seq_pth = os.path.join(AEM_pth, seq)
+        frm_list = os.listdir(seq_pth)
+        frm_list.sort(key=lambda x: x[:-4])
+        for frm in frm_list:
+            img_pth = os.path.join(Img_pth, seq, frm)
+            aem_pth = os.path.join(AEM_pth, seq, frm)
+            img = cv2.imread(img_pth)
+            img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+            aem = cv2.imread(aem_pth)
+            aem = cv2.resize(aem, (512, 256), interpolation=cv2.INTER_AREA)
+            overlay = cv2.addWeighted(img, 0.8, aem, 1.6, 0)
+            new_dir = os.path.join(save_pth, seq)
+            if not os.path.exists(new_dir):  os.makedirs(new_dir)
+            cv2.imwrite(os.path.join(new_dir, frm), overlay)
+
+def RenameAEM():
+    ori_pth = os.getcwd() + '/AEM/_-g4fQ5iOVzsI/'
+    save_pth = os.getcwd() + '/AEM/results/'
+    ori_list = os.listdir(ori_pth)
+    ori_list.sort(key=lambda x: x[:-4])
+    for idx in range(len(ori_list)):
+        new_pth = os.path.join(save_pth, format(str(idx), '0>4s') + '.jpg')
+        old_pth = os.path.join(ori_pth, ori_list[idx])
+        os.rename(old_pth, new_pth)
 
 if __name__ == '__main__':
-    KeyFrmAV360()
+    #RenameAEM()
+    AVOverlay()
+    #KeyFrmAV360()
     #ReOrder()
     #AVResize()
     #dataList_2()
